@@ -18,6 +18,36 @@
             endingLineNumber = "169"
             landmarkName = "ActiveWorkoutView"
             landmarkType = "14">
+            <Locations>
+               <Location
+                  uuid = "F5709B96-188A-47B5-A828-890B97FC874C - 8619b14efc72d140"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "gochange.ActiveWorkoutView.completeWorkout() -&gt; ()"
+                  moduleName = "gochange.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toqi/code/github/gochange/gochange/Views/Workout/ActiveWorkoutView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "170"
+                  endingLineNumber = "170">
+               </Location>
+               <Location
+                  uuid = "F5709B96-188A-47B5-A828-890B97FC874C - 8619b14efc72d161"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "gochange.ActiveWorkoutView.completeWorkout() -&gt; ()"
+                  moduleName = "gochange.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/toqi/code/github/gochange/gochange/Views/Workout/ActiveWorkoutView.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "171"
+                  endingLineNumber = "171">
+               </Location>
+            </Locations>
          </BreakpointContent>
       </BreakpointProxy>
    </Breakpoints>

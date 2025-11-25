@@ -38,7 +38,7 @@ struct EditWorkoutDayView: View {
                         NavigationLink {
                             EditExerciseView(exercise: exercise)
                         } label: {
-                            ExerciseRowView(exercise: exercise)
+                            EditExerciseRowView(exercise: exercise)
                         }
                     }
                     .onDelete(perform: deleteExercises)
@@ -102,8 +102,8 @@ struct EditWorkoutDayView: View {
     }
 }
 
-// MARK: - Exercise Row View
-struct ExerciseRowView: View {
+// MARK: - Edit Exercise Row View
+struct EditExerciseRowView: View {
     let exercise: Exercise
     
     var body: some View {
