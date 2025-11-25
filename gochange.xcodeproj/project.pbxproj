@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		964F1CEF2ED5B5E00081B1EF /* FSCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 964F1CEE2ED5B5E00081B1EF /* FSCalendar */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		964F1C972ED5B38B0081B1EF /* gochange.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gochange.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				964F1CEF2ED5B5E00081B1EF /* FSCalendar in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = gochange;
 			packageProductDependencies = (
+				964F1CEE2ED5B5E00081B1EF /* FSCalendar */,
 			);
 			productName = gochange;
 			productReference = 964F1C972ED5B38B0081B1EF /* gochange.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 964F1C8E2ED5B38B0081B1EF;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				964F1CED2ED5B5E00081B1EF /* XCRemoteSwiftPackageReference "FSCalendar" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 964F1C982ED5B38B0081B1EF /* Products */;
 			projectDirPath = "";
@@ -332,6 +341,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		964F1CED2ED5B5E00081B1EF /* XCRemoteSwiftPackageReference "FSCalendar" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/WenchaoD/FSCalendar.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.8.4;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		964F1CEE2ED5B5E00081B1EF /* FSCalendar */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 964F1CED2ED5B5E00081B1EF /* XCRemoteSwiftPackageReference "FSCalendar" */;
+			productName = FSCalendar;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 964F1C8F2ED5B38B0081B1EF /* Project object */;
 }
