@@ -7,7 +7,6 @@ struct HomeView: View {
     @Query(sort: \WorkoutDay.dayNumber) private var workoutDays: [WorkoutDay]
     
     @State private var suggestedWorkout: WorkoutDay?
-    @State private var showingWorkout = false
     @State private var selectedWorkoutDay: WorkoutDay?
     
     var body: some View {
@@ -35,10 +34,8 @@ struct HomeView: View {
             .onAppear {
                 updateSuggestedWorkout()
             }
-            .fullScreenCover(isPresented: $showingWorkout) {
-                if let workoutDay = selectedWorkoutDay {
-                    ActiveWorkoutView(workoutDay: workoutDay)
-                }
+            .fullScreenCover(item: $selectedWorkoutDay) { workoutDay in
+                ActiveWorkoutView(workoutDay: workoutDay)
             }
         }
     }
@@ -139,7 +136,6 @@ struct HomeView: View {
             
             Button {
                 selectedWorkoutDay = workout
-                showingWorkout = true
             } label: {
                 HStack {
                     Image(systemName: "play.fill")

@@ -6,7 +6,6 @@ struct WorkoutDaySelectionView: View {
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     
     @State private var selectedWorkoutDay: WorkoutDay?
-    @State private var showingActiveWorkout = false
     
     private let columns = [
         GridItem(.flexible()),
@@ -25,7 +24,6 @@ struct WorkoutDaySelectionView: View {
                         )
                         .onTapGesture {
                             selectedWorkoutDay = workoutDay
-                            showingActiveWorkout = true
                         }
                     }
                 }
@@ -33,10 +31,8 @@ struct WorkoutDaySelectionView: View {
             }
             .background(AppTheme.background)
             .navigationTitle("Workouts")
-            .fullScreenCover(isPresented: $showingActiveWorkout) {
-                if let workoutDay = selectedWorkoutDay {
-                    ActiveWorkoutView(workoutDay: workoutDay)
-                }
+            .fullScreenCover(item: $selectedWorkoutDay) { workoutDay in
+                ActiveWorkoutView(workoutDay: workoutDay)
             }
         }
     }
