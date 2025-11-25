@@ -10,7 +10,7 @@ class WorkoutActivityManager {
     private init() {}
     
     func start(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int) {
-        // Run on background to avoid blocking UI
+        // Run in a detached task to avoid blocking UI
         Task.detached { [weak self] in
             await self?.startActivity(
                 workoutName: workoutName,
@@ -22,13 +22,28 @@ class WorkoutActivityManager {
     }
     
     @MainActor
-    private func startActivity(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int) {
+    private func startActivity(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int) async {
         print("🏋️ WorkoutActivityManager: Starting workout activity...")
         
-        // End any existing activity first
-        if activity != nil {
+        // End any existing activity first and WAIT for it to complete
+        if let existingActivity = activity {
             print("🏋️ WorkoutActivityManager: Ending existing activity first...")
-            endActivitySync()
+            let contentState = existingActivity.content.state
+            await existingActivity.end(
+                ActivityContent(state: contentState, staleDate: nil),
+                dismissalPolicy: .immediate
+            )
+            self.activity = nil
+            self.startTime = nil
+        }
+        
+        // Also end any orphaned activities from previous app runs
+        for activity in Activity<WorkoutActivityAttributes>.activities {
+            let contentState = activity.content.state
+            await activity.end(
+                ActivityContent(state: contentState, staleDate: nil),
+                dismissalPolicy: .immediate
+            )
         }
         
         let authInfo = ActivityAuthorizationInfo()
@@ -97,17 +112,4 @@ class WorkoutActivityManager {
         }
     }
     
-    @MainActor
-    private func endActivitySync() {
-        guard let activity = activity else { return }
-        Task {
-            let contentState = activity.content.state
-            await activity.end(
-                ActivityContent(state: contentState, staleDate: nil),
-                dismissalPolicy: .immediate
-            )
-        }
-        self.activity = nil
-        self.startTime = nil
-    }
 }
