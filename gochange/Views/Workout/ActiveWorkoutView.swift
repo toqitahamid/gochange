@@ -197,7 +197,7 @@ struct WorkoutTimerCard: View {
                 .foregroundColor(AppTheme.accent)
         }
         .padding(20)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
         .onReceive(timer) { _ in
@@ -298,7 +298,7 @@ struct ExerciseLogCard: View {
                 .padding(.bottom, 12)
             }
         }
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }

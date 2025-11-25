@@ -77,8 +77,12 @@ enum AppTheme {
     static let success = Color(hex: "#27AE60")
     static let warning = Color(hex: "#F39C12")
     static let danger = Color(hex: "#E74C3C")
-    static let background = Color(hex: "#F5F6FA")
-    static let cardBackground = Color.white
+    
+    // System-adaptive colors for dark mode support
+    static let background = Color(.systemGroupedBackground)
+    static let cardBackground = Color(.secondarySystemGroupedBackground)
+    static let textPrimary = Color(.label)
+    static let textSecondary = Color(.secondaryLabel)
     
     // Gradient backgrounds
     static let primaryGradient = LinearGradient(

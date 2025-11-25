@@ -36,7 +36,7 @@ struct HistoryListView: View {
                     .padding(.horizontal)
                     .padding(.vertical, 12)
                 }
-                .background(Color.white)
+                .background(AppTheme.cardBackground)
                 
                 Divider()
                 

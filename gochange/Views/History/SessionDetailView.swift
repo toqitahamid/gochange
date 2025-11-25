@@ -55,7 +55,7 @@ struct SessionDetailView: View {
             Spacer()
         }
         .padding(20)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
@@ -152,7 +152,7 @@ struct StatCard: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }
@@ -223,7 +223,7 @@ struct ExerciseDetailCard: View {
             }
         }
         .padding(16)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }

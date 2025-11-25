@@ -98,7 +98,7 @@ struct RestTimerView: View {
             }
         }
         .padding(32)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(24)
         .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
         .onAppear {

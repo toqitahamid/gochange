@@ -149,7 +149,7 @@ struct CalendarGrid: View {
             .padding(.horizontal)
         }
         .padding(.vertical)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
     }
     
     private var daysInMonth: [Date?] {
@@ -283,7 +283,7 @@ struct SessionRowView: View {
                 .foregroundColor(.secondary)
         }
         .padding()
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
     }

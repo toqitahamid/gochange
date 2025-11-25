@@ -134,7 +134,7 @@ struct WorkoutDayCard: View {
         }
         .padding(16)
         .frame(height: 200)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(16)
         .overlay(
             RoundedRectangle(cornerRadius: 16)

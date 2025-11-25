@@ -154,7 +154,7 @@ struct HomeView: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
     }
@@ -206,7 +206,7 @@ struct HomeView: View {
                 .foregroundColor(.secondary)
         }
         .padding(20)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
     }
@@ -226,7 +226,7 @@ struct HomeView: View {
             }
         }
         .padding(20)
-        .background(Color.white)
+        .background(AppTheme.cardBackground)
         .cornerRadius(20)
         .shadow(color: .black.opacity(0.05), radius: 10, y: 5)
     }
