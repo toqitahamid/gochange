@@ -17,6 +17,15 @@ struct ActiveWorkoutView: View {
     @State private var expandedExercise: UUID?
     @State private var showingRestTimer = false
     
+    // Track completed sets for live activity
+    private var completedSetsCount: Int {
+        exerciseLogs.reduce(0) { $0 + $1.sets.filter { $0.isCompleted }.count }
+    }
+    
+    private var totalSetsCount: Int {
+        exerciseLogs.reduce(0) { $0 + $1.sets.count }
+    }
+    
     init(workoutDay: WorkoutDay) {
         self.workoutDay = workoutDay
         self._session = State(initialValue: WorkoutSession(
@@ -83,6 +92,7 @@ struct ActiveWorkoutView: View {
             .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
                 Button("Keep Going", role: .cancel) { }
                 Button("Discard", role: .destructive) {
+                    WorkoutActivityManager.shared.end()
                     dismiss()
                 }
             } message: {
@@ -99,6 +109,21 @@ struct ActiveWorkoutView: View {
             .onAppear {
                 setupExerciseLogs()
             }
+            .task {
+                // Start live activity after a brief delay to ensure UI is ready
+                try? await Task.sleep(for: .milliseconds(100))
+                startWorkoutLiveActivity()
+            }
+            .onDisappear {
+                // End live activity if view disappears without completion
+                WorkoutActivityManager.shared.end()
+            }
+            .onChange(of: completedSetsCount) { oldValue, newValue in
+                // Only update if value actually changed
+                if oldValue != newValue {
+                    updateWorkoutLiveActivity()
+                }
+            }
             .sheet(isPresented: $showingRestTimer) {
                 RestTimerView(isPresented: $showingRestTimer)
                     .presentationDetents([.medium])
@@ -108,6 +133,24 @@ struct ActiveWorkoutView: View {
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
+    }
+    
+    // MARK: - Live Activity
+    private func startWorkoutLiveActivity() {
+        WorkoutActivityManager.shared.start(
+            workoutName: workoutDay.name,
+            workoutColor: workoutDay.colorHex,
+            exerciseCount: workoutDay.exercises.count,
+            totalSets: totalSetsCount
+        )
+    }
+    
+    private func updateWorkoutLiveActivity() {
+        WorkoutActivityManager.shared.update(
+            completedSets: completedSetsCount,
+            totalSets: totalSetsCount,
+            exerciseCount: exerciseLogs.count
+        )
     }
     
     // MARK: - Computed Properties
@@ -171,6 +214,9 @@ struct ActiveWorkoutView: View {
     }
     
     private func completeWorkout() {
+        // End live activity
+        WorkoutActivityManager.shared.end()
+        
         session.endTime = Date()
         session.duration = session.endTime?.timeIntervalSince(session.startTime)
         session.isCompleted = true
