@@ -106,16 +106,20 @@ class WorkoutViewModel: ObservableObject {
     }
     
     var totalVolume: Double {
-        sessions.filter { $0.isCompleted }.reduce(0) { total, session in
-            total + session.exerciseLogs.reduce(0) { logTotal, log in
-                logTotal + log.sets.filter { $0.isCompleted }.reduce(0) { setTotal, set in
+        var total: Double = 0
+        let completedSessions = sessions.filter { $0.isCompleted }
+        
+        for session in completedSessions {
+            for log in session.exerciseLogs {
+                for set in log.sets where set.isCompleted {
                     if let weight = set.weight, let reps = set.actualReps {
-                        return setTotal + (weight * Double(reps))
+                        total += weight * Double(reps)
                     }
-                    return setTotal
                 }
             }
         }
+        
+        return total
     }
     
     var averageWorkoutDuration: TimeInterval {
