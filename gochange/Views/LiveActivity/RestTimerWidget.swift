@@ -38,7 +38,7 @@ struct RestTimerWidget: Widget {
                 
                 DynamicIslandExpandedRegion(.trailing) {
                     Text(timerInterval: Date()...safeEndTime, countsDown: true)
-                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(.white)
                         .padding(.trailing, 4)
@@ -117,9 +117,9 @@ struct RestTimerLockScreenView: View {
                     .fontWeight(.bold)
                     .foregroundColor(.cyan)
                     .tracking(1)
-                
+
                 Text(timerInterval: Date()...safeEndTime, countsDown: true)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .font(.system(size: 24, weight: .bold, design: .rounded))
                     .monospacedDigit()
                     .foregroundColor(.white)
             }
