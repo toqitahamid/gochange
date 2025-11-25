@@ -6,6 +6,7 @@ struct RestTimerView: View {
     @Binding var isPresented: Bool
     
     @AppStorage("restTimerDuration") private var defaultDuration: Double = 90
+    @AppStorage("hapticFeedback") private var hapticFeedbackEnabled: Bool = true
     
     @State private var remainingTime: TimeInterval = 0
     @State private var isRunning = false
@@ -176,7 +177,9 @@ struct RestTimerView: View {
     private func timerComplete() {
         pauseTimer()
         playCompletionSound()
-        triggerHaptic()
+        if hapticFeedbackEnabled {
+            triggerHaptic()
+        }
         remainingTime = defaultDuration
     }
     

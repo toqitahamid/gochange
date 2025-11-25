@@ -23,11 +23,19 @@ struct ExerciseDetailView: View {
                 // Media Section
                 mediaSection
                 
-                // Stats Section
-                statsSection
-                
-                // History Section
-                historySection
+                    // Stats Section
+                    statsSection
+                    
+                    // Progress Chart
+                    if !progressDataPoints.isEmpty {
+                        ProgressChartView(
+                            exerciseName: exercise.name,
+                            dataPoints: progressDataPoints
+                        )
+                    }
+                    
+                    // History Section
+                    historySection
                 
                 // Notes Section
                 notesSection
@@ -293,6 +301,38 @@ struct ExerciseDetailView: View {
             return String(format: "%.1fk", volume / 1000)
         }
         return String(format: "%.0f", volume)
+    }
+    
+    private var progressDataPoints: [ProgressDataPoint] {
+        // Group exercise logs by session date and create data points
+        var dataPoints: [ProgressDataPoint] = []
+        
+        for session in sessions.filter({ $0.isCompleted }).reversed() {
+            guard let log = session.exerciseLogs.first(where: { $0.exerciseId == exercise.id }) else {
+                continue
+            }
+            
+            let completedSets = log.sets.filter { $0.isCompleted }
+            guard !completedSets.isEmpty else { continue }
+            
+            let maxWeight = completedSets.compactMap { $0.weight }.max() ?? 0
+            let totalReps = completedSets.compactMap { $0.actualReps }.reduce(0, +)
+            let totalVolume = completedSets.reduce(0.0) { total, set in
+                if let weight = set.weight, let reps = set.actualReps {
+                    return total + (weight * Double(reps))
+                }
+                return total
+            }
+            
+            dataPoints.append(ProgressDataPoint(
+                date: session.date,
+                maxWeight: maxWeight,
+                totalVolume: totalVolume,
+                totalReps: totalReps
+            ))
+        }
+        
+        return dataPoints
     }
     
     // MARK: - Methods

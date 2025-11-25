@@ -5,6 +5,7 @@ import Combine
 struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     
     let workoutDay: WorkoutDay
     
@@ -14,6 +15,7 @@ struct ActiveWorkoutView: View {
     @State private var showingCompletionAlert = false
     @State private var showingCancelAlert = false
     @State private var expandedExercise: UUID?
+    @State private var showingRestTimer = false
     
     init(workoutDay: WorkoutDay) {
         self.workoutDay = workoutDay
@@ -28,8 +30,10 @@ struct ActiveWorkoutView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
-                    // Timer Card
-                    WorkoutTimerCard(startTime: startTime)
+                    // Timer Card with Rest Button
+                    WorkoutTimerCard(startTime: startTime, onRestTap: {
+                        showingRestTimer = true
+                    })
                     
                     // Exercise List
                     ForEach(Array(exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
@@ -95,6 +99,11 @@ struct ActiveWorkoutView: View {
             .onAppear {
                 setupExerciseLogs()
             }
+            .sheet(isPresented: $showingRestTimer) {
+                RestTimerView(isPresented: $showingRestTimer)
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+            }
         }
     }
     
@@ -114,11 +123,13 @@ struct ActiveWorkoutView: View {
                 order: index
             )
             
-            // Create sets based on default
+            // Create sets based on default with user's preferred weight unit
+            let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
             for setNum in 1...exercise.defaultSets {
                 let setLog = SetLog(
                     setNumber: setNum,
-                    targetReps: exercise.defaultReps
+                    targetReps: exercise.defaultReps,
+                    weightUnit: unit
                 )
                 log.sets.append(setLog)
             }
@@ -137,9 +148,11 @@ struct ActiveWorkoutView: View {
     private func addSet(to exerciseIndex: Int) {
         let exercise = getExercise(for: exerciseLogs[exerciseIndex])
         let newSetNumber = exerciseLogs[exerciseIndex].sets.count + 1
+        let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
         let newSet = SetLog(
             setNumber: newSetNumber,
-            targetReps: exercise?.defaultReps ?? "10"
+            targetReps: exercise?.defaultReps ?? "10",
+            weightUnit: unit
         )
         exerciseLogs[exerciseIndex].sets.append(newSet)
     }
@@ -174,6 +187,7 @@ struct ActiveWorkoutView: View {
 // MARK: - Workout Timer Card
 struct WorkoutTimerCard: View {
     let startTime: Date
+    let onRestTap: () -> Void
     @State private var elapsed: TimeInterval = 0
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
@@ -192,9 +206,20 @@ struct WorkoutTimerCard: View {
             
             Spacer()
             
-            Image(systemName: "timer")
-                .font(.title)
-                .foregroundColor(AppTheme.accent)
+            // Rest Timer Button
+            Button(action: onRestTap) {
+                HStack(spacing: 6) {
+                    Image(systemName: "timer")
+                    Text("Rest")
+                }
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.white)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(AppTheme.accent)
+                .cornerRadius(20)
+            }
         }
         .padding(20)
         .background(AppTheme.cardBackground)
@@ -241,9 +266,10 @@ struct ExerciseLogCard: View {
                         .fontWeight(.medium)
                         .foregroundColor(completedSets == exerciseLog.sets.count ? .green : .secondary)
                     
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                    Image(systemName: "chevron.down")
                         .font(.caption)
                         .foregroundColor(.secondary)
+                        .rotationEffect(.degrees(isExpanded ? -180 : 0))
                 }
                 .padding()
             }
@@ -296,11 +322,16 @@ struct ExerciseLogCard: View {
                     .padding(.vertical, 8)
                 }
                 .padding(.bottom, 12)
+                .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(AppTheme.cardBackground)
+                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        )
+        .animation(.easeInOut(duration: 0.25), value: isExpanded)
     }
 }
 
