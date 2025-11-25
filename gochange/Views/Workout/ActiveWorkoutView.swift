@@ -105,6 +105,9 @@ struct ActiveWorkoutView: View {
                     .presentationDragIndicator(.visible)
             }
         }
+        .onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
     }
     
     // MARK: - Computed Properties
