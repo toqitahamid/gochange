@@ -28,22 +28,14 @@ class WorkoutActivityManager {
         // End any existing activity first and WAIT for it to complete
         if let existingActivity = activity {
             print("🏋️ WorkoutActivityManager: Ending existing activity first...")
-            let contentState = existingActivity.content.state
-            await existingActivity.end(
-                ActivityContent(state: contentState, staleDate: nil),
-                dismissalPolicy: .immediate
-            )
+            await existingActivity.end(nil, dismissalPolicy: .immediate)
             self.activity = nil
             self.startTime = nil
         }
-        
+
         // Also end any orphaned activities from previous app runs
         for activity in Activity<WorkoutActivityAttributes>.activities {
-            let contentState = activity.content.state
-            await activity.end(
-                ActivityContent(state: contentState, staleDate: nil),
-                dismissalPolicy: .immediate
-            )
+            await activity.end(nil, dismissalPolicy: .immediate)
         }
         
         let authInfo = ActivityAuthorizationInfo()
