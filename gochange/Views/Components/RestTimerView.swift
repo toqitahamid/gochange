@@ -144,6 +144,9 @@ struct RestTimerView: View {
     
     private func startTimer() {
         isRunning = true
+        // Start Live Activity
+        RestTimerActivityManager.shared.start(endTime: Date().addingTimeInterval(remainingTime))
+        
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if remainingTime > 0 {
                 remainingTime -= 1
@@ -157,6 +160,8 @@ struct RestTimerView: View {
         isRunning = false
         timer?.invalidate()
         timer = nil
+        // End Live Activity
+        RestTimerActivityManager.shared.end()
     }
     
     private func stopTimer() {
