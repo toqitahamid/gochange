@@ -11,6 +11,7 @@ class HealthKitService: ObservableObject {
     
     @Published var isAuthorized = false
     @Published var authorizationStatus: HKAuthorizationStatus = .notDetermined
+    private var hasRequestedAuthorization = false
     
     // MARK: - Health Data Types
     
@@ -50,19 +51,56 @@ class HealthKitService: ObservableObject {
             return
         }
 
-        // Check if we have authorization for all the types we need to read
-        let sleepStatus = healthStore.authorizationStatus(for: HKCategoryType(.sleepAnalysis))
+        // Check workout write permission (more reliable than read permissions)
         let workoutStatus = healthStore.authorizationStatus(for: workoutType)
-
         authorizationStatus = workoutStatus
 
-        // Consider authorized if sleep data can be read (most important for recovery)
-        // Note: HealthKit returns .notDetermined for read permissions even if granted
-        isAuthorized = sleepStatus != .sharingDenied && workoutStatus != .sharingDenied
+        // For read permissions, HealthKit always returns .notDetermined even after granted
+        // So we consider authorized if workout write permission is authorized (most reliable indicator)
+        // OR if we've explicitly requested authorization and nothing is denied
+        let sleepStatus = healthStore.authorizationStatus(for: HKCategoryType(.sleepAnalysis))
+        let restingHRStatus = healthStore.authorizationStatus(for: HKQuantityType(.restingHeartRate))
+        let hrvStatus = healthStore.authorizationStatus(for: HKQuantityType(.heartRateVariabilitySDNN))
+        
+        // If workout is authorized, we've definitely requested and user granted permissions
+        // This is the most reliable indicator that HealthKit integration is set up
+        let hasDeniedReadPermissions = sleepStatus == .sharingDenied || 
+                                       restingHRStatus == .sharingDenied || 
+                                       hrvStatus == .sharingDenied
+        
+        // If workout is authorized, we know user has granted permissions before
+        if workoutStatus == .sharingAuthorized {
+            hasRequestedAuthorization = true
+        }
+        
+        // Consider authorized if:
+        // 1. Workout write is authorized (user has granted permissions), OR
+        // 2. We've requested and nothing is explicitly denied
+        isAuthorized = (workoutStatus == .sharingAuthorized) || 
+                      (hasRequestedAuthorization && workoutStatus != .sharingDenied && !hasDeniedReadPermissions)
 
         print("🔐 HealthKit Auth Status:")
         print("   Sleep: \(sleepStatus == .notDetermined ? "Not Determined" : sleepStatus == .sharingDenied ? "Denied" : "Authorized")")
         print("   Workout: \(workoutStatus == .notDetermined ? "Not Determined" : workoutStatus == .sharingDenied ? "Denied" : "Authorized")")
+        print("   Has requested: \(hasRequestedAuthorization)")
+        print("   Is authorized: \(isAuthorized)")
+    }
+    
+    /// Check if we can read a specific health data type
+    /// Returns false if authorization is explicitly denied or not determined
+    func canRead(_ objectType: HKObjectType) -> Bool {
+        guard isHealthKitAvailable else { return false }
+        let status = healthStore.authorizationStatus(for: objectType)
+        // HealthKit quirk: read permissions return .notDetermined even when granted
+        // So we only check if it's explicitly denied
+        return status != .sharingDenied
+    }
+    
+    /// Check if authorization is needed for a specific type
+    func needsAuthorization(for objectType: HKObjectType) -> Bool {
+        guard isHealthKitAvailable else { return false }
+        let status = healthStore.authorizationStatus(for: objectType)
+        return status == .notDetermined
     }
     
     /// Request authorization to read/write health data
@@ -79,6 +117,7 @@ class HealthKitService: ObservableObject {
 
         do {
             try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
+            hasRequestedAuthorization = true
             print("✅ HealthKit authorization request completed")
             checkAuthorizationStatus()
             return true // Always return true after request, as HealthKit doesn't reveal if user granted/denied read access
@@ -228,6 +267,18 @@ class HealthKitService: ObservableObject {
     func getSleepData(for date: Date) async -> SleepData? {
         guard isHealthKitAvailable else { return nil }
 
+        let sleepType = HKCategoryType(.sleepAnalysis)
+        
+        // Check if authorization is explicitly denied
+        let authStatus = healthStore.authorizationStatus(for: sleepType)
+        if authStatus == .sharingDenied {
+            print("❌ Sleep query error: Authorization denied")
+            return nil
+        }
+        
+        // Note: HealthKit returns .notDetermined for read permissions even after granted
+        // So we just proceed with the query - HealthKit will handle it
+
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
@@ -236,7 +287,6 @@ class HealthKitService: ObservableObject {
         // This captures sleep that started the previous night and ended on the given date
         let startTime = calendar.date(byAdding: .hour, value: -12, to: startOfDay) ?? startOfDay
 
-        let sleepType = HKCategoryType(.sleepAnalysis)
         // Use strictEndDate to find sleep that ended on this date (wake-up date)
         let predicate = HKQuery.predicateForSamples(withStart: startTime, end: endOfDay, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
@@ -343,11 +393,22 @@ class HealthKitService: ObservableObject {
     func getRestingHeartRate(for date: Date) async -> Double? {
         guard isHealthKitAvailable else { return nil }
 
+        let restingHRType = HKQuantityType(.restingHeartRate)
+        
+        // Check if authorization is explicitly denied
+        let authStatus = healthStore.authorizationStatus(for: restingHRType)
+        if authStatus == .sharingDenied {
+            print("❌ Resting HR query error: Authorization denied")
+            return nil
+        }
+        
+        // Note: HealthKit returns .notDetermined for read permissions even after granted
+        // So we just proceed with the query - HealthKit will handle it
+
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
 
-        let restingHRType = HKQuantityType(.restingHeartRate)
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 
@@ -385,11 +446,22 @@ class HealthKitService: ObservableObject {
     func getHeartRateVariability(for date: Date) async -> Double? {
         guard isHealthKitAvailable else { return nil }
 
+        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
+        
+        // Check if authorization is explicitly denied
+        let authStatus = healthStore.authorizationStatus(for: hrvType)
+        if authStatus == .sharingDenied {
+            print("❌ HRV query error: Authorization denied")
+            return nil
+        }
+        
+        // Note: HealthKit returns .notDetermined for read permissions even after granted
+        // So we just proceed with the query - HealthKit will handle it
+
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
 
-        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
 

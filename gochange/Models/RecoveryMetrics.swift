@@ -18,8 +18,8 @@ final class RecoveryMetrics {
 
     // User-reported metrics
     var muscleRecovery: [MuscleGroupRecovery]
-    var overallFatigue: Int // 1-5, lower is less fatigued
-    var motivationLevel: Int // 1-5
+    var overallFatigue: Int? // 1-5, lower is less fatigued (nil if not reported)
+    var motivationLevel: Int? // 1-5 (nil if not reported)
 
     var createdAt: Date
     var updatedAt: Date
@@ -28,8 +28,8 @@ final class RecoveryMetrics {
         self.id = UUID()
         self.date = date
         self.muscleRecovery = []
-        self.overallFatigue = 3
-        self.motivationLevel = 3
+        self.overallFatigue = nil
+        self.motivationLevel = nil
         self.createdAt = Date()
         self.updatedAt = Date()
     }
@@ -50,6 +50,22 @@ struct MuscleGroupRecovery: Codable {
 }
 
 extension RecoveryMetrics {
+    /// Check if metrics have any real data
+    var hasRealData: Bool {
+        return sleepDuration != nil ||
+               sleepQuality != nil ||
+               restingHeartRate != nil ||
+               heartRateVariability != nil ||
+               !muscleRecovery.isEmpty ||
+               overallFatigue != nil ||
+               motivationLevel != nil
+    }
+    
+    /// Check if fatigue value is user-reported
+    var hasUserReportedFatigue: Bool {
+        return overallFatigue != nil
+    }
+    
     var formattedSleepDuration: String {
         guard let duration = sleepDuration else { return "N/A" }
         let hours = Int(duration / 3600)
@@ -78,31 +94,39 @@ extension RecoveryMetrics {
 
     var overallRecoveryScore: Double {
         var score = 0.0
-        var components = 0
+        var totalWeight = 0.0
 
         // Sleep score (40%)
         if let quality = sleepQuality {
             score += quality * 0.4
-            components += 1
+            totalWeight += 0.4
         }
 
-        // Fatigue score (30%) - inverted so lower fatigue = higher score
-        let fatigueScore = (1.0 - (Double(overallFatigue) / 5.0)) * 0.3
-        score += fatigueScore
-        components += 1
+        // Fatigue score (30%) - only if user-reported
+        if let fatigue = overallFatigue {
+            let fatigueScore = (1.0 - (Double(fatigue) / 5.0)) * 0.3
+            score += fatigueScore
+            totalWeight += 0.3
+        }
 
         // Muscle recovery score (20%)
         if !muscleRecovery.isEmpty {
             let avgRecovery = muscleRecovery.reduce(0.0) { $0 + $1.recoveryPercentage } / Double(muscleRecovery.count)
             score += avgRecovery * 0.2
-            components += 1
+            totalWeight += 0.2
         }
 
-        // Motivation score (10%)
-        score += (Double(motivationLevel) / 5.0) * 0.1
-        components += 1
+        // Motivation score (10%) - only if user-reported
+        if let motivation = motivationLevel {
+            score += (Double(motivation) / 5.0) * 0.1
+            totalWeight += 0.1
+        }
 
-        return score
+        // If we have no real data, return 0 (or nil would be better, but Double can't be nil)
+        guard totalWeight > 0 else { return 0.0 }
+        
+        // Normalize score based on available components
+        return score / totalWeight
     }
 
     var readinessToTrain: TrainingReadiness {

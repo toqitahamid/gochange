@@ -36,12 +36,17 @@ struct RecoveryDashboardView: View {
                             healthKitPromptCard
                         }
 
-                        if let recommendation = recoveryService.recoveryRecommendation {
-                            readinessCard(recommendation)
-                        }
-
                         if let metrics = todaysMetrics {
-                            recoveryScoreCard(metrics)
+                            // Only show recommendation if we have real data
+                            if metrics.hasRealData, let recommendation = recoveryService.recoveryRecommendation {
+                                readinessCard(recommendation)
+                            }
+                            
+                            // Only show recovery score if we have real data
+                            if metrics.hasRealData {
+                                recoveryScoreCard(metrics)
+                            }
+                            
                             sleepCard(metrics)
                             muscleRecoveryCard(metrics)
                             vitalSignsCard(metrics)
@@ -438,16 +443,19 @@ struct RecoveryDashboardView: View {
                     .frame(maxWidth: .infinity)
                 }
 
-                VStack(spacing: 4) {
-                    Text("\(metrics.overallFatigue)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    Text("Fatigue")
-                        .font(.caption)
-                        .foregroundStyle(.gray)
+                // Only show fatigue if it's user-reported
+                if let fatigue = metrics.overallFatigue {
+                    VStack(spacing: 4) {
+                        Text("\(fatigue)")
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        Text("Fatigue")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                    }
+                    .frame(maxWidth: .infinity)
                 }
-                .frame(maxWidth: .infinity)
             }
 
             if metrics.restingHeartRate == nil && metrics.heartRateVariability == nil {

@@ -46,6 +46,16 @@ class RecoveryService: ObservableObject {
         print("🔄 Syncing recovery data for: \(targetDate.formatted(date: .abbreviated, time: .omitted))")
         print("   HealthKit available: \(healthKitService.isHealthKitAvailable)")
         print("   HealthKit authorized: \(healthKitService.isAuthorized)")
+        
+        // Ensure authorization has been requested at least once
+        // Note: We don't check isAuthorized here because HealthKit read permissions
+        // always show .notDetermined even after granted, so we just ensure we've requested it
+        if !healthKitService.isAuthorized {
+            print("⚠️ Authorization not requested yet, requesting...")
+            await healthKitService.requestAuthorization()
+            // Wait a moment for permissions to settle
+            try? await Task.sleep(nanoseconds: 500_000_000)
+        }
 
         let metrics = getTodaysRecoveryMetrics(context: context)
 
@@ -210,6 +220,12 @@ class RecoveryService: ObservableObject {
 
     /// Generate recovery recommendation based on current metrics
     func generateRecoveryRecommendation(metrics: RecoveryMetrics, context: ModelContext) async {
+        // Only generate recommendation if we have real data
+        guard metrics.hasRealData else {
+            self.recoveryRecommendation = nil
+            return
+        }
+        
         let readiness = metrics.readinessToTrain
         let recoveryScore = metrics.overallRecoveryScore
 
@@ -267,7 +283,7 @@ class RecoveryService: ObservableObject {
                 recommendation.message += " You're low on sleep (\(metrics.formattedSleepDuration)). Prioritize rest tonight."
             }
 
-            if metrics.overallFatigue >= 4 {
+            if let fatigue = metrics.overallFatigue, fatigue >= 4 {
                 recommendation.message += " High fatigue detected. Your body needs recovery time."
             }
         }
