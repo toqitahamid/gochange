@@ -27,13 +27,17 @@ struct ActiveWorkoutView: View {
         self.workoutDay = workoutDay
     }
     
+    private var accentColor: Color {
+        Color(hex: workoutDay.colorHex)
+    }
+    
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 16) {
                     // Timer Card with Rest Button
                     if let startTime = workoutManager.startTime {
-                        WorkoutTimerCard(startTime: startTime, onRestTap: {
+                        WorkoutTimerCard(startTime: startTime, accentColor: accentColor, onRestTap: {
                             workoutManager.showingRestTimer = true
                         })
                     }
@@ -43,9 +47,10 @@ struct ActiveWorkoutView: View {
                         ExerciseLogCard(
                             exerciseLog: $workoutManager.exerciseLogs[index],
                             exercise: getExercise(for: exerciseLog),
+                            accentColor: accentColor,
                             isExpanded: expandedExercise == exerciseLog.id,
                             onToggleExpand: {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.25)) {
                                     if expandedExercise == exerciseLog.id {
                                         expandedExercise = nil
                                     } else {
@@ -65,33 +70,43 @@ struct ActiveWorkoutView: View {
                         )
                     }
                 }
-                .padding()
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
-            .background(AppTheme.background)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .navigationTitle(workoutDay.name)
             .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button {
-                        workoutManager.minimize()
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .fontWeight(.semibold)
-                    }
-                }
-                
-                ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
                         showingCancelAlert = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.down")
+                                .font(.system(size: 14, weight: .semibold))
+                            Text("Cancel")
+                                .font(.system(size: 16, weight: .medium))
+                        }
+                        .foregroundColor(Color(hex: "#FF6B6B"))
                     }
-                    .foregroundColor(.red)
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Complete") {
+                    Button {
                         showingCompletionAlert = true
+                    } label: {
+                        Text("Complete")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
                     }
-                    .fontWeight(.semibold)
                     .disabled(!workoutManager.canComplete)
                 }
             }
@@ -112,13 +127,9 @@ struct ActiveWorkoutView: View {
                 Text("Great job! This workout will be saved to your history.")
             }
             .onAppear {
-                // Setup is now handled by WorkoutManager
                 if expandedExercise == nil {
                     expandedExercise = workoutManager.exerciseLogs.first?.id
                 }
-            }
-            .onDisappear {
-                // No longer end activity on disappear, as we might be minimizing
             }
             .onChange(of: completedSetsCount) { oldValue, newValue in
                 // Live activity update is handled in WorkoutManager
@@ -164,6 +175,7 @@ struct ActiveWorkoutView: View {
 // MARK: - Workout Timer Card
 struct WorkoutTimerCard: View {
     let startTime: Date
+    let accentColor: Color
     let onRestTap: () -> Void
     @State private var elapsed: TimeInterval = 0
     
@@ -171,37 +183,50 @@ struct WorkoutTimerCard: View {
     
     var body: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Workout Time")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("WORKOUT TIME")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(.gray)
                 
                 Text(elapsed.formattedDuration)
-                    .font(.system(size: 32, weight: .bold, design: .monospaced))
-                    .foregroundColor(.primary)
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
             }
             
             Spacer()
             
             // Rest Timer Button
             Button(action: onRestTap) {
-                HStack(spacing: 6) {
+                HStack(spacing: 8) {
                     Image(systemName: "timer")
+                        .font(.system(size: 16))
                     Text("Rest")
+                        .font(.system(size: 15, weight: .semibold))
                 }
-                .font(.subheadline)
-                .fontWeight(.medium)
                 .foregroundColor(.white)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(AppTheme.accent)
-                .cornerRadius(20)
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+                .background(
+                    LinearGradient(
+                        colors: [accentColor, accentColor.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(25)
+                .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
             }
         }
-        .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .padding(24)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
         .onReceive(timer) { _ in
             elapsed = Date().timeIntervalSince(startTime)
         }
@@ -212,77 +237,89 @@ struct WorkoutTimerCard: View {
 struct ExerciseLogCard: View {
     @Binding var exerciseLog: ExerciseLog
     let exercise: Exercise?
+    let accentColor: Color
     let isExpanded: Bool
     let onToggleExpand: () -> Void
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
     
+    private var completedSets: Int {
+        exerciseLog.sets.filter { $0.isCompleted }.count
+    }
+    
+    private var isFullyCompleted: Bool {
+        completedSets == exerciseLog.sets.count && exerciseLog.sets.count > 0
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
             // Header
             Button(action: onToggleExpand) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
+                HStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 4) {
                         Text(exerciseLog.exerciseName)
-                            .font(.headline)
-                            .foregroundColor(.primary)
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.white)
                         
                         if let exercise = exercise {
                             Text("\(exercise.muscleGroup) • \(exercise.defaultSets) × \(exercise.defaultReps)")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 13))
+                                .foregroundColor(.gray)
                         }
                     }
                     
                     Spacer()
                     
                     // Completion indicator
-                    let completedSets = exerciseLog.sets.filter { $0.isCompleted }.count
-                    Text("\(completedSets)/\(exerciseLog.sets.count)")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(completedSets == exerciseLog.sets.count ? .green : .secondary)
-                    
-                    Image(systemName: "chevron.down")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .rotationEffect(.degrees(isExpanded ? -180 : 0))
+                    HStack(spacing: 8) {
+                        Text("\(completedSets)/\(exerciseLog.sets.count)")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(isFullyCompleted ? Color(hex: "#00D4AA") : .gray)
+                        
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundColor(.gray)
+                            .rotationEffect(.degrees(isExpanded ? -180 : 0))
+                    }
                 }
-                .padding()
+                .padding(16)
             }
             .buttonStyle(.plain)
             
             // Expanded Content
             if isExpanded {
-                Divider()
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 1)
                 
-                VStack(spacing: 8) {
+                VStack(spacing: 0) {
                     // Set Headers
-                    HStack(spacing: 8) {
+                    HStack(spacing: 0) {
                         Text("SET")
-                            .frame(width: 35)
+                            .frame(width: 40, alignment: .center)
                         Text("TARGET")
-                            .frame(width: 50)
+                            .frame(width: 55, alignment: .center)
                         Text("WEIGHT")
-                            .frame(width: 70)
+                            .frame(maxWidth: .infinity, alignment: .center)
                         Text("REPS")
-                            .frame(width: 50)
+                            .frame(width: 55, alignment: .center)
                         Text("RIR")
-                            .frame(width: 50)
+                            .frame(width: 50, alignment: .center)
                         Spacer()
-                            .frame(width: 40)
+                            .frame(width: 44)
                     }
-                    .font(.caption2)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
-                    .padding(.horizontal)
-                    .padding(.top, 8)
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.5)
+                    .foregroundColor(Color.white.opacity(0.4))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 12)
                     
                     // Set Rows
                     ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
                         SetInputRow(
                             setLog: $exerciseLog.sets[index],
+                            accentColor: accentColor,
                             onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
                             onToggleCompletion: { onToggleSetCompletion(index) }
                         )
@@ -290,33 +327,39 @@ struct ExerciseLogCard: View {
                     
                     // Add Set Button
                     Button(action: onAddSet) {
-                        HStack {
+                        HStack(spacing: 8) {
                             Image(systemName: "plus.circle.fill")
+                                .font(.system(size: 16))
                             Text("Add Set")
+                                .font(.system(size: 14, weight: .semibold))
                         }
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundColor(AppTheme.accent)
+                        .foregroundColor(accentColor)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 14)
                     }
-                    .padding(.vertical, 8)
                 }
-                .padding(.bottom, 12)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .clipShape(RoundedRectangle(cornerRadius: 16))
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(AppTheme.cardBackground)
-                .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            isFullyCompleted ? Color(hex: "#00D4AA").opacity(0.3) : Color.white.opacity(0.1),
+                            lineWidth: 1
+                        )
+                )
         )
-        .animation(.easeInOut(duration: 0.25), value: isExpanded)
+        .clipShape(RoundedRectangle(cornerRadius: 20))
     }
 }
 
 // MARK: - Set Input Row
 struct SetInputRow: View {
     @Binding var setLog: SetLog
+    let accentColor: Color
     let onRemove: (() -> Void)?
     let onToggleCompletion: () -> Void
     
@@ -324,45 +367,54 @@ struct SetInputRow: View {
     @State private var repsText: String = ""
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 0) {
             // Set Number
             Text("\(setLog.setNumber)")
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .frame(width: 35)
+                .font(.system(size: 15, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .frame(width: 40, alignment: .center)
             
             // Target Reps
             Text(setLog.targetReps)
-                .font(.caption)
-                .foregroundColor(.secondary)
-                .frame(width: 50)
+                .font(.system(size: 13))
+                .foregroundColor(.gray)
+                .frame(width: 55, alignment: .center)
             
             // Weight Input
-            HStack(spacing: 2) {
+            HStack(spacing: 4) {
                 TextField("0", text: $weightText)
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
                     .frame(width: 50)
-                    .textFieldStyle(.roundedBorder)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(8)
                     .onChange(of: weightText) { _, newValue in
                         setLog.weight = Double(newValue)
                     }
                 
                 Text(setLog.weightUnit.rawValue)
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 11))
+                    .foregroundColor(.gray)
             }
-            .frame(width: 70)
+            .frame(maxWidth: .infinity, alignment: .center)
             
             // Actual Reps
             TextField("0", text: $repsText)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
-                .frame(width: 50)
-                .textFieldStyle(.roundedBorder)
+                .font(.system(size: 14, weight: .medium))
+                .foregroundColor(.white)
+                .frame(width: 44)
+                .padding(.vertical, 8)
+                .background(Color.white.opacity(0.1))
+                .cornerRadius(8)
                 .onChange(of: repsText) { _, newValue in
                     setLog.actualReps = Int(newValue)
                 }
+                .frame(width: 55, alignment: .center)
             
             // RIR Picker
             Menu {
@@ -375,41 +427,52 @@ struct SetInputRow: View {
                 }
             } label: {
                 Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
-                    .font(.subheadline)
-                    .frame(width: 50)
-                    .padding(.vertical, 6)
-                    .background(Color(.systemGray6))
-                    .cornerRadius(6)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(setLog.rir != nil ? accentColor : .gray)
+                    .frame(width: 36)
+                    .padding(.vertical, 8)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(8)
             }
+            .frame(width: 50, alignment: .center)
             
             // Complete Button
             Button {
-                withAnimation {
+                withAnimation(.easeInOut(duration: 0.2)) {
                     onToggleCompletion()
                 }
             } label: {
-                Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : "circle")
-                    .font(.title2)
-                    .foregroundColor(setLog.isCompleted ? .green : .gray)
+                ZStack {
+                    Circle()
+                        .stroke(setLog.isCompleted ? Color(hex: "#00D4AA") : Color.white.opacity(0.2), lineWidth: 2)
+                        .frame(width: 28, height: 28)
+                    
+                    if setLog.isCompleted {
+                        Circle()
+                            .fill(Color(hex: "#00D4AA"))
+                            .frame(width: 28, height: 28)
+                        
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.black)
+                    }
+                }
             }
-            .frame(width: 40)
+            .frame(width: 44, alignment: .center)
         }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-        .background(setLog.isCompleted ? Color.green.opacity(0.05) : Color.clear)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(
+            setLog.isCompleted ?
+            Color(hex: "#00D4AA").opacity(0.08) :
+            Color.clear
+        )
         .onAppear {
             if let weight = setLog.weight {
-                weightText = String(format: "%.1f", weight)
+                weightText = String(format: "%.0f", weight)
             }
             if let reps = setLog.actualReps {
                 repsText = String(reps)
-            }
-        }
-        .swipeActions(edge: .trailing) {
-            if let onRemove = onRemove {
-                Button(role: .destructive, action: onRemove) {
-                    Label("Delete", systemImage: "trash")
-                }
             }
         }
     }
