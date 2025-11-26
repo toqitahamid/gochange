@@ -141,8 +141,7 @@ struct SettingsView: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("Settings")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingExportSheet) {
                 if let data = exportData {
                     ShareSheet(activityItems: [data])

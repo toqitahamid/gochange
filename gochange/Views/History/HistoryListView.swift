@@ -76,9 +76,7 @@ struct HistoryListView: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("History")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search workouts")
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
     

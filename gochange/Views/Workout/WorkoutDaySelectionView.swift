@@ -61,8 +61,7 @@ struct WorkoutDaySelectionView: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("Workouts")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(item: $editingWorkoutDay) { workoutDay in
                 EditWorkoutDayView(workoutDay: workoutDay)
             }

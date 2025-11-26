@@ -42,8 +42,7 @@ struct HomeView: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("Home")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
             .onAppear {
                 updateSuggestedWorkout()
                 calculateStreak()

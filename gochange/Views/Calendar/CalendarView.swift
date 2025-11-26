@@ -68,8 +68,7 @@ struct CalendarView: View {
                 )
                 .ignoresSafeArea()
             )
-            .navigationTitle("Calendar")
-            .navigationBarTitleDisplayMode(.large)
+            .toolbar(.hidden, for: .navigationBar)
         }
     }
     
