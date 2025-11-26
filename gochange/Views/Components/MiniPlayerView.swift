@@ -7,53 +7,95 @@ struct MiniPlayerView: View {
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
+    private var accentColor: Color {
+        if let workoutDay = workoutManager.currentWorkoutDay {
+            return Color(hex: workoutDay.colorHex)
+        }
+        return AppTheme.accent
+    }
+    
     var body: some View {
         VStack(spacing: 0) {
-            Divider()
+            // Top accent line
+            Rectangle()
+                .fill(accentColor)
+                .frame(height: 2)
             
-            HStack(spacing: 16) {
-                // Workout Icon
-                if let session = workoutManager.currentSession {
+            HStack(spacing: 14) {
+                // Workout Icon with pulse animation
+                ZStack {
                     Circle()
-                        .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName).opacity(0.2))
-                        .frame(width: 40, height: 40)
-                        .overlay(
-                            Text(session.workoutDayName.prefix(1))
-                                .fontWeight(.bold)
-                                .foregroundColor(AppConstants.WorkoutColors.color(for: session.workoutDayName))
+                        .fill(accentColor.opacity(0.2))
+                        .frame(width: 44, height: 44)
+                    
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [accentColor, accentColor.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
+                        .frame(width: 36, height: 36)
+                    
+                    Text(workoutManager.currentSession?.workoutDayName.prefix(1) ?? "W")
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
                 }
                 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(workoutManager.currentSession?.workoutDayName ?? "Workout")
-                        .font(.headline)
-                        .foregroundColor(.primary)
+                    HStack(spacing: 6) {
+                        Text(workoutManager.currentSession?.workoutDayName ?? "Workout")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundColor(.white)
+                        
+                        // Live indicator
+                        Circle()
+                            .fill(Color(hex: "#00D4AA"))
+                            .frame(width: 6, height: 6)
+                    }
                     
-                    Text(elapsed.formattedDuration)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                        .monospacedDigit()
+                    HStack(spacing: 8) {
+                        Text(elapsed.formattedDuration)
+                            .font(.system(size: 13, weight: .medium, design: .monospaced))
+                            .foregroundColor(.gray)
+                        
+                        Text("•")
+                            .foregroundColor(.gray.opacity(0.5))
+                        
+                        Text("\(workoutManager.completedSetsCount)/\(workoutManager.totalSetsCount) sets")
+                            .font(.system(size: 12))
+                            .foregroundColor(.gray)
+                    }
                 }
                 
                 Spacer()
                 
-                // Resume Button (Chevron Up)
-                Image(systemName: "chevron.up")
-                    .font(.headline)
-                    .foregroundColor(.secondary)
-                    .padding(8)
+                // Resume Button
+                HStack(spacing: 6) {
+                    Text("Resume")
+                        .font(.system(size: 14, weight: .semibold))
+                    Image(systemName: "chevron.up")
+                        .font(.system(size: 12, weight: .bold))
+                }
+                .foregroundColor(accentColor)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(accentColor.opacity(0.15))
+                .cornerRadius(20)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(AppTheme.cardBackground)
+            .background(
+                Color(hex: "#0A1628")
+            )
             .contentShape(Rectangle())
             .onTapGesture {
-                withAnimation {
+                withAnimation(.spring(response: 0.3)) {
                     workoutManager.resume()
                 }
             }
         }
-        .background(AppTheme.cardBackground)
         .onReceive(timer) { _ in
             if let startTime = workoutManager.startTime {
                 elapsed = Date().timeIntervalSince(startTime)

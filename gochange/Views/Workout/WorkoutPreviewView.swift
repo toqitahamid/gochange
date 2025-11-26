@@ -14,57 +14,46 @@ struct WorkoutPreviewView: View {
     }
     
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Workout Header Card
-                    workoutHeaderCard
-                    
-                    // Exercise List
-                    exerciseListSection
-                    
-                    // Start Button
-                    startButton
-                }
-                .padding(.horizontal, 20)
-                .padding(.bottom, 100)
-            }
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
-            .navigationTitle(workoutDay.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "chevron.left")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                }
+        ScrollView {
+            VStack(spacing: 24) {
+                // Workout Header Card
+                workoutHeaderCard
                 
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showingEditSheet = true
-                    } label: {
-                        Image(systemName: "pencil")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundColor(.white)
-                    }
-                }
+                // Exercise List
+                exerciseListSection
+                
+                // Start Button
+                startButton
             }
-            .sheet(isPresented: $showingEditSheet) {
-                EditWorkoutDayView(workoutDay: workoutDay)
+            .padding(.horizontal, 20)
+            .padding(.bottom, 100)
+        }
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(hex: "#0A1628")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .navigationTitle(workoutDay.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button {
+                    showingEditSheet = true
+                } label: {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.white)
+                }
             }
         }
+        .sheet(isPresented: $showingEditSheet) {
+            EditWorkoutDayView(workoutDay: workoutDay)
+        }
+        .toolbar(.visible, for: .tabBar)
     }
     
     // MARK: - Header Card

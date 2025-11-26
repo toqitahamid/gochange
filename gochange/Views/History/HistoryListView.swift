@@ -20,46 +20,64 @@ struct HistoryListView: View {
             VStack(spacing: 0) {
                 // Filter Pills
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: 10) {
                         ForEach(WorkoutFilter.allCases, id: \.self) { filter in
-                            FilterPill(
+                            HistoryFilterPill(
                                 title: filter.rawValue,
                                 isSelected: selectedFilter == filter,
                                 color: colorFor(filter)
                             ) {
-                                withAnimation {
+                                withAnimation(.easeInOut(duration: 0.2)) {
                                     selectedFilter = filter
                                 }
                             }
                         }
                     }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .background(AppTheme.cardBackground)
-                
-                Divider()
                 
                 // Sessions List
-                if filteredSessions.isEmpty {
-                    emptyStateView
-                } else {
-                    List {
-                        ForEach(groupedSessions.keys.sorted().reversed(), id: \.self) { monthKey in
-                            Section(header: Text(monthKey)) {
-                                ForEach(groupedSessions[monthKey] ?? []) { session in
-                                    NavigationLink(destination: SessionDetailView(session: session)) {
-                                        HistoryRowView(session: session)
+                ScrollView {
+                    if filteredSessions.isEmpty {
+                        emptyStateView
+                            .padding(.top, 60)
+                    } else {
+                        LazyVStack(spacing: 24) {
+                            ForEach(groupedSessions.keys.sorted().reversed(), id: \.self) { monthKey in
+                                VStack(alignment: .leading, spacing: 12) {
+                                    Text(monthKey.uppercased())
+                                        .font(.system(size: 12, weight: .bold))
+                                        .tracking(1.5)
+                                        .foregroundColor(.gray)
+                                        .padding(.horizontal, 4)
+                                    
+                                    VStack(spacing: 10) {
+                                        ForEach(groupedSessions[monthKey] ?? []) { session in
+                                            NavigationLink(destination: SessionDetailView(session: session)) {
+                                                HistoryRowView(session: session)
+                                            }
+                                            .buttonStyle(ScaleButtonStyle())
+                                        }
                                     }
                                 }
                             }
                         }
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 100)
                     }
-                    .listStyle(.plain)
                 }
             }
-            .background(AppTheme.background)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .navigationTitle("History")
+            .navigationBarTitleDisplayMode(.large)
             .searchable(text: $searchText, prompt: "Search workouts")
         }
     }
@@ -91,7 +109,7 @@ struct HistoryListView: View {
     
     private func colorFor(_ filter: WorkoutFilter) -> Color {
         switch filter {
-        case .all: return AppTheme.accent
+        case .all: return Color(hex: "#00D4AA")
         case .push: return AppConstants.WorkoutColors.push
         case .pull: return AppConstants.WorkoutColors.pull
         case .legs: return AppConstants.WorkoutColors.legs
@@ -100,27 +118,35 @@ struct HistoryListView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 60))
-                .foregroundColor(.secondary)
+        VStack(spacing: 20) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 100, height: 100)
+                
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 40))
+                    .foregroundColor(.gray)
+            }
             
-            Text("No Workout History")
-                .font(.title2)
-                .fontWeight(.semibold)
-            
-            Text("Complete your first workout to see it here")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
+            VStack(spacing: 8) {
+                Text("No Workout History")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                Text("Complete your first workout to see it here")
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(AppTheme.background)
+        .frame(maxWidth: .infinity)
     }
 }
 
-// MARK: - Filter Pill
-struct FilterPill: View {
+// MARK: - History Filter Pill
+struct HistoryFilterPill: View {
     let title: String
     let isSelected: Bool
     let color: Color
@@ -129,13 +155,18 @@ struct FilterPill: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.subheadline)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .background(isSelected ? color : Color.gray.opacity(0.1))
-                .cornerRadius(20)
+                .font(.system(size: 14, weight: isSelected ? .semibold : .medium))
+                .foregroundColor(isSelected ? .white : .gray)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 10)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(isSelected ? color : Color.white.opacity(0.08))
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(isSelected ? color.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+                )
         }
     }
 }
@@ -144,20 +175,31 @@ struct FilterPill: View {
 struct HistoryRowView: View {
     let session: WorkoutSession
     
+    private var accentColor: Color {
+        AppConstants.WorkoutColors.color(for: session.workoutDayName)
+    }
+    
     var body: some View {
-        HStack(spacing: 12) {
-            // Workout Type Indicator
-            RoundedRectangle(cornerRadius: 4)
-                .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName))
-                .frame(width: 4)
+        HStack(spacing: 14) {
+            // Workout Type Indicator & Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 50, height: 50)
+                
+                Text(session.workoutDayName.prefix(1).uppercased())
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(accentColor)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.workoutDayName)
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 Text(session.date.formatted(as: "MMM d, yyyy"))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
             }
             
             Spacer()
@@ -165,16 +207,28 @@ struct HistoryRowView: View {
             VStack(alignment: .trailing, spacing: 4) {
                 if let duration = session.duration {
                     Text(duration.formattedDuration)
-                        .font(.subheadline)
-                        .fontWeight(.medium)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.white)
                 }
                 
                 Text("\(session.exerciseLogs.count) exercises")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12))
+                    .foregroundColor(.gray)
             }
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.gray.opacity(0.5))
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -182,4 +236,3 @@ struct HistoryRowView: View {
     HistoryListView()
         .modelContainer(for: WorkoutSession.self)
 }
-

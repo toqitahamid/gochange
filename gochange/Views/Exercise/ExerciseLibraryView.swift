@@ -12,46 +12,90 @@ struct ExerciseLibraryView: View {
             VStack(spacing: 0) {
                 // Muscle Group Filter
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        FilterChip(
+                    HStack(spacing: 10) {
+                        ExerciseFilterChip(
                             title: "All",
                             isSelected: selectedMuscleGroup == nil
                         ) {
-                            selectedMuscleGroup = nil
+                            withAnimation(.easeInOut(duration: 0.2)) {
+                                selectedMuscleGroup = nil
+                            }
                         }
                         
                         ForEach(allMuscleGroups, id: \.self) { group in
-                            FilterChip(
+                            ExerciseFilterChip(
                                 title: group,
                                 isSelected: selectedMuscleGroup == group
                             ) {
-                                selectedMuscleGroup = group
-                            }
-                        }
-                    }
-                    .padding(.horizontal)
-                    .padding(.vertical, 12)
-                }
-                .background(AppTheme.cardBackground)
-                
-                Divider()
-                
-                // Exercise List
-                List {
-                    ForEach(groupedExercises.keys.sorted(), id: \.self) { workoutName in
-                        Section(header: workoutSectionHeader(workoutName)) {
-                            ForEach(groupedExercises[workoutName] ?? []) { exercise in
-                                NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
-                                    ExerciseRowView(exercise: exercise)
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedMuscleGroup = group
                                 }
                             }
                         }
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
                 }
-                .listStyle(.insetGrouped)
+                
+                // Exercise List
+                ScrollView {
+                    LazyVStack(spacing: 24) {
+                        ForEach(groupedExercises.keys.sorted(), id: \.self) { workoutName in
+                            VStack(alignment: .leading, spacing: 12) {
+                                // Section Header
+                                HStack(spacing: 8) {
+                                    Circle()
+                                        .fill(AppConstants.WorkoutColors.color(for: workoutName))
+                                        .frame(width: 10, height: 10)
+                                    
+                                    Text(workoutName.uppercased())
+                                        .font(.system(size: 12, weight: .bold))
+                                        .tracking(1)
+                                        .foregroundColor(.gray)
+                                }
+                                .padding(.horizontal, 4)
+                                
+                                VStack(spacing: 0) {
+                                    ForEach(Array((groupedExercises[workoutName] ?? []).enumerated()), id: \.element.id) { index, exercise in
+                                        NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
+                                            ExerciseLibraryRowView(exercise: exercise)
+                                        }
+                                        .buttonStyle(.plain)
+                                        
+                                        if index < (groupedExercises[workoutName]?.count ?? 0) - 1 {
+                                            Rectangle()
+                                                .fill(Color.white.opacity(0.08))
+                                                .frame(height: 1)
+                                                .padding(.leading, 60)
+                                        }
+                                    }
+                                }
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.white.opacity(0.05))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16)
+                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                        )
+                                )
+                                .clipShape(RoundedRectangle(cornerRadius: 16))
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 100)
+                }
             }
-            .background(AppTheme.background)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .navigationTitle("Exercises")
+            .navigationBarTitleDisplayMode(.large)
             .searchable(text: $searchText, prompt: "Search exercises")
         }
     }
@@ -87,22 +131,10 @@ struct ExerciseLibraryView: View {
     private var allMuscleGroups: [String] {
         Array(Set(allExercises.map { $0.muscleGroup })).sorted()
     }
-    
-    private func workoutSectionHeader(_ workoutName: String) -> some View {
-        HStack(spacing: 8) {
-            Circle()
-                .fill(AppConstants.WorkoutColors.color(for: workoutName))
-                .frame(width: 10, height: 10)
-            
-            Text(workoutName)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-        }
-    }
 }
 
-// MARK: - Filter Chip
-struct FilterChip: View {
+// MARK: - Exercise Filter Chip
+struct ExerciseFilterChip: View {
     let title: String
     let isSelected: Bool
     let action: () -> Void
@@ -110,68 +142,79 @@ struct FilterChip: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.caption)
-                .fontWeight(isSelected ? .semibold : .regular)
-                .foregroundColor(isSelected ? .white : .primary)
-                .padding(.horizontal, 12)
-                .padding(.vertical, 6)
-                .background(isSelected ? AppTheme.accent : Color.gray.opacity(0.1))
-                .cornerRadius(16)
+                .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                .foregroundColor(isSelected ? .white : .gray)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(isSelected ? Color(hex: "#00D4AA") : Color.white.opacity(0.08))
+                )
         }
     }
 }
 
-// MARK: - Exercise Row View
-struct ExerciseRowView: View {
+// MARK: - Exercise Library Row View
+struct ExerciseLibraryRowView: View {
     let exercise: Exercise
     
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 14) {
             // Muscle Group Icon
-            Circle()
-                .fill(muscleGroupColor.opacity(0.15))
-                .frame(width: 44, height: 44)
-                .overlay(
-                    Image(systemName: muscleGroupIcon)
-                        .foregroundColor(muscleGroupColor)
-                )
+            ZStack {
+                Circle()
+                    .fill(muscleGroupColor.opacity(0.15))
+                    .frame(width: 44, height: 44)
+                
+                Image(systemName: muscleGroupIcon)
+                    .font(.system(size: 18))
+                    .foregroundColor(muscleGroupColor)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(exercise.name)
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 HStack(spacing: 8) {
-                    Label(exercise.muscleGroup, systemImage: "figure.strengthtraining.traditional")
+                    Text(exercise.muscleGroup)
+                        .font(.system(size: 12))
+                        .foregroundColor(.gray)
                     
                     Text("•")
+                        .foregroundColor(.gray.opacity(0.5))
                     
                     Text("\(exercise.defaultSets) × \(exercise.defaultReps)")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(muscleGroupColor.opacity(0.8))
                 }
-                .font(.caption)
-                .foregroundColor(.secondary)
             }
             
             Spacer()
             
             if exercise.mediaURL != nil {
                 Image(systemName: "play.circle.fill")
-                    .foregroundColor(AppTheme.accent)
+                    .font(.system(size: 20))
+                    .foregroundColor(Color(hex: "#00D4AA"))
             }
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundColor(.gray.opacity(0.5))
         }
-        .padding(.vertical, 4)
+        .padding(14)
     }
     
     private var muscleGroupColor: Color {
         switch exercise.muscleGroup.lowercased() {
-        case "chest": return .red
-        case "back": return .blue
-        case "shoulders": return .orange
-        case "biceps": return .purple
-        case "triceps": return .pink
-        case "quads", "hamstrings", "glutes": return .green
-        case "calves": return .teal
-        case "core": return .yellow
+        case "chest": return Color(hex: "#E57373")
+        case "back": return Color(hex: "#64B5F6")
+        case "shoulders": return Color(hex: "#FFB74D")
+        case "biceps": return Color(hex: "#BA68C8")
+        case "triceps": return Color(hex: "#F06292")
+        case "quads", "hamstrings", "glutes": return Color(hex: "#00D4AA")
+        case "calves": return Color(hex: "#4DB6AC")
+        case "core": return Color(hex: "#FFD54F")
         default: return .gray
         }
     }
@@ -193,4 +236,3 @@ struct ExerciseRowView: View {
     ExerciseLibraryView()
         .modelContainer(for: WorkoutDay.self)
 }
-

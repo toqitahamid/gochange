@@ -6,6 +6,10 @@ struct SessionDetailView: View {
     
     @Environment(\.dismiss) private var dismiss
     
+    private var accentColor: Color {
+        AppConstants.WorkoutColors.color(for: session.workoutDayName)
+    }
+    
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
@@ -18,77 +22,106 @@ struct SessionDetailView: View {
                 // Exercise Logs
                 exerciseSection
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 100)
         }
-        .background(AppTheme.background)
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(hex: "#0A1628")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
         .navigationTitle(session.workoutDayName)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
     }
     
     // MARK: - Header Card
     private var headerCard: some View {
-        HStack(spacing: 16) {
-            Circle()
-                .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName).opacity(0.2))
-                .frame(width: 60, height: 60)
-                .overlay(
-                    Text(session.workoutDayName.prefix(1))
-                        .font(.title)
-                        .fontWeight(.bold)
-                        .foregroundColor(AppConstants.WorkoutColors.color(for: session.workoutDayName))
-                )
+        VStack(spacing: 20) {
+            // Workout Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(
+                        LinearGradient(
+                            colors: [accentColor, accentColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                
+                Text(session.workoutDayName.prefix(1).uppercased())
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundColor(.white)
+            }
+            .shadow(color: accentColor.opacity(0.4), radius: 16, y: 8)
             
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(spacing: 6) {
                 Text(session.workoutDayName)
                     .font(.title2)
                     .fontWeight(.bold)
+                    .foregroundColor(.white)
                 
                 Text(session.date.formatted(as: "EEEE, MMMM d, yyyy"))
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                 
                 Text(session.startTime.formatted(as: "h:mm a"))
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
             }
-            
-            Spacer()
         }
-        .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 28)
+        .background(
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(
+                            LinearGradient(
+                                colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
     }
     
     // MARK: - Stats Row
     private var statsRow: some View {
-        HStack(spacing: 12) {
-            StatCard(
+        HStack(spacing: 10) {
+            SessionStatCard(
                 title: "Duration",
                 value: session.duration?.formattedDuration ?? "--",
                 icon: "timer",
-                color: .blue
+                color: Color(hex: "#64B5F6")
             )
             
-            StatCard(
+            SessionStatCard(
                 title: "Exercises",
                 value: "\(session.exerciseLogs.count)",
                 icon: "dumbbell.fill",
-                color: .purple
+                color: Color(hex: "#BA68C8")
             )
             
-            StatCard(
-                title: "Total Sets",
+            SessionStatCard(
+                title: "Sets",
                 value: "\(totalSets)",
                 icon: "checkmark.circle.fill",
-                color: .green
+                color: Color(hex: "#00D4AA")
             )
             
-            StatCard(
+            SessionStatCard(
                 title: "Volume",
                 value: formatVolume(totalVolume),
                 icon: "scalemass.fill",
-                color: .orange
+                color: Color(hex: "#FF6B35")
             )
         }
     }
@@ -96,11 +129,16 @@ struct SessionDetailView: View {
     // MARK: - Exercise Section
     private var exerciseSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Exercises")
-                .font(.headline)
+            Text("EXERCISES")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(.gray)
+                .padding(.horizontal, 4)
             
-            ForEach(session.exerciseLogs.sorted { $0.order < $1.order }) { exerciseLog in
-                ExerciseDetailCard(exerciseLog: exerciseLog)
+            VStack(spacing: 12) {
+                ForEach(session.exerciseLogs.sorted { $0.order < $1.order }) { exerciseLog in
+                    SessionExerciseDetailCard(exerciseLog: exerciseLog)
+                }
             }
         }
     }
@@ -129,87 +167,107 @@ struct SessionDetailView: View {
     }
 }
 
-// MARK: - Stat Card
-struct StatCard: View {
+// MARK: - Session Stat Card
+struct SessionStatCard: View {
     let title: String
     let value: String
     let icon: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .font(.title3)
-                .foregroundColor(color)
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 40, height: 40)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 16))
+                    .foregroundColor(color)
+            }
             
             Text(value)
-                .font(.headline)
-                .fontWeight(.bold)
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
             
             Text(title)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
 }
 
-// MARK: - Exercise Detail Card
-struct ExerciseDetailCard: View {
+// MARK: - Session Exercise Detail Card
+struct SessionExerciseDetailCard: View {
     let exerciseLog: ExerciseLog
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 14) {
             // Exercise Name
             Text(exerciseLog.exerciseName)
-                .font(.headline)
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(.white)
             
             // Sets Table
-            VStack(spacing: 4) {
+            VStack(spacing: 0) {
                 // Header
                 HStack {
                     Text("SET")
                         .frame(width: 40, alignment: .leading)
                     Text("WEIGHT")
-                        .frame(width: 70, alignment: .center)
+                        .frame(width: 80, alignment: .center)
                     Text("REPS")
                         .frame(width: 50, alignment: .center)
                     Text("RIR")
                         .frame(width: 40, alignment: .center)
                     Spacer()
                 }
-                .font(.caption2)
-                .fontWeight(.medium)
-                .foregroundColor(.secondary)
+                .font(.system(size: 10, weight: .bold))
+                .tracking(0.5)
+                .foregroundColor(.gray.opacity(0.6))
+                .padding(.bottom, 10)
                 
-                Divider()
+                Rectangle()
+                    .fill(Color.white.opacity(0.1))
+                    .frame(height: 1)
                 
                 // Rows
                 ForEach(exerciseLog.sets.sorted { $0.setNumber < $1.setNumber }) { setLog in
                     if setLog.isCompleted {
                         HStack {
                             Text("\(setLog.setNumber)")
-                                .fontWeight(.medium)
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
                                 .frame(width: 40, alignment: .leading)
                             
                             Text(setLog.weight != nil ? "\(String(format: "%.1f", setLog.weight!)) \(setLog.weightUnit.rawValue)" : "-")
-                                .frame(width: 70, alignment: .center)
+                                .font(.system(size: 14))
+                                .foregroundColor(.white)
+                                .frame(width: 80, alignment: .center)
                             
                             Text(setLog.actualReps != nil ? "\(setLog.actualReps!)" : "-")
+                                .font(.system(size: 14))
+                                .foregroundColor(.white)
                                 .frame(width: 50, alignment: .center)
                             
                             Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .gray)
                                 .frame(width: 40, alignment: .center)
-                                .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .secondary)
                             
                             Spacer()
                         }
-                        .font(.subheadline)
-                        .padding(.vertical, 4)
+                        .padding(.vertical, 10)
                     }
                 }
             }
@@ -218,14 +276,19 @@ struct ExerciseDetailCard: View {
             if let notes = exerciseLog.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(.gray)
                     .padding(.top, 4)
             }
         }
-        .padding(16)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
 }
 
@@ -236,4 +299,3 @@ struct ExerciseDetailCard: View {
         SessionDetailView(session: session)
     }
 }
-

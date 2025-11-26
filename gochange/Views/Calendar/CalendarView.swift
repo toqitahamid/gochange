@@ -9,43 +9,67 @@ struct CalendarView: View {
     
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-                // Calendar
-                CalendarGrid(
-                    displayedMonth: $displayedMonth,
-                    selectedDate: $selectedDate,
-                    sessions: sessions
-                )
-                
-                Divider()
-                
-                // Sessions for selected date
-                VStack(alignment: .leading, spacing: 12) {
-                    Text(selectedDate.formatted(as: "EEEE, MMMM d"))
-                        .font(.headline)
-                        .padding(.horizontal)
-                        .padding(.top, 16)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Calendar
+                    CalendarGrid(
+                        displayedMonth: $displayedMonth,
+                        selectedDate: $selectedDate,
+                        sessions: sessions
+                    )
                     
-                    if sessionsOnDate.isEmpty {
-                        emptyStateView
-                    } else {
-                        ScrollView {
-                            LazyVStack(spacing: 12) {
+                    // Sessions for selected date
+                    VStack(alignment: .leading, spacing: 16) {
+                        HStack {
+                            Text(selectedDate.formatted(as: "EEEE, MMMM d"))
+                                .font(.headline)
+                                .foregroundColor(.white)
+                            
+                            Spacer()
+                            
+                            if !sessionsOnDate.isEmpty {
+                                Text("\(sessionsOnDate.count) workout\(sessionsOnDate.count > 1 ? "s" : "")")
+                                    .font(.caption)
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                        
+                        if sessionsOnDate.isEmpty {
+                            emptyStateView
+                        } else {
+                            VStack(spacing: 12) {
                                 ForEach(sessionsOnDate) { session in
                                     NavigationLink(destination: SessionDetailView(session: session)) {
                                         SessionRowView(session: session)
                                     }
-                                    .buttonStyle(.plain)
+                                    .buttonStyle(ScaleButtonStyle())
                                 }
                             }
-                            .padding(.horizontal)
                         }
                     }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(Color.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                    )
                 }
-                .frame(maxHeight: .infinity)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
-            .background(AppTheme.background)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
             .navigationTitle("Calendar")
+            .navigationBarTitleDisplayMode(.large)
         }
     }
     
@@ -56,20 +80,30 @@ struct CalendarView: View {
     }
     
     private var emptyStateView: some View {
-        VStack(spacing: 12) {
-            Image(systemName: "calendar.badge.exclamationmark")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
+        VStack(spacing: 16) {
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 80, height: 80)
+                
+                Image(systemName: "calendar.badge.exclamationmark")
+                    .font(.system(size: 32))
+                    .foregroundColor(.gray)
+            }
             
-            Text("No Workouts")
-                .font(.headline)
-                .foregroundColor(.secondary)
-            
-            Text("No workouts logged on this date")
-                .font(.caption)
-                .foregroundColor(.secondary)
+            VStack(spacing: 4) {
+                Text("No Workouts")
+                    .font(.headline)
+                    .foregroundColor(.white)
+                
+                Text("No workouts logged on this date")
+                    .font(.caption)
+                    .foregroundColor(.gray)
+                    .multilineTextAlignment(.center)
+            }
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 32)
     }
 }
 
@@ -92,14 +126,19 @@ struct CalendarGrid: View {
                     }
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.title3)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
                 }
                 
                 Spacer()
                 
                 Text(displayedMonth.formatted(as: "MMMM yyyy"))
-                    .font(.title2)
-                    .fontWeight(.semibold)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
@@ -109,18 +148,21 @@ struct CalendarGrid: View {
                     }
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.title3)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
                 }
             }
-            .padding(.horizontal)
             
             // Days of Week Header
             HStack(spacing: 0) {
                 ForEach(daysOfWeek, id: \.self) { day in
                     Text(day)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(0.5)
+                        .foregroundColor(.gray)
                         .frame(maxWidth: .infinity)
                 }
             }
@@ -136,7 +178,7 @@ struct CalendarGrid: View {
                             sessions: sessionsForDate(date)
                         )
                         .onTapGesture {
-                            withAnimation {
+                            withAnimation(.easeInOut(duration: 0.2)) {
                                 selectedDate = date
                             }
                         }
@@ -146,10 +188,16 @@ struct CalendarGrid: View {
                     }
                 }
             }
-            .padding(.horizontal)
         }
-        .padding(.vertical)
-        .background(AppTheme.cardBackground)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
     
     private var daysInMonth: [Date?] {
@@ -215,12 +263,12 @@ struct CalendarDayView: View {
         .frame(height: 50)
         .frame(maxWidth: .infinity)
         .background(
-            RoundedRectangle(cornerRadius: 8)
+            RoundedRectangle(cornerRadius: 10)
                 .fill(backgroundColor)
         )
         .overlay(
-            RoundedRectangle(cornerRadius: 8)
-                .stroke(isToday ? AppTheme.accent : Color.clear, lineWidth: 2)
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isToday ? Color(hex: "#00D4AA") : Color.clear, lineWidth: 2)
         )
     }
     
@@ -228,17 +276,17 @@ struct CalendarDayView: View {
         if isSelected {
             return .white
         } else if isToday {
-            return AppTheme.accent
+            return Color(hex: "#00D4AA")
         } else {
-            return .primary
+            return .white
         }
     }
     
     private var backgroundColor: Color {
         if isSelected {
-            return AppTheme.accent
+            return Color(hex: "#00D4AA")
         } else if !sessions.isEmpty {
-            return Color.gray.opacity(0.1)
+            return Color.white.opacity(0.08)
         } else {
             return Color.clear
         }
@@ -249,21 +297,27 @@ struct CalendarDayView: View {
 struct SessionRowView: View {
     let session: WorkoutSession
     
+    private var accentColor: Color {
+        AppConstants.WorkoutColors.color(for: session.workoutDayName)
+    }
+    
     var body: some View {
-        HStack(spacing: 12) {
-            Circle()
-                .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName).opacity(0.2))
-                .frame(width: 50, height: 50)
-                .overlay(
-                    Text(session.workoutDayName.prefix(1))
-                        .font(.title3)
-                        .fontWeight(.semibold)
-                        .foregroundColor(AppConstants.WorkoutColors.color(for: session.workoutDayName))
-                )
+        HStack(spacing: 14) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(accentColor.opacity(0.15))
+                    .frame(width: 50, height: 50)
+                
+                Text(session.workoutDayName.prefix(1).uppercased())
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(accentColor)
+            }
             
             VStack(alignment: .leading, spacing: 4) {
                 Text(session.workoutDayName)
-                    .font(.headline)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 HStack(spacing: 8) {
                     Label(session.startTime.formatted(as: "h:mm a"), systemImage: "clock")
@@ -273,19 +327,20 @@ struct SessionRowView: View {
                     }
                 }
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
             }
             
             Spacer()
             
             Image(systemName: "chevron.right")
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray)
         }
-        .padding()
-        .background(AppTheme.cardBackground)
-        .cornerRadius(12)
-        .shadow(color: .black.opacity(0.05), radius: 4, y: 2)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.03))
+        )
     }
 }
 
@@ -293,4 +348,3 @@ struct SessionRowView: View {
     CalendarView()
         .modelContainer(for: WorkoutSession.self)
 }
-

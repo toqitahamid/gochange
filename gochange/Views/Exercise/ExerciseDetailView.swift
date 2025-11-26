@@ -23,28 +23,37 @@ struct ExerciseDetailView: View {
                 // Media Section
                 mediaSection
                 
-                    // Stats Section
-                    statsSection
-                    
-                    // Progress Chart
-                    if !progressDataPoints.isEmpty {
-                        ProgressChartView(
-                            exerciseName: exercise.name,
-                            dataPoints: progressDataPoints
-                        )
-                    }
-                    
-                    // History Section
-                    historySection
+                // Stats Section
+                statsSection
+                
+                // Progress Chart
+                if !progressDataPoints.isEmpty {
+                    ProgressChartView(
+                        exerciseName: exercise.name,
+                        dataPoints: progressDataPoints
+                    )
+                }
+                
+                // History Section
+                historySection
                 
                 // Notes Section
                 notesSection
             }
-            .padding()
+            .padding(.horizontal, 20)
+            .padding(.bottom, 100)
         }
-        .background(AppTheme.background)
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(hex: "#0A1628")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .onAppear {
             notesText = exercise.notes ?? ""
         }
@@ -56,33 +65,39 @@ struct ExerciseDetailView: View {
             // Muscle Group Badge
             HStack {
                 Label(exercise.muscleGroup, systemImage: "figure.strengthtraining.traditional")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
+                    .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(.white)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(muscleGroupColor)
-                    .cornerRadius(20)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(muscleGroupColor)
+                    )
                 
                 Spacer()
                 
                 if let workoutDay = exercise.workoutDay {
                     Text("Day \(workoutDay.dayNumber): \(workoutDay.name)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.gray)
                 }
             }
             
             // Default Sets/Reps
-            HStack(spacing: 24) {
-                StatBox(title: "Default Sets", value: "\(exercise.defaultSets)")
-                StatBox(title: "Default Reps", value: exercise.defaultReps)
+            HStack(spacing: 12) {
+                ExerciseStatBox(title: "Default Sets", value: "\(exercise.defaultSets)")
+                ExerciseStatBox(title: "Default Reps", value: exercise.defaultReps)
             }
         }
         .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
     
     // MARK: - Media Section
@@ -90,7 +105,8 @@ struct ExerciseDetailView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("Form Reference")
-                    .font(.headline)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.white)
                 
                 Spacer()
                 
@@ -98,9 +114,12 @@ struct ExerciseDetailView: View {
                     selection: $selectedPhotoItem,
                     matching: .any(of: [.images, .videos])
                 ) {
-                    Label(exercise.mediaURL == nil ? "Add" : "Change", systemImage: "plus.circle.fill")
-                        .font(.subheadline)
-                        .foregroundColor(AppTheme.accent)
+                    HStack(spacing: 6) {
+                        Image(systemName: "plus.circle.fill")
+                        Text(exercise.mediaURL == nil ? "Add" : "Change")
+                    }
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(hex: "#00D4AA"))
                 }
                 .onChange(of: selectedPhotoItem) { _, newItem in
                     Task {
@@ -116,9 +135,14 @@ struct ExerciseDetailView: View {
             }
         }
         .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
     }
     
     private func mediaPreview(url: String, type: Exercise.MediaType) -> some View {
@@ -144,117 +168,148 @@ struct ExerciseDetailView: View {
     
     private var emptyMediaPlaceholder: some View {
         VStack(spacing: 12) {
-            Image(systemName: "photo.on.rectangle.angled")
-                .font(.system(size: 40))
-                .foregroundColor(.secondary)
+            ZStack {
+                Circle()
+                    .fill(Color.white.opacity(0.05))
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: "photo.on.rectangle.angled")
+                    .font(.system(size: 24))
+                    .foregroundColor(.gray)
+            }
             
             Text("No form reference added")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray)
             
             Text("Add a photo or video to remember proper form")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(.gray.opacity(0.7))
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
-        .background(Color.gray.opacity(0.1))
+        .background(Color.white.opacity(0.03))
         .cornerRadius(12)
     }
     
     // MARK: - Stats Section
     private var statsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Personal Records")
-                .font(.headline)
+            Text("PERSONAL RECORDS")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(.gray)
+                .padding(.horizontal, 4)
             
-            HStack(spacing: 12) {
-                PRCard(
+            HStack(spacing: 10) {
+                ExercisePRCard(
                     title: "Heaviest",
                     value: heaviestWeight != nil ? String(format: "%.1f lbs", heaviestWeight!) : "--",
                     icon: "scalemass.fill",
-                    color: .orange
+                    color: Color(hex: "#FF6B35")
                 )
                 
-                PRCard(
+                ExercisePRCard(
                     title: "Most Reps",
                     value: mostReps != nil ? "\(mostReps!)" : "--",
                     icon: "repeat.circle.fill",
-                    color: .green
+                    color: Color(hex: "#00D4AA")
                 )
                 
-                PRCard(
+                ExercisePRCard(
                     title: "Best Volume",
                     value: bestVolume != nil ? formatVolume(bestVolume!) : "--",
                     icon: "chart.bar.fill",
-                    color: .blue
+                    color: Color(hex: "#64B5F6")
                 )
             }
         }
-        .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
     
     // MARK: - History Section
     private var historySection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Recent History")
-                .font(.headline)
+            Text("RECENT HISTORY")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(.gray)
+                .padding(.horizontal, 4)
             
-            if exerciseHistory.isEmpty {
-                Text("No history yet")
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
+            VStack(spacing: 0) {
+                if exerciseHistory.isEmpty {
+                    VStack(spacing: 12) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 28))
+                            .foregroundColor(.gray)
+                        
+                        Text("No history yet")
+                            .font(.subheadline)
+                            .foregroundColor(.gray)
+                    }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 20)
-            } else {
-                ForEach(exerciseHistory.prefix(5)) { log in
-                    ExerciseHistoryRow(log: log, sessionDate: sessionDate(for: log))
+                    .padding(.vertical, 32)
+                } else {
+                    ForEach(Array(exerciseHistory.prefix(5).enumerated()), id: \.element.id) { index, log in
+                        ExerciseHistoryRowView(log: log, sessionDate: sessionDate(for: log))
+                        
+                        if index < min(exerciseHistory.count - 1, 4) {
+                            Rectangle()
+                                .fill(Color.white.opacity(0.08))
+                                .frame(height: 1)
+                        }
+                    }
                 }
             }
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 16)
+                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    )
+            )
         }
-        .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
     
     // MARK: - Notes Section
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Notes")
-                .font(.headline)
+            Text("NOTES")
+                .font(.system(size: 12, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(.gray)
+                .padding(.horizontal, 4)
             
             TextEditor(text: $notesText)
+                .scrollContentBackground(.hidden)
                 .frame(minHeight: 80)
-                .padding(8)
-                .background(Color.gray.opacity(0.1))
-                .cornerRadius(8)
+                .padding(12)
+                .background(Color.white.opacity(0.05))
+                .foregroundColor(.white)
+                .cornerRadius(12)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
                 .onChange(of: notesText) { _, newValue in
                     exercise.notes = newValue.isEmpty ? nil : newValue
                     try? modelContext.save()
                 }
         }
-        .padding(20)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }
     
     // MARK: - Computed Properties
     private var muscleGroupColor: Color {
         switch exercise.muscleGroup.lowercased() {
-        case "chest": return .red
-        case "back": return .blue
-        case "shoulders": return .orange
-        case "biceps": return .purple
-        case "triceps": return .pink
-        case "quads", "hamstrings", "glutes": return .green
-        case "calves": return .teal
-        case "core": return .yellow
+        case "chest": return Color(hex: "#E57373")
+        case "back": return Color(hex: "#64B5F6")
+        case "shoulders": return Color(hex: "#FFB74D")
+        case "biceps": return Color(hex: "#BA68C8")
+        case "triceps": return Color(hex: "#F06292")
+        case "quads", "hamstrings", "glutes": return Color(hex: "#00D4AA")
+        case "calves": return Color(hex: "#4DB6AC")
+        case "core": return Color(hex: "#FFD54F")
         default: return .gray
         }
     }
@@ -357,57 +412,72 @@ struct ExerciseDetailView: View {
     }
 }
 
-// MARK: - Stat Box
-struct StatBox: View {
+// MARK: - Exercise Stat Box
+struct ExerciseStatBox: View {
     let title: String
     let value: String
     
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Text(value)
-                .font(.title2)
-                .fontWeight(.bold)
+                .font(.system(size: 24, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
             
             Text(title)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity)
-        .padding()
-        .background(Color.gray.opacity(0.1))
-        .cornerRadius(12)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.08))
+        )
     }
 }
 
-// MARK: - PR Card
-struct PRCard: View {
+// MARK: - Exercise PR Card
+struct ExercisePRCard: View {
     let title: String
     let value: String
     let icon: String
     let color: Color
     
     var body: some View {
-        VStack(spacing: 8) {
-            Image(systemName: icon)
-                .foregroundColor(color)
+        VStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.15))
+                    .frame(width: 36, height: 36)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+            }
             
             Text(value)
-                .font(.subheadline)
-                .fontWeight(.bold)
+                .font(.system(size: 15, weight: .bold))
+                .foregroundColor(.white)
             
             Text(title)
-                .font(.caption2)
-                .foregroundColor(.secondary)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(.gray)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 12)
-        .background(color.opacity(0.1))
-        .cornerRadius(10)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(color.opacity(0.2), lineWidth: 1)
+                )
+        )
     }
 }
 
-// MARK: - Exercise History Row
-struct ExerciseHistoryRow: View {
+// MARK: - Exercise History Row View
+struct ExerciseHistoryRowView: View {
     let log: ExerciseLog
     let sessionDate: Date?
     
@@ -415,22 +485,25 @@ struct ExerciseHistoryRow: View {
         VStack(alignment: .leading, spacing: 8) {
             if let date = sessionDate {
                 Text(date.formatted(as: "MMM d, yyyy"))
-                    .font(.caption)
-                    .foregroundColor(.secondary)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundColor(.gray)
             }
             
-            HStack(spacing: 8) {
-                ForEach(log.sets.filter { $0.isCompleted }) { set in
-                    Text("\(set.weight != nil ? String(format: "%.0f", set.weight!) : "-") × \(set.actualReps ?? 0)")
-                        .font(.caption)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(4)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(log.sets.filter { $0.isCompleted }) { set in
+                        Text("\(set.weight != nil ? String(format: "%.0f", set.weight!) : "-") × \(set.actualReps ?? 0)")
+                            .font(.system(size: 13, weight: .medium))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 6)
+                            .background(Color.white.opacity(0.08))
+                            .cornerRadius(6)
+                    }
                 }
             }
         }
-        .padding(.vertical, 4)
+        .padding(14)
     }
 }
 
@@ -442,4 +515,3 @@ struct ExerciseHistoryRow: View {
     }
     .modelContainer(for: [Exercise.self, WorkoutSession.self])
 }
-

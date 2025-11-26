@@ -32,7 +32,55 @@ struct ActiveWorkoutView: View {
     }
     
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Custom Navigation Bar
+            HStack {
+                HStack(spacing: 12) {
+                    // Minimize button - allows browsing the app
+                    Button {
+                        withAnimation {
+                            workoutManager.minimize()
+                        }
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 36, height: 36)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    
+                    // Cancel button - discards workout
+                    Button {
+                        showingCancelAlert = true
+                    } label: {
+                        Text("Cancel")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color(hex: "#FF6B6B"))
+                    }
+                }
+                
+                Spacer()
+                
+                Text(workoutDay.name)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Spacer()
+                
+                Button {
+                    showingCompletionAlert = true
+                } label: {
+                    Text("Complete")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
+                }
+                .disabled(!workoutManager.canComplete)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(.ultraThinMaterial)
+            
             ScrollView {
                 VStack(spacing: 16) {
                     // Timer Card with Rest Button
@@ -71,75 +119,46 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 100)
+                .padding(.bottom, 120) // Extra padding for tab bar
             }
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+        }
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(hex: "#0A1628")],
+                startPoint: .top,
+                endPoint: .bottom
             )
-            .navigationTitle(workoutDay.name)
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    // Cancel button (text for better tap target)
-                    Button {
-                        showingCancelAlert = true
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "chevron.down")
-                                .font(.system(size: 14, weight: .semibold))
-                            Text("Cancel")
-                                .font(.system(size: 16, weight: .medium))
-                        }
-                        .foregroundColor(Color(hex: "#FF6B6B"))
-                    }
-                }
-                
-                ToolbarItem(placement: .confirmationAction) {
-                    Button {
-                        showingCompletionAlert = true
-                    } label: {
-                        Text("Complete")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
-                    }
-                    .disabled(!workoutManager.canComplete)
-                }
+            .ignoresSafeArea()
+        )
+        .toolbar(.visible, for: .tabBar)
+        .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
+            Button("Keep Going", role: .cancel) { }
+            Button("Discard", role: .destructive) {
+                workoutManager.cancel()
             }
-            .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
-                Button("Keep Going", role: .cancel) { }
-                Button("Discard", role: .destructive) {
-                    workoutManager.cancel()
-                }
-            } message: {
-                Text("Your progress will not be saved.")
+        } message: {
+            Text("Your progress will not be saved.")
+        }
+        .alert("Complete Workout?", isPresented: $showingCompletionAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Complete") {
+                workoutManager.complete()
             }
-            .alert("Complete Workout?", isPresented: $showingCompletionAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Complete") {
-                    workoutManager.complete()
-                }
-            } message: {
-                Text("Great job! This workout will be saved to your history.")
+        } message: {
+            Text("Great job! This workout will be saved to your history.")
+        }
+        .onAppear {
+            if expandedExercise == nil {
+                expandedExercise = workoutManager.exerciseLogs.first?.id
             }
-            .onAppear {
-                if expandedExercise == nil {
-                    expandedExercise = workoutManager.exerciseLogs.first?.id
-                }
-            }
-            .onChange(of: completedSetsCount) { oldValue, newValue in
-                // Live activity update is handled in WorkoutManager
-            }
-            .sheet(isPresented: $workoutManager.showingRestTimer) {
-                RestTimerView(isPresented: $workoutManager.showingRestTimer)
-                    .presentationDetents([.medium])
-                    .presentationDragIndicator(.visible)
-            }
+        }
+        .onChange(of: completedSetsCount) { oldValue, newValue in
+            // Live activity update is handled in WorkoutManager
+        }
+        .sheet(isPresented: $workoutManager.showingRestTimer) {
+            RestTimerView(isPresented: $workoutManager.showingRestTimer)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)

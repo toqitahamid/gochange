@@ -167,107 +167,96 @@ struct HomeView: View {
     // MARK: - Suggested Workout
     private func suggestedWorkoutCard(_ workout: WorkoutDay) -> some View {
         let accentColor = Color(hex: workout.colorHex)
+        let totalSets = workout.exercises.reduce(0) { $0 + $1.defaultSets }
+        let estimatedMins = totalSets * 2
         
-        return VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                HStack(spacing: 8) {
-                    Image(systemName: "sparkles")
-                        .font(.system(size: 14))
-                        .foregroundColor(Color(hex: "#FFD700"))
-                    
-                    Text("UP NEXT")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                Text("Day \(workout.dayNumber)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1)
-                    .foregroundColor(accentColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 4)
-                    .background(accentColor.opacity(0.15))
-                    .cornerRadius(6)
-            }
-            
-            HStack(spacing: 16) {
-                // Workout Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(
-                            LinearGradient(
-                                colors: [accentColor, accentColor.opacity(0.7)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .frame(width: 64, height: 64)
-                    
-                    Text(workout.name.prefix(1).uppercased())
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                }
-                .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
-                
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(workout.name)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
-                    
-                    HStack(spacing: 12) {
-                        Label("\(workout.exercises.count) exercises", systemImage: "dumbbell.fill")
-                            .font(.caption)
+        return NavigationLink(destination: WorkoutPreviewView(workoutDay: workout)) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(hex: "#FFD700"))
+                        
+                        Text("UP NEXT")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1.5)
                             .foregroundColor(.gray)
                     }
+                    
+                    Spacer()
+                    
+                    Text("Day \(workout.dayNumber)")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(accentColor)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(accentColor.opacity(0.15))
+                        .cornerRadius(6)
                 }
                 
-                Spacer()
-            }
-            
-            Button {
-                workoutManager.start(workoutDay: workout)
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 14))
-                    Text("Start Workout")
-                        .font(.system(size: 16, weight: .semibold))
+                HStack(spacing: 16) {
+                    // Workout Icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(
+                                LinearGradient(
+                                    colors: [accentColor, accentColor.opacity(0.7)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 64, height: 64)
+                        
+                        Text(workout.name.prefix(1).uppercased())
+                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .foregroundColor(.white)
+                    }
+                    .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
+                    
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(workout.name)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                        
+                        HStack(spacing: 12) {
+                            Label("\(workout.exercises.count) exercises", systemImage: "dumbbell.fill")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                            
+                            Label("~\(estimatedMins) min", systemImage: "clock")
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
                 }
-                .foregroundColor(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
-                .background(
-                    LinearGradient(
-                        colors: [accentColor, accentColor.opacity(0.8)],
-                        startPoint: .leading,
-                        endPoint: .trailing
-                    )
-                )
-                .cornerRadius(14)
-                .shadow(color: accentColor.opacity(0.3), radius: 8, y: 4)
             }
-            .buttonStyle(ScaleButtonStyle())
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
         }
-        .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(
-                            LinearGradient(
-                                colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
-        )
+        .buttonStyle(ScaleButtonStyle())
     }
     
     // MARK: - Weekly Progress
