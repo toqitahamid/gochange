@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import Combine
 
 /// Service for communication between iPhone and Apple Watch
 /// Handles sending workout data to watch and receiving completed workouts back

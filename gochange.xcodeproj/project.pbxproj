@@ -55,6 +55,7 @@
 		969A6FC82ED5CA4400272209 /* Exceptions for "gochange" folder in "gochange" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				Info.plist,
 				Views/LiveActivity/GoChangeStaticWidget.swift,
 				Views/LiveActivity/RestTimerWidget.swift,
 				Views/LiveActivity/RestTimerWidgetBundle.swift,
@@ -412,7 +413,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = gochange/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "GoChange!";
+				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -451,7 +453,8 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = gochange/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = "GoChange!";
+				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;

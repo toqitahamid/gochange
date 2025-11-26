@@ -214,49 +214,6 @@ struct SettingsView: View {
                         .buttonStyle(.plain)
                     }
                     
-                    // iCloud Sync Section
-                    SettingsSection(title: "SYNC") {
-                        VStack(spacing: 0) {
-                            SettingsRow(icon: "icloud.fill", iconColor: Color(hex: "#64B5F6")) {
-                                Toggle(isOn: Binding(
-                                    get: { iCloudSyncEnabled },
-                                    set: { newValue in
-                                        if newValue && !iCloudSyncEnabled {
-                                            // Warn user before enabling
-                                            showingICloudAlert = true
-                                        } else if !newValue {
-                                            iCloudSyncEnabled = false
-                                        }
-                                    }
-                                )) {
-                                    VStack(alignment: .leading, spacing: 2) {
-                                        Text("iCloud Sync")
-                                            .foregroundColor(.white)
-                                        Text(iCloudSyncEnabled ? "Syncing across devices" : "Local only")
-                                            .font(.caption)
-                                            .foregroundColor(iCloudSyncEnabled ? Color(hex: "#00D4AA") : .gray)
-                                    }
-                                }
-                                .tint(Color(hex: "#00D4AA"))
-                            }
-                            
-                            if iCloudSyncEnabled {
-                                Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
-                                
-                                SettingsRow(icon: "arrow.triangle.2.circlepath", iconColor: Color(hex: "#4DB6AC")) {
-                                    HStack {
-                                        Text("Sync Status")
-                                            .foregroundColor(.white)
-                                        Spacer()
-                                        Text("Active")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(Color(hex: "#00D4AA"))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
                     // Data Management Section
                     SettingsSection(title: "DATA MANAGEMENT") {
                         VStack(spacing: 0) {
@@ -339,14 +296,6 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("This will delete all your workout history and reset exercises to defaults. This action cannot be undone.")
-            }
-            .alert("Enable iCloud Sync?", isPresented: $showingICloudAlert) {
-                Button("Cancel", role: .cancel) { }
-                Button("Enable") {
-                    iCloudSyncEnabled = true
-                }
-            } message: {
-                Text("Your workout data will sync across all your devices signed into the same iCloud account.\n\nNote: Restart the app after enabling for sync to take effect.")
             }
             .sheet(isPresented: $showingReminderSettings) {
                 ReminderSettingsView(workoutDays: workoutDays)

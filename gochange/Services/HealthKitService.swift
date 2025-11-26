@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import Combine
 
 /// Service for HealthKit integration - saves workouts to Apple Health and reads heart rate data
 @MainActor
@@ -70,7 +71,7 @@ class HealthKitService: ObservableObject {
     }
     
     // MARK: - Save Workout
-    
+
     /// Save a completed workout session to HealthKit
     func saveWorkout(
         workoutName: String,
@@ -82,38 +83,42 @@ class HealthKitService: ObservableObject {
         guard isAuthorized else {
             throw HealthKitError.notAuthorized
         }
-        
+
         // Estimate calories burned (approximately 3-5 cal/minute for strength training)
         // Using 4 cal/minute as a middle ground
         let caloriesPerMinute: Double = 4.0
         let estimatedCalories = (duration / 60.0) * caloriesPerMinute
-        
-        // Create the workout
-        let workout = HKWorkout(
-            activityType: .traditionalStrengthTraining,
-            start: startTime,
-            end: endTime,
-            duration: duration,
-            totalEnergyBurned: HKQuantity(unit: .kilocalorie(), doubleValue: estimatedCalories),
-            totalDistance: nil,
-            metadata: [
-                HKMetadataKeyWorkoutBrandName: "GoChange",
-                "WorkoutName": workoutName
-            ]
-        )
-        
-        try await healthStore.save(workout)
-        
-        // Save active energy burned sample
+
+        // Use HKWorkoutBuilder (iOS 17+)
+        let workoutConfiguration = HKWorkoutConfiguration()
+        workoutConfiguration.activityType = .traditionalStrengthTraining
+
+        let builder = HKWorkoutBuilder(healthStore: healthStore, configuration: workoutConfiguration, device: .local())
+
+        // Add metadata
+        try await builder.addMetadata([
+            HKMetadataKeyWorkoutBrandName: "GoChange",
+            "WorkoutName": workoutName
+        ])
+
+        // Begin the workout
+        try await builder.beginCollection(at: startTime)
+
+        // Add energy burned sample
+        let energyType = HKQuantityType(.activeEnergyBurned)
+        let energyQuantity = HKQuantity(unit: .kilocalorie(), doubleValue: estimatedCalories)
         let energySample = HKQuantitySample(
-            type: HKQuantityType(.activeEnergyBurned),
-            quantity: HKQuantity(unit: .kilocalorie(), doubleValue: estimatedCalories),
+            type: energyType,
+            quantity: energyQuantity,
             start: startTime,
             end: endTime
         )
-        
-        try await healthStore.save(energySample)
-        
+        try await builder.addSamples([energySample])
+
+        // End collection and finish the workout
+        try await builder.endCollection(at: endTime)
+        try await builder.finishWorkout()
+
         print("Successfully saved workout to HealthKit: \(workoutName), \(Int(estimatedCalories)) kcal")
     }
     
