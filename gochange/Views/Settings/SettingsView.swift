@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UniformTypeIdentifiers
+import HealthKit
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -10,14 +11,18 @@ struct SettingsView: View {
     @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     @AppStorage("restTimerDuration") private var restTimerDuration: Double = 90
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
+    @AppStorage("healthKitEnabled") private var healthKitEnabled: Bool = false
+    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
     
     @State private var showingExportSheet = false
     @State private var showingImportSheet = false
     @State private var showingResetAlert = false
     @State private var exportData: Data?
     @State private var showingReminderSettings = false
+    @State private var showingICloudAlert = false
     
     @StateObject private var notificationService = NotificationService.shared
+    @StateObject private var healthKitService = HealthKitService.shared
     
     private let dataService = DataService()
     private let mediaService = MediaService()
@@ -79,6 +84,63 @@ struct SettingsView: View {
                                     .foregroundColor(.white)
                             }
                             .tint(Color(hex: "#00D4AA"))
+                        }
+                    }
+                    
+                    // Health Section
+                    SettingsSection(title: "HEALTH") {
+                        VStack(spacing: 0) {
+                            if healthKitService.isHealthKitAvailable {
+                                if !healthKitService.isAuthorized && healthKitService.authorizationStatus == .notDetermined {
+                                    // Not yet requested
+                                    SettingsButton(icon: "heart.fill", iconColor: Color(hex: "#FF6B6B"), title: "Connect Apple Health") {
+                                        Task {
+                                            let authorized = await healthKitService.requestAuthorization()
+                                            if authorized {
+                                                healthKitEnabled = true
+                                            }
+                                        }
+                                    }
+                                } else if healthKitService.isAuthorized {
+                                    // Authorized - show toggle
+                                    SettingsRow(icon: "heart.fill", iconColor: Color(hex: "#FF6B6B")) {
+                                        Toggle(isOn: $healthKitEnabled) {
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text("Sync to Apple Health")
+                                                    .foregroundColor(.white)
+                                                Text("Workouts & calories")
+                                                    .font(.caption)
+                                                    .foregroundColor(.gray)
+                                            }
+                                        }
+                                        .tint(Color(hex: "#00D4AA"))
+                                    }
+                                    
+                                    Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
+                                    
+                                    SettingsButton(icon: "heart.text.square", iconColor: Color(hex: "#64B5F6"), title: "Open Health App") {
+                                        if let url = URL(string: "x-apple-health://") {
+                                            UIApplication.shared.open(url)
+                                        }
+                                    }
+                                } else {
+                                    // Denied
+                                    SettingsRow(icon: "heart.slash", iconColor: .gray) {
+                                        VStack(alignment: .leading, spacing: 4) {
+                                            Text("Health Access Denied")
+                                                .foregroundColor(.white)
+                                            Text("Enable in Settings > Privacy > Health")
+                                                .font(.caption)
+                                                .foregroundColor(.gray)
+                                        }
+                                    }
+                                }
+                            } else {
+                                SettingsRow(icon: "heart.slash", iconColor: .gray) {
+                                    Text("HealthKit not available")
+                                        .foregroundColor(.gray)
+                                }
+                            }
                         }
                     }
                     
@@ -152,6 +214,49 @@ struct SettingsView: View {
                             .padding(16)
                         }
                         .buttonStyle(.plain)
+                    }
+                    
+                    // iCloud Sync Section
+                    SettingsSection(title: "SYNC") {
+                        VStack(spacing: 0) {
+                            SettingsRow(icon: "icloud.fill", iconColor: Color(hex: "#64B5F6")) {
+                                Toggle(isOn: Binding(
+                                    get: { iCloudSyncEnabled },
+                                    set: { newValue in
+                                        if newValue && !iCloudSyncEnabled {
+                                            // Warn user before enabling
+                                            showingICloudAlert = true
+                                        } else if !newValue {
+                                            iCloudSyncEnabled = false
+                                        }
+                                    }
+                                )) {
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("iCloud Sync")
+                                            .foregroundColor(.white)
+                                        Text(iCloudSyncEnabled ? "Syncing across devices" : "Local only")
+                                            .font(.caption)
+                                            .foregroundColor(iCloudSyncEnabled ? Color(hex: "#00D4AA") : .gray)
+                                    }
+                                }
+                                .tint(Color(hex: "#00D4AA"))
+                            }
+                            
+                            if iCloudSyncEnabled {
+                                Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
+                                
+                                SettingsRow(icon: "arrow.triangle.2.circlepath", iconColor: Color(hex: "#4DB6AC")) {
+                                    HStack {
+                                        Text("Sync Status")
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Text("Active")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(Color(hex: "#00D4AA"))
+                                    }
+                                }
+                            }
+                        }
                     }
                     
                     // Data Management Section
@@ -237,11 +342,20 @@ struct SettingsView: View {
             } message: {
                 Text("This will delete all your workout history and reset exercises to defaults. This action cannot be undone.")
             }
+            .alert("Enable iCloud Sync?", isPresented: $showingICloudAlert) {
+                Button("Cancel", role: .cancel) { }
+                Button("Enable") {
+                    iCloudSyncEnabled = true
+                }
+            } message: {
+                Text("Your workout data will sync across all your devices signed into the same iCloud account.\n\nNote: Restart the app after enabling for sync to take effect.")
+            }
             .sheet(isPresented: $showingReminderSettings) {
                 ReminderSettingsView(workoutDays: workoutDays)
             }
             .onAppear {
                 notificationService.checkAuthorizationStatus()
+                healthKitService.checkAuthorizationStatus()
             }
         }
     }

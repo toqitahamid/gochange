@@ -2,6 +2,7 @@ import SwiftUI
 import SwiftData
 import Combine
 import WidgetKit
+import HealthKit
 
 // MARK: - Previous Set Info
 struct PreviousSetInfo {
@@ -174,8 +175,9 @@ class WorkoutManager: ObservableObject {
         endWorkoutActivity()
         
         // Update session details
-        session.endTime = Date()
-        session.duration = session.endTime?.timeIntervalSince(startTime)
+        let endTime = Date()
+        session.endTime = endTime
+        session.duration = endTime.timeIntervalSince(startTime)
         session.isCompleted = true
         session.notes = sessionNotes.isEmpty ? nil : sessionNotes
         
@@ -191,7 +193,44 @@ class WorkoutManager: ObservableObject {
         // Update widget data
         updateWidgetData(context: context)
         
+        // Save to HealthKit if enabled
+        let workoutName = session.workoutDayName
+        let duration = session.duration ?? endTime.timeIntervalSince(startTime)
+        saveToHealthKitIfEnabled(workoutName: workoutName, startTime: startTime, endTime: endTime, duration: duration)
+        
         resetState()
+    }
+    
+    // MARK: - HealthKit Integration
+    
+    private func saveToHealthKitIfEnabled(workoutName: String, startTime: Date, endTime: Date, duration: TimeInterval) {
+        // Check if HealthKit is enabled in settings
+        let healthKitEnabled = UserDefaults.standard.bool(forKey: "healthKitEnabled")
+        guard healthKitEnabled else { return }
+        
+        // Calculate total volume for metadata
+        let totalVolume = exerciseLogs.reduce(0.0) { total, log in
+            total + log.sets.reduce(0.0) { setTotal, set in
+                if set.isCompleted, let weight = set.weight, let reps = set.actualReps {
+                    return setTotal + (weight * Double(reps))
+                }
+                return setTotal
+            }
+        }
+        
+        Task {
+            do {
+                try await HealthKitService.shared.saveWorkout(
+                    workoutName: workoutName,
+                    startTime: startTime,
+                    endTime: endTime,
+                    duration: duration,
+                    totalVolume: totalVolume
+                )
+            } catch {
+                print("Failed to save workout to HealthKit: \(error)")
+            }
+        }
     }
     
     private func updateWidgetData(context: ModelContext) {
