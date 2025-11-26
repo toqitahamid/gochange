@@ -4,6 +4,7 @@ import SwiftData
 @main
 struct GoChangeApp: App {
     let modelContainer: ModelContainer
+    @StateObject private var workoutManager = WorkoutManager()
     
     init() {
         do {
@@ -37,6 +38,7 @@ struct GoChangeApp: App {
             MainTabView()
         }
         .modelContainer(modelContainer)
+        .environmentObject(workoutManager)
     }
     
     private func seedDefaultDataIfNeeded() {

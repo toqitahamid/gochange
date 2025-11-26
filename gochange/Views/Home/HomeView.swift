@@ -3,27 +3,28 @@ import SwiftData
 
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
+    @EnvironmentObject var workoutManager: WorkoutManager
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \WorkoutDay.dayNumber) private var workoutDays: [WorkoutDay]
     
     @State private var suggestedWorkout: WorkoutDay?
-    @State private var selectedWorkoutDay: WorkoutDay?
-    
+    @State private var cachedStreak: Int = 0
+
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
                     // Header Card
                     headerCard
-                    
+
                     // Suggested Workout Card
                     if let suggested = suggestedWorkout {
                         suggestedWorkoutCard(suggested)
                     }
-                    
+
                     // Weekly Progress
                     weeklyProgressCard
-                    
+
                     // Recent Workouts
                     recentWorkoutsSection
                 }
@@ -33,9 +34,11 @@ struct HomeView: View {
             .navigationTitle("Workout Tracker")
             .onAppear {
                 updateSuggestedWorkout()
+                calculateStreak()
             }
-            .fullScreenCover(item: $selectedWorkoutDay) { workoutDay in
-                ActiveWorkoutView(workoutDay: workoutDay)
+            .onChange(of: sessions.count) { _, _ in
+                calculateStreak()
+                updateSuggestedWorkout()
             }
         }
     }
@@ -80,12 +83,12 @@ struct HomeView: View {
             Image(systemName: "flame.fill")
                 .font(.title)
                 .foregroundColor(.orange)
-            
-            Text("\(currentStreak)")
+
+            Text("\(cachedStreak)")
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(.white)
-            
+
             Text("week streak")
                 .font(.caption2)
                 .foregroundColor(.white.opacity(0.8))
@@ -135,7 +138,7 @@ struct HomeView: View {
             }
             
             Button {
-                selectedWorkoutDay = workout
+                workoutManager.start(workoutDay: workout)
             } label: {
                 HStack {
                     Image(systemName: "play.fill")
@@ -261,33 +264,36 @@ struct HomeView: View {
         CGFloat(min(workoutsThisWeek, 4)) / 4.0
     }
     
-    private var currentStreak: Int {
-        // Calculate consecutive weeks with 4 workouts
+    private func calculateStreak() {
+        // Optimized streak calculation - runs once on appear instead of on every render
         var streak = 0
         var currentWeek = Date().startOfWeek
-        
-        while true {
-            let weekSessions = sessions.filter { session in
-                session.isCompleted &&
-                session.date >= currentWeek &&
-                session.date < Calendar.current.date(byAdding: .weekOfYear, value: 1, to: currentWeek)!
-            }
-            
-            let uniqueDays = Set(weekSessions.map { $0.workoutDayName })
-            if uniqueDays.count >= 4 {
+        let calendar = Calendar.current
+
+        // Group completed sessions by week first (single pass)
+        var sessionsByWeek: [Date: Set<String>] = [:]
+        for session in sessions where session.isCompleted {
+            let weekStart = session.date.startOfWeek
+            sessionsByWeek[weekStart, default: []].insert(session.workoutDayName)
+        }
+
+        // Check consecutive weeks
+        for _ in 0..<52 { // Safety limit
+            if let uniqueDays = sessionsByWeek[currentWeek], uniqueDays.count >= 4 {
                 streak += 1
-                currentWeek = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: currentWeek)!
+                guard let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek) else { break }
+                currentWeek = previousWeek
             } else if currentWeek < Date().startOfWeek {
+                // Past week didn't have 4 workouts, stop counting
                 break
             } else {
-                currentWeek = Calendar.current.date(byAdding: .weekOfYear, value: -1, to: currentWeek)!
+                // Current week hasn't completed 4 yet, check previous week
+                guard let previousWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: currentWeek) else { break }
+                currentWeek = previousWeek
             }
-            
-            // Safety limit
-            if streak > 52 { break }
         }
-        
-        return streak
+
+        cachedStreak = streak
     }
     
     private func isWorkoutCompletedThisWeek(_ workoutDay: WorkoutDay) -> Bool {

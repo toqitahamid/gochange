@@ -5,34 +5,26 @@ import Combine
 struct ActiveWorkoutView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var workoutManager: WorkoutManager
     @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     
     let workoutDay: WorkoutDay
     
-    @State private var session: WorkoutSession
-    @State private var exerciseLogs: [ExerciseLog] = []
-    @State private var startTime = Date()
     @State private var showingCompletionAlert = false
     @State private var showingCancelAlert = false
     @State private var expandedExercise: UUID?
-    @State private var showingRestTimer = false
     
     // Track completed sets for live activity
     private var completedSetsCount: Int {
-        exerciseLogs.reduce(0) { $0 + $1.sets.filter { $0.isCompleted }.count }
+        workoutManager.completedSetsCount
     }
     
     private var totalSetsCount: Int {
-        exerciseLogs.reduce(0) { $0 + $1.sets.count }
+        workoutManager.totalSetsCount
     }
     
     init(workoutDay: WorkoutDay) {
         self.workoutDay = workoutDay
-        self._session = State(initialValue: WorkoutSession(
-            date: Date(),
-            workoutDayId: workoutDay.id,
-            workoutDayName: workoutDay.name
-        ))
     }
     
     var body: some View {
@@ -40,14 +32,16 @@ struct ActiveWorkoutView: View {
             ScrollView {
                 VStack(spacing: 16) {
                     // Timer Card with Rest Button
-                    WorkoutTimerCard(startTime: startTime, onRestTap: {
-                        showingRestTimer = true
-                    })
+                    if let startTime = workoutManager.startTime {
+                        WorkoutTimerCard(startTime: startTime, onRestTap: {
+                            workoutManager.showingRestTimer = true
+                        })
+                    }
                     
                     // Exercise List
-                    ForEach(Array(exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
+                    ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
                         ExerciseLogCard(
-                            exerciseLog: $exerciseLogs[index],
+                            exerciseLog: $workoutManager.exerciseLogs[index],
                             exercise: getExercise(for: exerciseLog),
                             isExpanded: expandedExercise == exerciseLog.id,
                             onToggleExpand: {
@@ -64,6 +58,9 @@ struct ActiveWorkoutView: View {
                             },
                             onRemoveSet: { setIndex in
                                 removeSet(at: setIndex, from: index)
+                            },
+                            onToggleSetCompletion: { setIndex in
+                                workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
                             }
                         )
                     }
@@ -74,6 +71,15 @@ struct ActiveWorkoutView: View {
             .navigationTitle(workoutDay.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button {
+                        workoutManager.minimize()
+                    } label: {
+                        Image(systemName: "chevron.down")
+                            .fontWeight(.semibold)
+                    }
+                }
+                
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         showingCancelAlert = true
@@ -86,14 +92,13 @@ struct ActiveWorkoutView: View {
                         showingCompletionAlert = true
                     }
                     .fontWeight(.semibold)
-                    .disabled(!canComplete)
+                    .disabled(!workoutManager.canComplete)
                 }
             }
             .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
                 Button("Keep Going", role: .cancel) { }
                 Button("Discard", role: .destructive) {
-                    WorkoutActivityManager.shared.end()
-                    dismiss()
+                    workoutManager.cancel()
                 }
             } message: {
                 Text("Your progress will not be saved.")
@@ -101,31 +106,25 @@ struct ActiveWorkoutView: View {
             .alert("Complete Workout?", isPresented: $showingCompletionAlert) {
                 Button("Cancel", role: .cancel) { }
                 Button("Complete") {
-                    completeWorkout()
+                    workoutManager.complete()
                 }
             } message: {
                 Text("Great job! This workout will be saved to your history.")
             }
             .onAppear {
-                setupExerciseLogs()
-            }
-            .task {
-                // Start live activity after a brief delay to ensure UI is ready
-                try? await Task.sleep(for: .milliseconds(100))
-                startWorkoutLiveActivity()
-            }
-            .onDisappear {
-                // End live activity if view disappears without completion
-                WorkoutActivityManager.shared.end()
-            }
-            .onChange(of: completedSetsCount) { oldValue, newValue in
-                // Only update if value actually changed
-                if oldValue != newValue {
-                    updateWorkoutLiveActivity()
+                // Setup is now handled by WorkoutManager
+                if expandedExercise == nil {
+                    expandedExercise = workoutManager.exerciseLogs.first?.id
                 }
             }
-            .sheet(isPresented: $showingRestTimer) {
-                RestTimerView(isPresented: $showingRestTimer)
+            .onDisappear {
+                // No longer end activity on disappear, as we might be minimizing
+            }
+            .onChange(of: completedSetsCount) { oldValue, newValue in
+                // Live activity update is handled in WorkoutManager
+            }
+            .sheet(isPresented: $workoutManager.showingRestTimer) {
+                RestTimerView(isPresented: $workoutManager.showingRestTimer)
                     .presentationDetents([.medium])
                     .presentationDragIndicator(.visible)
             }
@@ -136,100 +135,29 @@ struct ActiveWorkoutView: View {
     }
     
     // MARK: - Live Activity
-    private func startWorkoutLiveActivity() {
-        WorkoutActivityManager.shared.start(
-            workoutName: workoutDay.name,
-            workoutColor: workoutDay.colorHex,
-            exerciseCount: workoutDay.exercises.count,
-            totalSets: totalSetsCount
-        )
-    }
-    
-    private func updateWorkoutLiveActivity() {
-        WorkoutActivityManager.shared.update(
-            completedSets: completedSetsCount,
-            totalSets: totalSetsCount,
-            exerciseCount: exerciseLogs.count
-        )
-    }
+    // Moved to WorkoutManager
     
     // MARK: - Computed Properties
-    private var canComplete: Bool {
-        exerciseLogs.contains { log in
-            log.sets.contains { $0.isCompleted }
-        }
-    }
+    // Moved to WorkoutManager
     
     // MARK: - Methods
-    private func setupExerciseLogs() {
-        exerciseLogs = workoutDay.exercises.enumerated().map { index, exercise in
-            let log = ExerciseLog(
-                exerciseId: exercise.id,
-                exerciseName: exercise.name,
-                order: index
-            )
-            
-            // Create sets based on default with user's preferred weight unit
-            let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
-            for setNum in 1...exercise.defaultSets {
-                let setLog = SetLog(
-                    setNumber: setNum,
-                    targetReps: exercise.defaultReps,
-                    weightUnit: unit
-                )
-                log.sets.append(setLog)
-            }
-            
-            return log
-        }
-        
-        // Expand first exercise by default
-        expandedExercise = exerciseLogs.first?.id
-    }
+    // setupExerciseLogs moved to WorkoutManager
     
     private func getExercise(for log: ExerciseLog) -> Exercise? {
         workoutDay.exercises.first { $0.id == log.exerciseId }
     }
     
     private func addSet(to exerciseIndex: Int) {
-        let exercise = getExercise(for: exerciseLogs[exerciseIndex])
-        let newSetNumber = exerciseLogs[exerciseIndex].sets.count + 1
-        let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
-        let newSet = SetLog(
-            setNumber: newSetNumber,
-            targetReps: exercise?.defaultReps ?? "10",
-            weightUnit: unit
-        )
-        exerciseLogs[exerciseIndex].sets.append(newSet)
+        let exercise = getExercise(for: workoutManager.exerciseLogs[exerciseIndex])
+        workoutManager.addSet(to: exerciseIndex, defaultReps: exercise?.defaultReps ?? "10")
     }
     
     private func removeSet(at setIndex: Int, from exerciseIndex: Int) {
-        guard exerciseLogs[exerciseIndex].sets.count > 1 else { return }
-        exerciseLogs[exerciseIndex].sets.remove(at: setIndex)
-        
-        // Renumber remaining sets
-        for (index, _) in exerciseLogs[exerciseIndex].sets.enumerated() {
-            exerciseLogs[exerciseIndex].sets[index].setNumber = index + 1
-        }
+        workoutManager.removeSet(at: setIndex, from: exerciseIndex)
     }
     
     private func completeWorkout() {
-        // End live activity
-        WorkoutActivityManager.shared.end()
-        
-        session.endTime = Date()
-        session.duration = session.endTime?.timeIntervalSince(session.startTime)
-        session.isCompleted = true
-        
-        // Attach exercise logs to session
-        for log in exerciseLogs {
-            session.exerciseLogs.append(log)
-        }
-        
-        modelContext.insert(session)
-        try? modelContext.save()
-        
-        dismiss()
+        // Moved to WorkoutManager
     }
 }
 
@@ -288,6 +216,7 @@ struct ExerciseLogCard: View {
     let onToggleExpand: () -> Void
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
+    let onToggleSetCompletion: (Int) -> Void
     
     var body: some View {
         VStack(spacing: 0) {
@@ -354,7 +283,8 @@ struct ExerciseLogCard: View {
                     ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
                         SetInputRow(
                             setLog: $exerciseLog.sets[index],
-                            onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil
+                            onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
+                            onToggleCompletion: { onToggleSetCompletion(index) }
                         )
                     }
                     
@@ -388,6 +318,7 @@ struct ExerciseLogCard: View {
 struct SetInputRow: View {
     @Binding var setLog: SetLog
     let onRemove: (() -> Void)?
+    let onToggleCompletion: () -> Void
     
     @State private var weightText: String = ""
     @State private var repsText: String = ""
@@ -454,7 +385,7 @@ struct SetInputRow: View {
             // Complete Button
             Button {
                 withAnimation {
-                    setLog.isCompleted.toggle()
+                    onToggleCompletion()
                 }
             } label: {
                 Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : "circle")
