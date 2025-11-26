@@ -13,7 +13,9 @@ struct GoChangeApp: App {
                 Exercise.self,
                 WorkoutSession.self,
                 ExerciseLog.self,
-                SetLog.self
+                SetLog.self,
+                RestDay.self,
+                RecoveryMetrics.self
             ])
 
             let modelConfiguration = ModelConfiguration(

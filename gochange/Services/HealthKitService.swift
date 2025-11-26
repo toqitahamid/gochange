@@ -20,11 +20,14 @@ class HealthKitService: ObservableObject {
         HKObjectType.workoutType(),
         HKQuantityType(.activeEnergyBurned)
     ]
-    
+
     private let typesToRead: Set<HKObjectType> = [
         HKObjectType.workoutType(),
         HKQuantityType(.heartRate),
-        HKQuantityType(.activeEnergyBurned)
+        HKQuantityType(.activeEnergyBurned),
+        HKQuantityType(.restingHeartRate),
+        HKQuantityType(.heartRateVariabilitySDNN),
+        HKCategoryType(.sleepAnalysis)
     ]
     
     // MARK: - Initialization
@@ -202,6 +205,193 @@ class HealthKitService: ObservableObject {
             healthStore.execute(query)
         }
     }
+
+    // MARK: - Sleep Data
+
+    /// Get sleep analysis data for a given date
+    func getSleepData(for date: Date) async -> SleepData? {
+        guard isHealthKitAvailable else { return nil }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+
+        let sleepType = HKCategoryType(.sleepAnalysis)
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("Sleep query error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard let sleepSamples = samples as? [HKCategorySample] else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                var totalSleep: TimeInterval = 0
+                var deepSleep: TimeInterval = 0
+                var remSleep: TimeInterval = 0
+                var coreSleep: TimeInterval = 0
+
+                for sample in sleepSamples {
+                    let duration = sample.endDate.timeIntervalSince(sample.startDate)
+
+                    switch sample.value {
+                    case HKCategoryValueSleepAnalysis.asleepDeep.rawValue:
+                        deepSleep += duration
+                        totalSleep += duration
+                    case HKCategoryValueSleepAnalysis.asleepREM.rawValue:
+                        remSleep += duration
+                        totalSleep += duration
+                    case HKCategoryValueSleepAnalysis.asleepCore.rawValue:
+                        coreSleep += duration
+                        totalSleep += duration
+                    case HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue:
+                        totalSleep += duration
+                    default:
+                        break
+                    }
+                }
+
+                guard totalSleep > 0 else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Calculate sleep quality based on sleep stage distribution
+                // Deep sleep should be 15-25%, REM should be 20-25% of total sleep
+                let deepPercentage = deepSleep / totalSleep
+                let remPercentage = remSleep / totalSleep
+
+                var quality = 0.5 // Base quality
+
+                // Bonus for good deep sleep (optimal: 15-25%)
+                if deepPercentage >= 0.15 && deepPercentage <= 0.25 {
+                    quality += 0.25
+                } else if deepPercentage >= 0.10 && deepPercentage <= 0.30 {
+                    quality += 0.15
+                }
+
+                // Bonus for good REM sleep (optimal: 20-25%)
+                if remPercentage >= 0.20 && remPercentage <= 0.25 {
+                    quality += 0.25
+                } else if remPercentage >= 0.15 && remPercentage <= 0.30 {
+                    quality += 0.15
+                }
+
+                quality = min(quality, 1.0) // Cap at 1.0
+
+                let sleepData = SleepData(
+                    totalDuration: totalSleep,
+                    deepSleepDuration: deepSleep,
+                    remSleepDuration: remSleep,
+                    coreSleepDuration: coreSleep,
+                    quality: quality,
+                    startDate: sleepSamples.first?.startDate ?? startOfDay,
+                    endDate: sleepSamples.last?.endDate ?? endOfDay
+                )
+
+                continuation.resume(returning: sleepData)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Resting Heart Rate
+
+    /// Get resting heart rate for a given date
+    func getRestingHeartRate(for date: Date) async -> Double? {
+        guard isHealthKitAvailable else { return nil }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+
+        let restingHRType = HKQuantityType(.restingHeartRate)
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: restingHRType,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("Resting HR query error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard let sample = (samples as? [HKQuantitySample])?.first else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                continuation.resume(returning: bpm)
+            }
+
+            healthStore.execute(query)
+        }
+    }
+
+    // MARK: - Heart Rate Variability
+
+    /// Get heart rate variability (HRV) for a given date
+    func getHeartRateVariability(for date: Date) async -> Double? {
+        guard isHealthKitAvailable else { return nil }
+
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+
+        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: hrvType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("HRV query error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+
+                // Calculate average HRV for the day
+                let totalHRV = hrvSamples.reduce(0.0) { sum, sample in
+                    sum + sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
+                }
+                let averageHRV = totalHRV / Double(hrvSamples.count)
+
+                continuation.resume(returning: averageHRV)
+            }
+
+            healthStore.execute(query)
+        }
+    }
 }
 
 // MARK: - Supporting Types
@@ -210,6 +400,41 @@ struct HeartRateSample: Identifiable {
     let id = UUID()
     let date: Date
     let bpm: Double
+}
+
+struct SleepData {
+    let totalDuration: TimeInterval
+    let deepSleepDuration: TimeInterval
+    let remSleepDuration: TimeInterval
+    let coreSleepDuration: TimeInterval
+    let quality: Double // 0-1
+    let startDate: Date
+    let endDate: Date
+
+    var formattedTotal: String {
+        let hours = Int(totalDuration / 3600)
+        let minutes = Int((totalDuration.truncatingRemainder(dividingBy: 3600)) / 60)
+        return "\(hours)h \(minutes)m"
+    }
+
+    var formattedDeep: String {
+        let minutes = Int(deepSleepDuration / 60)
+        return "\(minutes) min"
+    }
+
+    var formattedREM: String {
+        let minutes = Int(remSleepDuration / 60)
+        return "\(minutes) min"
+    }
+
+    var formattedCore: String {
+        let minutes = Int(coreSleepDuration / 60)
+        return "\(minutes) min"
+    }
+
+    var qualityPercentage: Int {
+        Int(quality * 100)
+    }
 }
 
 enum HealthKitError: LocalizedError {

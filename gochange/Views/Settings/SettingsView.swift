@@ -182,6 +182,34 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Analytics Section
+                    SettingsSection(title: "ANALYTICS") {
+                        NavigationLink(destination: AnalyticsDashboardView()) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: "#4ECDC4").opacity(0.15))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "chart.bar.xaxis")
+                                        .font(.system(size: 15))
+                                        .foregroundColor(Color(hex: "#4ECDC4"))
+                                }
+
+                                Text("Advanced Analytics")
+                                    .foregroundColor(.white)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                            .padding(16)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // Library Section
                     SettingsSection(title: "LIBRARY") {
                         NavigationLink(destination: ExerciseLibraryView()) {
@@ -190,21 +218,21 @@ struct SettingsView: View {
                                     Circle()
                                         .fill(Color(hex: "#00D4AA").opacity(0.15))
                                         .frame(width: 36, height: 36)
-                                    
+
                                     Image(systemName: "figure.strengthtraining.traditional")
                                         .font(.system(size: 15))
                                         .foregroundColor(Color(hex: "#00D4AA"))
                                 }
-                                
+
                                 Text("Exercise Library")
                                     .foregroundColor(.white)
-                                
+
                                 Spacer()
-                                
+
                                 Text("\(workoutDays.flatMap { $0.exercises }.count)")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.gray)
-                                
+
                                 Image(systemName: "chevron.right")
                                     .font(.system(size: 12, weight: .semibold))
                                     .foregroundColor(.gray.opacity(0.5))
