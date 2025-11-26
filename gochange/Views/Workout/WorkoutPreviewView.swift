@@ -157,11 +157,14 @@ struct WorkoutPreviewView: View {
             
             VStack(spacing: 0) {
                 ForEach(Array(workoutDay.exercises.enumerated()), id: \.element.id) { index, exercise in
-                    ExercisePreviewRow(
-                        exercise: exercise,
-                        index: index + 1,
-                        accentColor: accentColor
-                    )
+                    NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
+                        ExercisePreviewRow(
+                            exercise: exercise,
+                            index: index + 1,
+                            accentColor: accentColor
+                        )
+                    }
+                    .buttonStyle(.plain)
                     
                     if index < workoutDay.exercises.count - 1 {
                         Rectangle()
@@ -266,9 +269,9 @@ struct ExercisePreviewRow: View {
             
             Spacer()
             
-            // Muscle group icon
-            Image(systemName: "dumbbell.fill")
-                .font(.system(size: 14))
+            // Chevron to indicate tappable
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.5))
         }
         .padding(.horizontal, 16)

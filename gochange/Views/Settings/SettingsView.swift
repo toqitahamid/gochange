@@ -79,6 +79,38 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Library Section
+                    SettingsSection(title: "LIBRARY") {
+                        NavigationLink(destination: ExerciseLibraryView()) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: "#00D4AA").opacity(0.15))
+                                        .frame(width: 36, height: 36)
+                                    
+                                    Image(systemName: "figure.strengthtraining.traditional")
+                                        .font(.system(size: 15))
+                                        .foregroundColor(Color(hex: "#00D4AA"))
+                                }
+                                
+                                Text("Exercise Library")
+                                    .foregroundColor(.white)
+                                
+                                Spacer()
+                                
+                                Text("\(workoutDays.flatMap { $0.exercises }.count)")
+                                    .font(.system(size: 14, weight: .medium))
+                                    .foregroundColor(.gray)
+                                
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                            .padding(16)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    
                     // Data Management Section
                     SettingsSection(title: "DATA MANAGEMENT") {
                         VStack(spacing: 0) {

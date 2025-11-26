@@ -8,96 +8,96 @@ struct ExerciseLibraryView: View {
     @State private var selectedMuscleGroup: String?
     
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // Muscle Group Filter
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
+        VStack(spacing: 0) {
+            // Muscle Group Filter
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 10) {
+                    ExerciseFilterChip(
+                        title: "All",
+                        isSelected: selectedMuscleGroup == nil
+                    ) {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedMuscleGroup = nil
+                        }
+                    }
+                    
+                    ForEach(allMuscleGroups, id: \.self) { group in
                         ExerciseFilterChip(
-                            title: "All",
-                            isSelected: selectedMuscleGroup == nil
+                            title: group,
+                            isSelected: selectedMuscleGroup == group
                         ) {
                             withAnimation(.easeInOut(duration: 0.2)) {
-                                selectedMuscleGroup = nil
-                            }
-                        }
-                        
-                        ForEach(allMuscleGroups, id: \.self) { group in
-                            ExerciseFilterChip(
-                                title: group,
-                                isSelected: selectedMuscleGroup == group
-                            ) {
-                                withAnimation(.easeInOut(duration: 0.2)) {
-                                    selectedMuscleGroup = group
-                                }
+                                selectedMuscleGroup = group
                             }
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
                 }
-                
-                // Exercise List
-                ScrollView {
-                    LazyVStack(spacing: 24) {
-                        ForEach(groupedExercises.keys.sorted(), id: \.self) { workoutName in
-                            VStack(alignment: .leading, spacing: 12) {
-                                // Section Header
-                                HStack(spacing: 8) {
-                                    Circle()
-                                        .fill(AppConstants.WorkoutColors.color(for: workoutName))
-                                        .frame(width: 10, height: 10)
-                                    
-                                    Text(workoutName.uppercased())
-                                        .font(.system(size: 12, weight: .bold))
-                                        .tracking(1)
-                                        .foregroundColor(.gray)
-                                }
-                                .padding(.horizontal, 4)
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 12)
+            }
+            
+            // Exercise List
+            ScrollView {
+                LazyVStack(spacing: 24) {
+                    ForEach(groupedExercises.keys.sorted(), id: \.self) { workoutName in
+                        VStack(alignment: .leading, spacing: 12) {
+                            // Section Header
+                            HStack(spacing: 8) {
+                                Circle()
+                                    .fill(AppConstants.WorkoutColors.color(for: workoutName))
+                                    .frame(width: 10, height: 10)
                                 
-                                VStack(spacing: 0) {
-                                    ForEach(Array((groupedExercises[workoutName] ?? []).enumerated()), id: \.element.id) { index, exercise in
-                                        NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
-                                            ExerciseLibraryRowView(exercise: exercise)
-                                        }
-                                        .buttonStyle(.plain)
-                                        
-                                        if index < (groupedExercises[workoutName]?.count ?? 0) - 1 {
-                                            Rectangle()
-                                                .fill(Color.white.opacity(0.08))
-                                                .frame(height: 1)
-                                                .padding(.leading, 60)
-                                        }
+                                Text(workoutName.uppercased())
+                                    .font(.system(size: 12, weight: .bold))
+                                    .tracking(1)
+                                    .foregroundColor(.gray)
+                            }
+                            .padding(.horizontal, 4)
+                            
+                            VStack(spacing: 0) {
+                                ForEach(Array((groupedExercises[workoutName] ?? []).enumerated()), id: \.element.id) { index, exercise in
+                                    NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
+                                        ExerciseLibraryRowView(exercise: exercise)
+                                    }
+                                    .buttonStyle(.plain)
+                                    
+                                    if index < (groupedExercises[workoutName]?.count ?? 0) - 1 {
+                                        Rectangle()
+                                            .fill(Color.white.opacity(0.08))
+                                            .frame(height: 1)
+                                            .padding(.leading, 60)
                                     }
                                 }
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color.white.opacity(0.05))
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 16)
-                                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                        )
-                                )
-                                .clipShape(RoundedRectangle(cornerRadius: 16))
                             }
+                            .background(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .fill(Color.white.opacity(0.05))
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 16)
+                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    )
+                            )
+                            .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 100)
                 }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 100)
             }
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
-            .navigationTitle("Exercises")
-            .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search exercises")
         }
+        .background(
+            LinearGradient(
+                colors: [Color.black, Color(hex: "#0A1628")],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+        .navigationTitle("Exercises")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .searchable(text: $searchText, prompt: "Search exercises")
     }
     
     // MARK: - Computed Properties
@@ -233,6 +233,8 @@ struct ExerciseLibraryRowView: View {
 }
 
 #Preview {
-    ExerciseLibraryView()
-        .modelContainer(for: WorkoutDay.self)
+    NavigationStack {
+        ExerciseLibraryView()
+    }
+    .modelContainer(for: WorkoutDay.self)
 }
