@@ -55,6 +55,8 @@ All models are SwiftData `@Model` classes with relationships:
 
 - **RestTimerAttributes**: ActivityKit attributes for Live Activity rest timer
 
+- **WorkoutActivityAttributes**: ActivityKit attributes for Live Activity workout tracking
+
 ### Key Services
 
 - **SchedulingService** (`gochange/Services/SchedulingService.swift`):
@@ -64,10 +66,22 @@ All models are SwiftData `@Model` classes with relationships:
   - Calculates weekly streaks (consecutive weeks with all 4 workouts)
   - Rest period validation (48h same muscle group, 24h different)
 
+- **WorkoutManager** (`gochange/Services/WorkoutManager.swift`):
+  - Singleton managing active workout state (injected as EnvironmentObject)
+  - Handles workout lifecycle: start(), minimize(), resume(), cancel(), complete()
+  - Manages exerciseLogs array and set operations
+  - Integrates with WorkoutActivityManager for Live Activity updates
+  - Methods: addSet(), removeSet(), toggleSetCompletion()
+
 - **RestTimerActivityManager** (`gochange/Services/RestTimerActivityManager.swift`):
   - Singleton managing Live Activity for rest timer
   - Uses ActivityKit to display timer on Lock Screen/Dynamic Island
   - Methods: start(endTime:), update(endTime:), end()
+
+- **WorkoutActivityManager** (`gochange/Services/WorkoutActivityManager.swift`):
+  - Singleton managing Live Activity for active workouts
+  - Shows workout progress (completed sets/total sets) on Lock Screen/Dynamic Island
+  - Methods: start(), update(completedSets:totalSets:exerciseCount:), end()
 
 - **DataService** (`gochange/Services/DataService.swift`):
   - Export/import functionality for backup/restore
@@ -80,9 +94,9 @@ All models are SwiftData `@Model` classes with relationships:
 ### ViewModels
 
 - **WorkoutViewModel** (`gochange/ViewModels/WorkoutViewModel.swift`):
-  - Main ViewModel for workout operations
-  - Manages workoutDays and sessions arrays
-  - Methods: startSession(), completeSession(), addExercise(), etc.
+  - ViewModel for workout operations (NOT currently used in main app flow)
+  - WorkoutManager is preferred for active workout management
+  - Contains methods: startSession(), completeSession(), addExercise(), etc.
   - Calculates statistics: completedSessionsThisWeek, totalVolume, averageWorkoutDuration
   - Uses SchedulingService.suggestNextWorkout()
 
@@ -91,10 +105,19 @@ All models are SwiftData `@Model` classes with relationships:
 
 ### View Structure
 
-- **MainTabView.swift**: Tab-based navigation (Home, Workout, Calendar, History, Exercise Library, Settings)
-- **Views/Workout/**: ActiveWorkoutView (main workout logging UI), WorkoutDaySelectionView, EditWorkoutDayView
+- **MainTabView.swift**: Tab-based navigation (Home, Workout, Calendar, History, More/Settings)
+  - Dynamically shows ActiveWorkoutView when WorkoutManager.isWorkoutActive is true
+  - Shows MiniPlayerView at bottom when workout is minimized
+  - Injects WorkoutManager as EnvironmentObject
+
+- **Views/Workout/**: ActiveWorkoutView (main workout logging UI), WorkoutDaySelectionView, EditWorkoutDayView, WorkoutPreviewView
 - **Views/LiveActivity/**: RestTimerWidget (WidgetKit/ActivityKit UI), RestTimerWidgetBundle
-- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView
+- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView, MiniPlayerView
+- **Views/Home/**: HomeView
+- **Views/Calendar/**: CalendarView
+- **Views/History/**: HistoryListView, SessionDetailView
+- **Views/Exercise/**: ExerciseLibraryView, ExerciseDetailView
+- **Views/Settings/**: SettingsView
 
 ### App Initialization
 
@@ -102,19 +125,20 @@ In `gochange/App/GoChangeApp.swift`:
 - SwiftData ModelContainer is initialized with schema including all 5 models
 - Default workout data is seeded on first launch via `DefaultWorkoutData.createDefaultWorkouts()`
 - ModelContainer is injected into environment via `.modelContainer(modelContainer)`
+- WorkoutManager singleton is created as @StateObject and injected via `.environmentObject(workoutManager)`
 
 ## Important Patterns
 
 ### SwiftData Context Access
-Views access the model context via `@Environment(\.modelContext)`. ViewModels receive it via initializer.
+Views access the model context via `@Environment(\.modelContext)`. ViewModels receive it via initializer or WorkoutManager.setModelContext().
 
 ### Session Management
-When starting a workout:
+When starting a workout via WorkoutManager:
 1. Create WorkoutSession from WorkoutDay template
 2. Pre-populate ExerciseLogs for each exercise
 3. Pre-populate SetLogs for each set with targetReps from exercise defaults
 4. User fills in actualReps, weight, RIR during workout
-5. On completion, set endTime, duration, isCompleted = true
+5. On completion, set endTime, duration, isCompleted = true and persist to database
 
 ### Data Relationships
 - Use cascade delete for parent-child relationships (WorkoutDay→Exercise, WorkoutSession→ExerciseLog, etc.)
@@ -122,7 +146,9 @@ When starting a workout:
 - ExerciseLog stores exerciseName string copy for historical accuracy
 
 ### Live Activity Integration
-RestTimerActivityManager is a singleton that manages the rest timer Live Activity. Call `RestTimerActivityManager.shared.start(endTime: Date)` to show the timer on Lock Screen/Dynamic Island. The widget extension (GoChangeWidget) renders the UI.
+- RestTimerActivityManager is a singleton that manages the rest timer Live Activity. Call `RestTimerActivityManager.shared.start(endTime: Date)` to show the timer on Lock Screen/Dynamic Island.
+- WorkoutActivityManager is a singleton that manages the workout progress Live Activity. It's automatically started/updated/ended by WorkoutManager.
+- The widget extension (GoChangeWidget) renders the UI for both activities.
 
 ## Widget Extension
 
@@ -133,7 +159,7 @@ The `GoChangeWidget` target is a Widget Extension containing:
 
 ## Dependencies
 
-- **FSCalendar** (v2.8.4+): Optional calendar UI component via Swift Package Manager
+- **FSCalendar** (v2.8.4+): Calendar UI component via Swift Package Manager
   - URL: https://github.com/WenchaoD/FSCalendar.git
 
 ## Common Data Operations
@@ -169,6 +195,7 @@ gochange/
 │   ├── ExerciseLog.swift
 │   ├── SetLog.swift
 │   ├── RestTimerAttributes.swift
+│   ├── WorkoutActivityAttributes.swift
 │   └── DefaultWorkoutData.swift
 ├── ViewModels/                   # MVVM ViewModels
 │   ├── WorkoutViewModel.swift
@@ -185,7 +212,9 @@ gochange/
 │   └── Components/
 ├── Services/                     # Business logic services
 │   ├── SchedulingService.swift
+│   ├── WorkoutManager.swift
 │   ├── RestTimerActivityManager.swift
+│   ├── WorkoutActivityManager.swift
 │   ├── DataService.swift
 │   └── MediaService.swift
 └── Utilities/                    # Extensions and constants

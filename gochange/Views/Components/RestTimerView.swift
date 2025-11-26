@@ -12,96 +12,182 @@ struct RestTimerView: View {
     @State private var isRunning = false
     @State private var timer: Timer?
     
+    private let timerAccentColor = Color(hex: "#00D4AA")
+    
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 32) {
+            // Header
+            HStack {
+                Text("REST TIMER")
+                    .font(.system(size: 12, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(.gray)
+                
+                Spacer()
+                
+                Button {
+                    stopTimer()
+                    isPresented = false
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
+                        .frame(width: 32, height: 32)
+                        .background(Color.white.opacity(0.1))
+                        .clipShape(Circle())
+                }
+            }
+            
             // Timer Display
             ZStack {
                 // Background Circle
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 12)
-                    .frame(width: 200, height: 200)
+                    .stroke(Color.white.opacity(0.1), lineWidth: 10)
+                    .frame(width: 220, height: 220)
                 
                 // Progress Circle
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(progressColor, style: StrokeStyle(lineWidth: 12, lineCap: .round))
-                    .frame(width: 200, height: 200)
+                    .stroke(
+                        LinearGradient(
+                            colors: [progressColor, progressColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
+                    )
+                    .frame(width: 220, height: 220)
                     .rotationEffect(.degrees(-90))
                     .animation(.linear(duration: 0.1), value: remainingTime)
+                    .shadow(color: progressColor.opacity(0.4), radius: 10)
                 
                 // Time Text
-                VStack(spacing: 4) {
+                VStack(spacing: 8) {
                     Text(timeString)
-                        .font(.system(size: 48, weight: .bold, design: .monospaced))
+                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
                     
-                    Text(isRunning ? "REST" : "READY")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
+                    Text(isRunning ? "RESTING" : "READY")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(isRunning ? progressColor : .gray)
                 }
             }
             
             // Duration Presets
-            HStack(spacing: 16) {
+            HStack(spacing: 12) {
                 ForEach([60, 90, 120, 180], id: \.self) { seconds in
                     Button {
                         setDuration(TimeInterval(seconds))
                     } label: {
                         Text("\(seconds)s")
-                            .font(.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(remainingTime == TimeInterval(seconds) ? .white : .primary)
-                            .padding(.horizontal, 16)
-                            .padding(.vertical, 8)
-                            .background(remainingTime == TimeInterval(seconds) ? AppTheme.accent : Color.gray.opacity(0.1))
-                            .cornerRadius(20)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(remainingTime == TimeInterval(seconds) ? .white : .gray)
+                            .padding(.horizontal, 18)
+                            .padding(.vertical, 10)
+                            .background(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(remainingTime == TimeInterval(seconds) ? timerAccentColor : Color.white.opacity(0.08))
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(remainingTime == TimeInterval(seconds) ? timerAccentColor.opacity(0.5) : Color.white.opacity(0.1), lineWidth: 1)
+                            )
                     }
                 }
             }
             
             // Control Buttons
-            HStack(spacing: 24) {
+            HStack(spacing: 32) {
                 // Reset Button
                 Button {
                     resetTimer()
                 } label: {
-                    Image(systemName: "arrow.counterclockwise")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                        .frame(width: 60, height: 60)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
+                    VStack(spacing: 6) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                            )
+                        
+                        Text("Reset")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
                 }
                 
                 // Start/Pause Button
                 Button {
                     toggleTimer()
                 } label: {
-                    Image(systemName: isRunning ? "pause.fill" : "play.fill")
-                        .font(.title)
-                        .foregroundColor(.white)
-                        .frame(width: 80, height: 80)
-                        .background(isRunning ? Color.orange : AppTheme.accent)
-                        .clipShape(Circle())
+                    VStack(spacing: 6) {
+                        ZStack {
+                            Circle()
+                                .fill(
+                                    LinearGradient(
+                                        colors: isRunning ? [Color(hex: "#FF6B35"), Color(hex: "#F7931E")] : [timerAccentColor, timerAccentColor.opacity(0.8)],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                                .frame(width: 72, height: 72)
+                                .shadow(color: (isRunning ? Color(hex: "#FF6B35") : timerAccentColor).opacity(0.5), radius: 12, y: 4)
+                            
+                            Image(systemName: isRunning ? "pause.fill" : "play.fill")
+                                .font(.system(size: 26, weight: .semibold))
+                                .foregroundColor(.white)
+                                .offset(x: isRunning ? 0 : 2)
+                        }
+                        
+                        Text(isRunning ? "Pause" : "Start")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
                 }
                 
-                // Close Button
+                // Skip Button
                 Button {
-                    stopTimer()
-                    isPresented = false
+                    timerComplete()
                 } label: {
-                    Image(systemName: "xmark")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                        .frame(width: 60, height: 60)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
+                    VStack(spacing: 6) {
+                        Image(systemName: "forward.fill")
+                            .font(.system(size: 20, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.white.opacity(0.1))
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                            )
+                        
+                        Text("Skip")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundColor(.gray)
+                    }
                 }
             }
         }
-        .padding(32)
-        .background(AppTheme.cardBackground)
-        .cornerRadius(24)
-        .shadow(color: .black.opacity(0.2), radius: 20, y: 10)
+        .padding(28)
+        .background(
+            RoundedRectangle(cornerRadius: 28)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#1a1a2e"), Color(hex: "#16213e")],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                )
+        )
         .onAppear {
             remainingTime = defaultDuration
         }
