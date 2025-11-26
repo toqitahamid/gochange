@@ -6,12 +6,6 @@ struct GoChangeApp: App {
     let modelContainer: ModelContainer
     @StateObject private var workoutManager = WorkoutManager()
     
-    // Check if iCloud sync is enabled from UserDefaults
-    // Note: This is read at launch time - app restart required for changes
-    private static var iCloudSyncEnabled: Bool {
-        UserDefaults.standard.bool(forKey: "iCloudSyncEnabled")
-    }
-    
     init() {
         do {
             let schema = Schema([
@@ -21,30 +15,12 @@ struct GoChangeApp: App {
                 ExerciseLog.self,
                 SetLog.self
             ])
-            
-            // Configure CloudKit sync if enabled
-            // IMPORTANT: Requires iCloud capability enabled in Xcode:
-            // 1. Select project > Signing & Capabilities
-            // 2. Add iCloud capability
-            // 3. Check "CloudKit" and create container: iCloud.com.toqitahamid.gochange
-            // 4. Add Background Modes > Remote notifications
-            let modelConfiguration: ModelConfiguration
-            
-            if Self.iCloudSyncEnabled {
-                // Use CloudKit for sync across devices
-                modelConfiguration = ModelConfiguration(
-                    schema: schema,
-                    isStoredInMemoryOnly: false,
-                    cloudKitDatabase: .private("iCloud.com.toqitahamid.gochange")
-                )
-            } else {
-                // Local-only storage
-                modelConfiguration = ModelConfiguration(
-                    schema: schema,
-                    isStoredInMemoryOnly: false
-                )
-            }
-            
+
+            let modelConfiguration = ModelConfiguration(
+                schema: schema,
+                isStoredInMemoryOnly: false
+            )
+
             modelContainer = try ModelContainer(
                 for: schema,
                 configurations: [modelConfiguration]

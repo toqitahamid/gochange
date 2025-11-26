@@ -12,14 +12,12 @@ struct SettingsView: View {
     @AppStorage("restTimerDuration") private var restTimerDuration: Double = 90
     @AppStorage("hapticFeedback") private var hapticFeedback: Bool = true
     @AppStorage("healthKitEnabled") private var healthKitEnabled: Bool = false
-    @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = false
-    
+
     @State private var showingExportSheet = false
     @State private var showingImportSheet = false
     @State private var showingResetAlert = false
     @State private var exportData: Data?
     @State private var showingReminderSettings = false
-    @State private var showingICloudAlert = false
     
     @StateObject private var notificationService = NotificationService.shared
     @StateObject private var healthKitService = HealthKitService.shared
