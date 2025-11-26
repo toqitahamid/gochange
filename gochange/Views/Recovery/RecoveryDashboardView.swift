@@ -129,7 +129,14 @@ struct RecoveryDashboardView: View {
             }
 
             Button {
-                showingHealthKitAuth = true
+                Task {
+                    let success = await healthKitService.requestAuthorization()
+                    if success {
+                        // Wait a bit for permissions to settle, then refresh
+                        try? await Task.sleep(nanoseconds: 500_000_000) // 0.5 seconds
+                        await refreshData()
+                    }
+                }
             } label: {
                 Text("Connect HealthKit")
                     .fontWeight(.semibold)
@@ -314,6 +321,11 @@ struct RecoveryDashboardView: View {
 
                 Button("Sync from HealthKit") {
                     Task {
+                        // Request authorization if not already granted
+                        if !healthKitService.isAuthorized {
+                            await healthKitService.requestAuthorization()
+                            try? await Task.sleep(nanoseconds: 500_000_000)
+                        }
                         await recoveryService.syncRecoveryData(context: modelContext)
                     }
                 }

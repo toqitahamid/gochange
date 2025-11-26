@@ -49,26 +49,41 @@ class HealthKitService: ObservableObject {
             isAuthorized = false
             return
         }
-        
-        let status = healthStore.authorizationStatus(for: workoutType)
-        authorizationStatus = status
-        isAuthorized = status == .sharingAuthorized
+
+        // Check if we have authorization for all the types we need to read
+        let sleepStatus = healthStore.authorizationStatus(for: HKCategoryType(.sleepAnalysis))
+        let workoutStatus = healthStore.authorizationStatus(for: workoutType)
+
+        authorizationStatus = workoutStatus
+
+        // Consider authorized if sleep data can be read (most important for recovery)
+        // Note: HealthKit returns .notDetermined for read permissions even if granted
+        isAuthorized = sleepStatus != .sharingDenied && workoutStatus != .sharingDenied
+
+        print("🔐 HealthKit Auth Status:")
+        print("   Sleep: \(sleepStatus == .notDetermined ? "Not Determined" : sleepStatus == .sharingDenied ? "Denied" : "Authorized")")
+        print("   Workout: \(workoutStatus == .notDetermined ? "Not Determined" : workoutStatus == .sharingDenied ? "Denied" : "Authorized")")
     }
     
     /// Request authorization to read/write health data
     @discardableResult
     func requestAuthorization() async -> Bool {
         guard isHealthKitAvailable else {
-            print("HealthKit is not available on this device")
+            print("❌ HealthKit is not available on this device")
             return false
         }
-        
+
+        print("📱 Requesting HealthKit authorization...")
+        print("   Requesting to WRITE: \(typesToWrite.map { $0.identifier })")
+        print("   Requesting to READ: \(typesToRead.map { $0.identifier })")
+
         do {
             try await healthStore.requestAuthorization(toShare: typesToWrite, read: typesToRead)
+            print("✅ HealthKit authorization request completed")
             checkAuthorizationStatus()
-            return isAuthorized
+            return true // Always return true after request, as HealthKit doesn't reveal if user granted/denied read access
         } catch {
-            print("HealthKit authorization error: \(error.localizedDescription)")
+            print("❌ HealthKit authorization error: \(error.localizedDescription)")
             return false
         }
     }
