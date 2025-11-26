@@ -32,6 +32,7 @@ struct HomeView: View {
                     recentWorkoutsSection
                 }
                 .padding(.horizontal, 20)
+                .padding(.top, 20)
                 .padding(.bottom, 100)
             }
             .background(

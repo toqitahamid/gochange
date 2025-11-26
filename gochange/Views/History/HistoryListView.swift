@@ -34,7 +34,8 @@ struct HistoryListView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.vertical, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 16)
                 }
                 
                 // Sessions List
