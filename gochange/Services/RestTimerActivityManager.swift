@@ -4,7 +4,7 @@ import Foundation
 class RestTimerActivityManager {
     static let shared = RestTimerActivityManager()
     
-    private var activity: Activity<RestTimerAttributes>?
+    private(set) var activity: Activity<RestTimerAttributes>?
     
     private init() {}
     

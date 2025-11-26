@@ -38,6 +38,9 @@ struct GoChangeApp: App {
     var body: some Scene {
         WindowGroup {
             MainTabView()
+                .onAppear {
+                    workoutManager.setModelContext(modelContainer.mainContext)
+                }
         }
         .modelContainer(modelContainer)
         .environmentObject(workoutManager)
