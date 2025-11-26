@@ -86,10 +86,11 @@ struct ActiveWorkoutView: View {
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
+                    // Cancel button (text for better tap target)
                     Button {
                         showingCancelAlert = true
                     } label: {
-                        HStack(spacing: 6) {
+                        HStack(spacing: 4) {
                             Image(systemName: "chevron.down")
                                 .font(.system(size: 14, weight: .semibold))
                             Text("Cancel")

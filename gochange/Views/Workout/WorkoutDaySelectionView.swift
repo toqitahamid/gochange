@@ -21,14 +21,14 @@ struct WorkoutDaySelectionView: View {
                     // Workout Cards
                     VStack(spacing: 16) {
                         ForEach(workoutDays) { workoutDay in
-                            WorkoutDayCard(
-                                workoutDay: workoutDay,
-                                lastCompleted: lastCompletedDate(for: workoutDay),
-                                isCompletedThisWeek: isCompletedThisWeek(workoutDay),
-                                onStart: {
-                                    workoutManager.start(workoutDay: workoutDay)
-                                }
-                            )
+                            NavigationLink(destination: WorkoutPreviewView(workoutDay: workoutDay)) {
+                                WorkoutDayCardContent(
+                                    workoutDay: workoutDay,
+                                    lastCompleted: lastCompletedDate(for: workoutDay),
+                                    isCompletedThisWeek: isCompletedThisWeek(workoutDay)
+                                )
+                            }
+                            .buttonStyle(ScaleButtonStyle())
                             .contextMenu {
                                 Button {
                                     editingWorkoutDay = workoutDay
@@ -185,115 +185,103 @@ struct WorkoutDaySelectionView: View {
     }
 }
 
-// MARK: - Workout Day Card
-struct WorkoutDayCard: View {
+// MARK: - Workout Day Card Content (for NavigationLink)
+struct WorkoutDayCardContent: View {
     let workoutDay: WorkoutDay
     let lastCompleted: Date?
     let isCompletedThisWeek: Bool
-    let onStart: () -> Void
-    
-    @State private var isPressed = false
     
     private var accentColor: Color {
         Color(hex: workoutDay.colorHex)
     }
     
     var body: some View {
-        Button(action: onStart) {
-            HStack(spacing: 16) {
-                // Left: Workout Icon
-                ZStack {
-                    RoundedRectangle(cornerRadius: 16)
-                        .fill(
-                            LinearGradient(
-                                colors: [accentColor, accentColor.opacity(0.7)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
+        HStack(spacing: 16) {
+            // Left: Workout Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(
+                        LinearGradient(
+                            colors: [accentColor, accentColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
                         )
-                        .frame(width: 70, height: 70)
-                    
-                    if isCompletedThisWeek {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 28, weight: .bold))
-                            .foregroundColor(.white)
-                    } else {
-                        Text(workoutDay.name.prefix(1).uppercased())
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .foregroundColor(.white)
-                    }
-                }
-                .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
+                    )
+                    .frame(width: 70, height: 70)
                 
-                // Center: Info
-                VStack(alignment: .leading, spacing: 6) {
-                    HStack(spacing: 8) {
-                        Text("DAY \(workoutDay.dayNumber)")
-                            .font(.system(size: 11, weight: .bold))
-                            .tracking(1.2)
-                            .foregroundColor(accentColor)
-                        
-                        if isCompletedThisWeek {
-                            Text("DONE")
-                                .font(.system(size: 9, weight: .bold))
-                                .tracking(0.5)
-                                .foregroundColor(.black)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color(hex: "#00D4AA"))
-                                .cornerRadius(4)
-                        }
-                    }
-                    
-                    Text(workoutDay.name)
-                        .font(.title3)
-                        .fontWeight(.bold)
+                if isCompletedThisWeek {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 28, weight: .bold))
                         .foregroundColor(.white)
-                    
-                    HStack(spacing: 12) {
-                        Label("\(workoutDay.exercises.count)", systemImage: "dumbbell.fill")
-                            .font(.caption)
-                            .foregroundColor(.gray)
-                        
-                        if let date = lastCompleted {
-                            Label(relativeDate(date), systemImage: "clock")
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                    }
-                }
-                
-                Spacer()
-                
-                // Right: Play button
-                ZStack {
-                    Circle()
-                        .fill(Color.white.opacity(0.1))
-                        .frame(width: 44, height: 44)
-                    
-                    Image(systemName: "play.fill")
-                        .font(.system(size: 14))
+                } else {
+                    Text(workoutDay.name.prefix(1).uppercased())
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
                 }
             }
-            .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(
-                                LinearGradient(
-                                    colors: [accentColor.opacity(0.5), accentColor.opacity(0.1)],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                ),
-                                lineWidth: 1
-                            )
-                    )
-            )
+            .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
+            
+            // Center: Info
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    Text("DAY \(workoutDay.dayNumber)")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.2)
+                        .foregroundColor(accentColor)
+                    
+                    if isCompletedThisWeek {
+                        Text("DONE")
+                            .font(.system(size: 9, weight: .bold))
+                            .tracking(0.5)
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color(hex: "#00D4AA"))
+                            .cornerRadius(4)
+                    }
+                }
+                
+                Text(workoutDay.name)
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                HStack(spacing: 12) {
+                    Label("\(workoutDay.exercises.count)", systemImage: "dumbbell.fill")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                    
+                    if let date = lastCompleted {
+                        Label(relativeDate(date), systemImage: "clock")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            // Right: Chevron (indicates navigation)
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray)
         }
-        .buttonStyle(ScaleButtonStyle())
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white.opacity(0.05))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(
+                            LinearGradient(
+                                colors: [accentColor.opacity(0.5), accentColor.opacity(0.1)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+        )
     }
     
     private func relativeDate(_ date: Date) -> String {
