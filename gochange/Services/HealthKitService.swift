@@ -209,6 +209,7 @@ class HealthKitService: ObservableObject {
     // MARK: - Sleep Data
 
     /// Get sleep analysis data for a given date
+    /// Looks for sleep that ended on the given date (i.e., wake-up date)
     func getSleepData(for date: Date) async -> SleepData? {
         guard isHealthKitAvailable else { return nil }
 
@@ -216,8 +217,13 @@ class HealthKitService: ObservableObject {
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
 
+        // Query for sleep that occurred the night before (typically 8-12 hours before wake-up)
+        // This captures sleep that started the previous night and ended on the given date
+        let startTime = calendar.date(byAdding: .hour, value: -12, to: startOfDay) ?? startOfDay
+
         let sleepType = HKCategoryType(.sleepAnalysis)
-        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        // Use strictEndDate to find sleep that ended on this date (wake-up date)
+        let predicate = HKQuery.predicateForSamples(withStart: startTime, end: endOfDay, options: .strictEndDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
         return await withCheckedContinuation { continuation in
@@ -228,15 +234,18 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("Sleep query error: \(error.localizedDescription)")
+                    print("❌ Sleep query error: \(error.localizedDescription)")
                     continuation.resume(returning: nil)
                     return
                 }
 
                 guard let sleepSamples = samples as? [HKCategorySample] else {
+                    print("⚠️ No sleep samples found or invalid sample type")
                     continuation.resume(returning: nil)
                     return
                 }
+
+                print("✅ Found \(sleepSamples.count) sleep samples for date: \(date.formatted(date: .abbreviated, time: .omitted))")
 
                 var totalSleep: TimeInterval = 0
                 var deepSleep: TimeInterval = 0
@@ -264,9 +273,13 @@ class HealthKitService: ObservableObject {
                 }
 
                 guard totalSleep > 0 else {
+                    print("⚠️ No sleep time recorded in samples")
                     continuation.resume(returning: nil)
                     return
                 }
+
+                print("💤 Total sleep: \(Int(totalSleep/3600))h \(Int((totalSleep.truncatingRemainder(dividingBy: 3600))/60))m")
+                print("   Deep: \(Int(deepSleep/60))m, REM: \(Int(remSleep/60))m, Core: \(Int(coreSleep/60))m")
 
                 // Calculate sleep quality based on sleep stage distribution
                 // Deep sleep should be 15-25%, REM should be 20-25% of total sleep
@@ -301,6 +314,7 @@ class HealthKitService: ObservableObject {
                     endDate: sleepSamples.last?.endDate ?? endOfDay
                 )
 
+                print("✅ Sleep quality calculated: \(Int(quality * 100))%")
                 continuation.resume(returning: sleepData)
             }
 
@@ -330,17 +344,19 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("Resting HR query error: \(error.localizedDescription)")
+                    print("❌ Resting HR query error: \(error.localizedDescription)")
                     continuation.resume(returning: nil)
                     return
                 }
 
                 guard let sample = (samples as? [HKQuantitySample])?.first else {
+                    print("⚠️ No resting heart rate data found for date: \(date.formatted(date: .abbreviated, time: .omitted))")
                     continuation.resume(returning: nil)
                     return
                 }
 
                 let bpm = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                print("💓 Resting HR: \(Int(bpm)) BPM")
                 continuation.resume(returning: bpm)
             }
 
@@ -370,12 +386,13 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("HRV query error: \(error.localizedDescription)")
+                    print("❌ HRV query error: \(error.localizedDescription)")
                     continuation.resume(returning: nil)
                     return
                 }
 
                 guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
+                    print("⚠️ No HRV data found for date: \(date.formatted(date: .abbreviated, time: .omitted))")
                     continuation.resume(returning: nil)
                     return
                 }
@@ -386,6 +403,7 @@ class HealthKitService: ObservableObject {
                 }
                 let averageHRV = totalHRV / Double(hrvSamples.count)
 
+                print("📊 HRV: \(Int(averageHRV))ms (from \(hrvSamples.count) samples)")
                 continuation.resume(returning: averageHRV)
             }
 

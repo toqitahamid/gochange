@@ -283,7 +283,7 @@ struct RestDayLoggingView: View {
         )
 
         // If we have sleep data, update the rest day with it
-        if let sleep = sleepData {
+        if sleepData != nil {
             Task {
                 await RecoveryService.shared.syncSleepToRestDay(context: modelContext)
             }

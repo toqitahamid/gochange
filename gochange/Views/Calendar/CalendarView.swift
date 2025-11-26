@@ -3,7 +3,8 @@ import SwiftData
 
 struct CalendarView: View {
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
-    
+    @Query(sort: \RestDay.date, order: .reverse) private var restDays: [RestDay]
+
     @State private var selectedDate: Date = Date()
     @State private var displayedMonth: Date = Date()
     
@@ -15,28 +16,39 @@ struct CalendarView: View {
                     CalendarGrid(
                         displayedMonth: $displayedMonth,
                         selectedDate: $selectedDate,
-                        sessions: sessions
+                        sessions: sessions,
+                        restDays: restDays
                     )
-                    
-                    // Sessions for selected date
+
+                    // Sessions and Rest Days for selected date
                     VStack(alignment: .leading, spacing: 16) {
                         HStack {
                             Text(selectedDate.formatted(as: "EEEE, MMMM d"))
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            
+
                             Spacer()
-                            
+
                             if !sessionsOnDate.isEmpty {
                                 Text("\(sessionsOnDate.count) workout\(sessionsOnDate.count > 1 ? "s" : "")")
                                     .font(.caption)
                                     .foregroundColor(.gray)
+                            } else if restDayOnDate != nil {
+                                Text("Rest Day")
+                                    .font(.caption)
+                                    .foregroundColor(.green)
                             }
                         }
-                        
-                        if sessionsOnDate.isEmpty {
+
+                        // Show rest day if exists
+                        if let restDay = restDayOnDate {
+                            RestDayRowView(restDay: restDay)
+                        }
+
+                        // Show workouts if they exist
+                        if sessionsOnDate.isEmpty && restDayOnDate == nil {
                             emptyStateView
-                        } else {
+                        } else if !sessionsOnDate.isEmpty {
                             VStack(spacing: 12) {
                                 ForEach(sessionsOnDate) { session in
                                     NavigationLink(destination: SessionDetailView(session: session)) {
@@ -78,7 +90,13 @@ struct CalendarView: View {
             Calendar.current.isDate(session.date, inSameDayAs: selectedDate) && session.isCompleted
         }
     }
-    
+
+    private var restDayOnDate: RestDay? {
+        restDays.first { restDay in
+            Calendar.current.isDate(restDay.date, inSameDayAs: selectedDate)
+        }
+    }
+
     private var emptyStateView: some View {
         VStack(spacing: 16) {
             ZStack {
@@ -112,7 +130,8 @@ struct CalendarGrid: View {
     @Binding var displayedMonth: Date
     @Binding var selectedDate: Date
     let sessions: [WorkoutSession]
-    
+    let restDays: [RestDay]
+
     private let calendar = Calendar.current
     private let daysOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     
@@ -175,7 +194,8 @@ struct CalendarGrid: View {
                             date: date,
                             isSelected: calendar.isDate(date, inSameDayAs: selectedDate),
                             isToday: calendar.isDateInToday(date),
-                            sessions: sessionsForDate(date)
+                            sessions: sessionsForDate(date),
+                            restDay: restDayForDate(date)
                         )
                         .onTapGesture {
                             withAnimation(.easeInOut(duration: 0.2)) {
@@ -234,6 +254,12 @@ struct CalendarGrid: View {
             calendar.isDate(session.date, inSameDayAs: date) && session.isCompleted
         }
     }
+
+    private func restDayForDate(_ date: Date) -> RestDay? {
+        restDays.first { restDay in
+            calendar.isDate(restDay.date, inSameDayAs: date)
+        }
+    }
 }
 
 // MARK: - Calendar Day View
@@ -242,21 +268,29 @@ struct CalendarDayView: View {
     let isSelected: Bool
     let isToday: Bool
     let sessions: [WorkoutSession]
-    
+    let restDay: RestDay?
+
     private let calendar = Calendar.current
-    
+
     var body: some View {
         VStack(spacing: 4) {
             Text("\(calendar.component(.day, from: date))")
                 .font(.system(size: 16, weight: isSelected ? .bold : .regular))
                 .foregroundColor(textColor)
-            
-            // Workout dots
-            HStack(spacing: 2) {
-                ForEach(sessions.prefix(3)) { session in
-                    Circle()
-                        .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName))
-                        .frame(width: 6, height: 6)
+
+            // Rest day indicator or workout dots
+            if restDay != nil, sessions.isEmpty {
+                Image(systemName: "figure.mind.and.body")
+                    .font(.system(size: 10))
+                    .foregroundColor(.green)
+            } else {
+                // Workout dots
+                HStack(spacing: 2) {
+                    ForEach(sessions.prefix(3)) { session in
+                        Circle()
+                            .fill(AppConstants.WorkoutColors.color(for: session.workoutDayName))
+                            .frame(width: 6, height: 6)
+                    }
                 }
             }
         }
@@ -335,6 +369,52 @@ struct SessionRowView: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.gray)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14)
+                .fill(Color.white.opacity(0.03))
+        )
+    }
+}
+
+// MARK: - Rest Day Row View
+struct RestDayRowView: View {
+    let restDay: RestDay
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.green.opacity(0.15))
+                    .frame(width: 50, height: 50)
+
+                Image(systemName: "figure.mind.and.body")
+                    .font(.system(size: 18, weight: .bold))
+                    .foregroundColor(.green)
+            }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Rest Day - \(restDay.type.rawValue.capitalized)")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+
+                HStack(spacing: 8) {
+                    if restDay.sleepDuration != nil {
+                        Label(restDay.formattedSleepDuration, systemImage: "bed.double.fill")
+                    }
+
+                    Label("Recovery: \(Int(restDay.recoveryScore * 100))%", systemImage: "heart.fill")
+                }
+                .font(.caption)
+                .foregroundColor(.gray)
+            }
+
+            Spacer()
+
+            Text(restDay.recoveryStatus.emoji)
+                .font(.title2)
         }
         .padding(14)
         .background(

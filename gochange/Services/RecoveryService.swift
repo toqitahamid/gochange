@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import HealthKit
+import Combine
 
 /// Service for managing recovery tracking and providing recommendations
 @MainActor
@@ -42,7 +43,11 @@ class RecoveryService: ObservableObject {
         let calendar = Calendar.current
         let targetDate = calendar.startOfDay(for: date)
 
-        var metrics = getTodaysRecoveryMetrics(context: context)
+        print("🔄 Syncing recovery data for: \(targetDate.formatted(date: .abbreviated, time: .omitted))")
+        print("   HealthKit available: \(healthKitService.isHealthKitAvailable)")
+        print("   HealthKit authorized: \(healthKitService.isAuthorized)")
+
+        let metrics = getTodaysRecoveryMetrics(context: context)
 
         // Fetch sleep data
         if let sleepData = await healthKitService.getSleepData(for: targetDate) {
@@ -50,22 +55,32 @@ class RecoveryService: ObservableObject {
             metrics.sleepQuality = sleepData.quality
             metrics.deepSleepDuration = sleepData.deepSleepDuration
             metrics.remSleepDuration = sleepData.remSleepDuration
+            print("✅ Sleep data synced")
+        } else {
+            print("⚠️ No sleep data available")
         }
 
         // Fetch resting heart rate
         if let restingHR = await healthKitService.getRestingHeartRate(for: targetDate) {
             metrics.restingHeartRate = restingHR
+            print("✅ Resting HR synced")
+        } else {
+            print("⚠️ No resting HR available")
         }
 
         // Fetch HRV
         if let hrv = await healthKitService.getHeartRateVariability(for: targetDate) {
             metrics.heartRateVariability = hrv
+            print("✅ HRV synced")
+        } else {
+            print("⚠️ No HRV available")
         }
 
         metrics.updatedAt = Date()
         try? context.save()
 
         self.todaysRecoveryMetrics = metrics
+        print("✅ Recovery sync complete")
         await generateRecoveryRecommendation(metrics: metrics, context: context)
     }
 
@@ -93,7 +108,6 @@ class RecoveryService: ObservableObject {
 
             for group in muscleGroups {
                 if muscleGroupMap[group] == nil {
-                    let daysSince = calendar.dateComponents([.day], from: session.date, to: today).day ?? 0
                     let intensity = calculateWorkoutIntensity(session: session)
                     muscleGroupMap[group] = (session.date, intensity)
                 }
@@ -115,7 +129,7 @@ class RecoveryService: ObservableObject {
         }
 
         // Update today's metrics
-        var metrics = getTodaysRecoveryMetrics(context: context)
+        let metrics = getTodaysRecoveryMetrics(context: context)
         metrics.muscleRecovery = muscleRecovery
         metrics.updatedAt = Date()
         try? context.save()
@@ -181,7 +195,7 @@ class RecoveryService: ObservableObject {
             }
         )
 
-        guard var restDay = try? context.fetch(descriptor).first else { return }
+        guard let restDay = try? context.fetch(descriptor).first else { return }
 
         // Fetch sleep data from HealthKit
         if let sleepData = await healthKitService.getSleepData(for: today) {
@@ -289,12 +303,8 @@ class RecoveryService: ObservableObject {
             groups.insert("Full Body")
         }
 
-        // Also extract from exercise logs if available
-        for exerciseLog in session.exerciseLogs {
-            if let muscleGroup = exerciseLog.muscleGroup, !muscleGroup.isEmpty {
-                groups.insert(muscleGroup)
-            }
-        }
+        // Muscle groups are already extracted from workout day name
+        // Exercise-specific muscle groups could be added here if needed
 
         return groups
     }
@@ -307,7 +317,7 @@ class RecoveryService: ObservableObject {
         var setCount = 0
 
         for exerciseLog in session.exerciseLogs {
-            for setLog in exerciseLog.setLogs where setLog.isCompleted {
+            for setLog in exerciseLog.sets where setLog.isCompleted {
                 if let rir = setLog.rir {
                     totalRIR += Double(rir)
                     setCount += 1

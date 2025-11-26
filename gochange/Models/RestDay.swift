@@ -93,10 +93,10 @@ enum RecoveryStatus: String {
 
     var color: String {
         switch self {
-        case .excellent: return "green"
-        case .good: return "blue"
-        case .fair: return "orange"
-        case .poor: return "red"
+        case .excellent: return "#00D4AA"  // Teal - matches app's primary accent
+        case .good: return "#64B5F6"       // Light Blue - matches settings icons
+        case .fair: return "#FFD54F"       // Gold/Yellow - matches notification icons
+        case .poor: return "#FF6B6B"       // Coral Red - matches app's red accent
         }
     }
 

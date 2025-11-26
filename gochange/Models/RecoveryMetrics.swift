@@ -140,10 +140,10 @@ enum TrainingReadiness: String {
 
     var color: String {
         switch self {
-        case .optimal: return "green"
-        case .ready: return "blue"
-        case .moderate: return "orange"
-        case .needsRest: return "red"
+        case .optimal: return "#00D4AA"    // Teal - matches app's primary accent
+        case .ready: return "#64B5F6"      // Light Blue - matches settings icons
+        case .moderate: return "#FFD54F"   // Gold/Yellow - matches notification icons
+        case .needsRest: return "#FF6B6B"  // Coral Red - matches app's red accent
         }
     }
 }

@@ -182,6 +182,34 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Recovery Section
+                    SettingsSection(title: "RECOVERY") {
+                        NavigationLink(destination: RecoveryDashboardView()) {
+                            HStack(spacing: 14) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color(hex: "#7B68EE").opacity(0.15))
+                                        .frame(width: 36, height: 36)
+
+                                    Image(systemName: "heart.text.square.fill")
+                                        .font(.system(size: 15))
+                                        .foregroundColor(Color(hex: "#7B68EE"))
+                                }
+
+                                Text("Recovery Dashboard")
+                                    .foregroundColor(.white)
+
+                                Spacer()
+
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .semibold))
+                                    .foregroundColor(.gray.opacity(0.5))
+                            }
+                            .padding(16)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // Analytics Section
                     SettingsSection(title: "ANALYTICS") {
                         NavigationLink(destination: AnalyticsDashboardView()) {

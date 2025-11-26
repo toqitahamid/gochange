@@ -6,9 +6,12 @@ struct HomeView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query(sort: \WorkoutDay.dayNumber) private var workoutDays: [WorkoutDay]
-    
+    @Query(sort: \RecoveryMetrics.date, order: .reverse) private var recoveryMetrics: [RecoveryMetrics]
+
     @State private var suggestedWorkout: WorkoutDay?
     @State private var cachedStreak: Int = 0
+    @State private var recoveryRecommendation: RecoveryRecommendation?
+    @StateObject private var recoveryService = RecoveryService.shared
 
     var body: some View {
         NavigationStack {
@@ -20,6 +23,11 @@ struct HomeView: View {
                     // Suggested Workout Card
                     if let suggested = suggestedWorkout {
                         suggestedWorkoutCard(suggested)
+                    }
+
+                    // Recovery Insights Card
+                    if let recommendation = recoveryRecommendation {
+                        recoveryInsightsCard(recommendation)
                     }
 
                     // Stats Row
@@ -47,10 +55,14 @@ struct HomeView: View {
             .onAppear {
                 updateSuggestedWorkout()
                 calculateStreak()
+                loadRecoveryData()
             }
             .onChange(of: sessions.count) { _, _ in
                 calculateStreak()
                 updateSuggestedWorkout()
+            }
+            .onChange(of: recoveryMetrics.count) { _, _ in
+                updateRecoveryRecommendation()
             }
         }
     }
@@ -403,6 +415,102 @@ struct HomeView: View {
         .padding(.vertical, 32)
     }
     
+    // MARK: - Recovery Insights Card
+    private func recoveryInsightsCard(_ recommendation: RecoveryRecommendation) -> some View {
+        NavigationLink(destination: RecoveryDashboardView()) {
+            VStack(alignment: .leading, spacing: 16) {
+                HStack {
+                    HStack(spacing: 8) {
+                        Image(systemName: "heart.text.square.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color(hex: recommendation.readiness.color))
+
+                        Text("RECOVERY")
+                            .font(.system(size: 11, weight: .bold))
+                            .tracking(1.5)
+                            .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Text("\(recommendation.scorePercentage)%")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1)
+                        .foregroundColor(Color(hex: recommendation.readiness.color))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 4)
+                        .background(Color(hex: recommendation.readiness.color).opacity(0.15))
+                        .cornerRadius(6)
+                }
+
+                HStack(spacing: 16) {
+                    // Recovery Icon
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: recommendation.readiness.color),
+                                        Color(hex: recommendation.readiness.color).opacity(0.7)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 64, height: 64)
+
+                        VStack(spacing: 2) {
+                            Text("\(recommendation.scorePercentage)")
+                                .font(.system(size: 18, weight: .bold, design: .rounded))
+                                .foregroundColor(.white)
+                            Text("%")
+                                .font(.system(size: 10, weight: .bold))
+                                .foregroundColor(.white.opacity(0.8))
+                        }
+                    }
+                    .shadow(color: Color(hex: recommendation.readiness.color).opacity(0.4), radius: 8, y: 4)
+
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(recommendation.readiness.rawValue)
+                            .font(.title2)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+
+                        Text(recommendation.shouldRest ? "Consider rest today" : "Ready to train")
+                            .font(.caption)
+                            .foregroundColor(.gray)
+                    }
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(20)
+            .background(
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white.opacity(0.05))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [
+                                        Color(hex: recommendation.readiness.color).opacity(0.3),
+                                        Color(hex: recommendation.readiness.color).opacity(0.1)
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+
     // MARK: - Computed Properties
     private var recentSessions: [WorkoutSession] {
         Array(sessions.filter { $0.isCompleted }.prefix(5))
@@ -470,6 +578,24 @@ struct HomeView: View {
             sessions: sessions,
             workoutDays: workoutDays
         )
+    }
+
+    private func loadRecoveryData() {
+        Task {
+            await recoveryService.syncRecoveryData(context: modelContext)
+            await recoveryService.updateMuscleRecovery(context: modelContext)
+            updateRecoveryRecommendation()
+        }
+    }
+
+    private func updateRecoveryRecommendation() {
+        let today = Calendar.current.startOfDay(for: Date())
+        if let todaysMetrics = recoveryMetrics.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
+            Task {
+                await recoveryService.generateRecoveryRecommendation(metrics: todaysMetrics, context: modelContext)
+                recoveryRecommendation = recoveryService.recoveryRecommendation
+            }
+        }
     }
 }
 

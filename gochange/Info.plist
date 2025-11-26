@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSHealthShareUsageDescription</key>
-	<string>GoChange needs access to your health data to read heart rate during workouts and display your workout history.</string>
+	<string>GoChange needs access to your health data to read heart rate, sleep analysis, HRV, and resting heart rate to provide personalized recovery insights and optimize your training.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>GoChange needs permission to save your completed workouts to Apple Health, including duration and estimated calories burned.</string>
 	<key>UIBackgroundModes</key>
