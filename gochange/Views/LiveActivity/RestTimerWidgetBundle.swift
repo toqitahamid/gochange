@@ -6,5 +6,6 @@ struct RestTimerWidgetBundle: WidgetBundle {
     var body: some Widget {
         RestTimerWidget()
         WorkoutActivityWidget()
+        GoChangeStaticWidget()
     }
 }

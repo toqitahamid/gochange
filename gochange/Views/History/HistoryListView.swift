@@ -2,10 +2,13 @@ import SwiftUI
 import SwiftData
 
 struct HistoryListView: View {
+    @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     
     @State private var selectedFilter: WorkoutFilter = .all
     @State private var searchText = ""
+    @State private var sessionToDelete: WorkoutSession?
+    @State private var showingDeleteAlert = false
     
     enum WorkoutFilter: String, CaseIterable {
         case all = "All"
@@ -18,6 +21,42 @@ struct HistoryListView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+                // Search Bar
+                HStack(spacing: 12) {
+                    HStack(spacing: 10) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 16))
+                            .foregroundColor(.gray)
+                        
+                        TextField("Search workouts or exercises", text: $searchText)
+                            .font(.system(size: 15))
+                            .foregroundColor(.white)
+                            .autocorrectionDisabled()
+                        
+                        if !searchText.isEmpty {
+                            Button {
+                                searchText = ""
+                            } label: {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.gray)
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(Color.white.opacity(0.08))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
+                
                 // Filter Pills
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 10) {
@@ -34,7 +73,7 @@ struct HistoryListView: View {
                         }
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 20)
+                    .padding(.top, 12)
                     .padding(.bottom, 16)
                 }
                 
@@ -59,6 +98,14 @@ struct HistoryListView: View {
                                                 HistoryRowView(session: session)
                                             }
                                             .buttonStyle(ScaleButtonStyle())
+                                            .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                                Button(role: .destructive) {
+                                                    sessionToDelete = session
+                                                    showingDeleteAlert = true
+                                                } label: {
+                                                    Label("Delete", systemImage: "trash")
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -78,7 +125,25 @@ struct HistoryListView: View {
                 .ignoresSafeArea()
             )
             .toolbar(.hidden, for: .navigationBar)
+            .alert("Delete Workout?", isPresented: $showingDeleteAlert) {
+                Button("Cancel", role: .cancel) {
+                    sessionToDelete = nil
+                }
+                Button("Delete", role: .destructive) {
+                    if let session = sessionToDelete {
+                        deleteSession(session)
+                    }
+                }
+            } message: {
+                Text("This will permanently delete this workout session and all its data. This action cannot be undone.")
+            }
         }
+    }
+    
+    private func deleteSession(_ session: WorkoutSession) {
+        modelContext.delete(session)
+        try? modelContext.save()
+        sessionToDelete = nil
     }
     
     private var filteredSessions: [WorkoutSession] {

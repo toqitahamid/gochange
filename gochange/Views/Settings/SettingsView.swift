@@ -15,6 +15,9 @@ struct SettingsView: View {
     @State private var showingImportSheet = false
     @State private var showingResetAlert = false
     @State private var exportData: Data?
+    @State private var showingReminderSettings = false
+    
+    @StateObject private var notificationService = NotificationService.shared
     
     private let dataService = DataService()
     private let mediaService = MediaService()
@@ -76,6 +79,46 @@ struct SettingsView: View {
                                     .foregroundColor(.white)
                             }
                             .tint(Color(hex: "#00D4AA"))
+                        }
+                    }
+                    
+                    // Notifications Section
+                    SettingsSection(title: "NOTIFICATIONS") {
+                        VStack(spacing: 0) {
+                            if !notificationService.isAuthorized && notificationService.authorizationStatus == .notDetermined {
+                                SettingsButton(icon: "bell.badge", iconColor: Color(hex: "#FFD54F"), title: "Enable Notifications") {
+                                    Task {
+                                        await notificationService.requestAuthorization()
+                                    }
+                                }
+                            } else if notificationService.isAuthorized {
+                                SettingsRow(icon: "bell.fill", iconColor: Color(hex: "#FFD54F")) {
+                                    HStack {
+                                        Text("Notifications")
+                                            .foregroundColor(.white)
+                                        Spacer()
+                                        Text("Enabled")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(Color(hex: "#00D4AA"))
+                                    }
+                                }
+                                
+                                Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
+                                
+                                SettingsButton(icon: "calendar.badge.clock", iconColor: Color(hex: "#64B5F6"), title: "Workout Reminders") {
+                                    showingReminderSettings = true
+                                }
+                            } else {
+                                SettingsRow(icon: "bell.slash", iconColor: .gray) {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text("Notifications Disabled")
+                                            .foregroundColor(.white)
+                                        Text("Enable in Settings app")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                            }
                         }
                     }
                     
@@ -193,6 +236,12 @@ struct SettingsView: View {
                 }
             } message: {
                 Text("This will delete all your workout history and reset exercises to defaults. This action cannot be undone.")
+            }
+            .sheet(isPresented: $showingReminderSettings) {
+                ReminderSettingsView(workoutDays: workoutDays)
+            }
+            .onAppear {
+                notificationService.checkAuthorizationStatus()
             }
         }
     }
@@ -370,6 +419,227 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
     
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+// MARK: - Reminder Settings View
+struct ReminderSettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    let workoutDays: [WorkoutDay]
+    
+    @State private var reminders: [WorkoutReminderSchedule] = []
+    @State private var selectedReminder: WorkoutReminderSchedule?
+    @State private var showingTimePicker = false
+    
+    // Days of week with typical workout mapping
+    private let weekdays = [
+        (2, "Monday"),
+        (3, "Tuesday"),
+        (4, "Wednesday"),
+        (5, "Thursday"),
+        (6, "Friday"),
+        (7, "Saturday"),
+        (1, "Sunday")
+    ]
+    
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 20) {
+                    Text("Set reminders to get notified when it's time to work out.")
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 20)
+                    
+                    VStack(spacing: 0) {
+                        ForEach(Array(reminders.enumerated()), id: \.element.id) { index, reminder in
+                            VStack(spacing: 0) {
+                                HStack {
+                                    VStack(alignment: .leading, spacing: 4) {
+                                        Text(reminder.weekdayName)
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundColor(.white)
+                                        
+                                        if reminder.isEnabled {
+                                            Text("\(reminder.timeString) • \(reminder.workoutName)")
+                                                .font(.caption)
+                                                .foregroundColor(Color(hex: "#00D4AA"))
+                                        }
+                                    }
+                                    
+                                    Spacer()
+                                    
+                                    Toggle("", isOn: Binding(
+                                        get: { reminder.isEnabled },
+                                        set: { newValue in
+                                            reminders[index].isEnabled = newValue
+                                            updateReminder(reminders[index])
+                                        }
+                                    ))
+                                    .tint(Color(hex: "#00D4AA"))
+                                }
+                                .padding(16)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    selectedReminder = reminder
+                                    showingTimePicker = true
+                                }
+                                
+                                if index < reminders.count - 1 {
+                                    Rectangle()
+                                        .fill(Color.white.opacity(0.1))
+                                        .frame(height: 1)
+                                        .padding(.leading, 16)
+                                }
+                            }
+                        }
+                    }
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                    )
+                    .padding(.horizontal, 20)
+                }
+                .padding(.top, 20)
+                .padding(.bottom, 100)
+            }
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .navigationTitle("Workout Reminders")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+            .sheet(isPresented: $showingTimePicker) {
+                if let reminder = selectedReminder,
+                   let index = reminders.firstIndex(where: { $0.id == reminder.id }) {
+                    ReminderTimePickerView(reminder: $reminders[index]) {
+                        updateReminder(reminders[index])
+                    }
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
+                }
+            }
+            .task {
+                await loadReminders()
+            }
+        }
+    }
+    
+    private func loadReminders() async {
+        let scheduledReminders = await NotificationService.shared.getScheduledReminders()
+        
+        var loadedReminders: [WorkoutReminderSchedule] = []
+        for (weekday, _) in weekdays {
+            let workoutName = workoutDays.first?.name ?? "Workout"
+            if let scheduled = scheduledReminders[weekday] {
+                loadedReminders.append(WorkoutReminderSchedule(
+                    weekday: weekday,
+                    isEnabled: true,
+                    hour: scheduled.hour,
+                    minute: scheduled.minute,
+                    workoutName: workoutName
+                ))
+            } else {
+                loadedReminders.append(WorkoutReminderSchedule(
+                    weekday: weekday,
+                    isEnabled: false,
+                    hour: 8,
+                    minute: 0,
+                    workoutName: workoutName
+                ))
+            }
+        }
+        reminders = loadedReminders
+    }
+    
+    private func updateReminder(_ reminder: WorkoutReminderSchedule) {
+        if reminder.isEnabled {
+            NotificationService.shared.scheduleWorkoutReminder(
+                weekday: reminder.weekday,
+                hour: reminder.hour,
+                minute: reminder.minute,
+                workoutName: reminder.workoutName
+            )
+        } else {
+            NotificationService.shared.cancelWorkoutReminder(weekday: reminder.weekday)
+        }
+    }
+}
+
+// MARK: - Reminder Time Picker View
+struct ReminderTimePickerView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var reminder: WorkoutReminderSchedule
+    let onSave: () -> Void
+    
+    @State private var selectedTime = Date()
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Text(reminder.weekdayName)
+                    .font(.title2)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                
+                DatePicker("", selection: $selectedTime, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                
+                Spacer()
+            }
+            .padding(20)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .navigationTitle("Set Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let components = Calendar.current.dateComponents([.hour, .minute], from: selectedTime)
+                        reminder.hour = components.hour ?? 8
+                        reminder.minute = components.minute ?? 0
+                        reminder.isEnabled = true
+                        onSave()
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                var components = DateComponents()
+                components.hour = reminder.hour
+                components.minute = reminder.minute
+                selectedTime = Calendar.current.date(from: components) ?? Date()
+            }
+        }
+    }
 }
 
 #Preview {

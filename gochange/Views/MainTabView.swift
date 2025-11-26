@@ -54,9 +54,10 @@ struct MainTabView: View {
                 .tag(4)
         }
         .tint(AppTheme.accent)
-        .safeAreaInset(edge: .bottom) {
+        .overlay(alignment: .bottom) {
             if workoutManager.isWorkoutActive && workoutManager.isMinimized {
                 MiniPlayerView()
+                    .padding(.bottom, 49) // Standard tab bar height
                     .transition(.move(edge: .bottom))
             }
         }

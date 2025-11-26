@@ -83,11 +83,19 @@ struct ActiveWorkoutView: View {
             
             ScrollView {
                 VStack(spacing: 16) {
-                    // Timer Card with Rest Button
+                    // Timer Card with Rest Button and Notes
                     if let startTime = workoutManager.startTime {
-                        WorkoutTimerCard(startTime: startTime, accentColor: accentColor, onRestTap: {
-                            workoutManager.showingRestTimer = true
-                        })
+                        WorkoutTimerCard(
+                            startTime: startTime,
+                            accentColor: accentColor,
+                            onRestTap: {
+                                workoutManager.showingRestTimer = true
+                            },
+                            onNotesTap: {
+                                workoutManager.showingSessionNotes = true
+                            },
+                            hasNotes: !workoutManager.sessionNotes.isEmpty
+                        )
                     }
                     
                     // Exercise List
@@ -97,6 +105,7 @@ struct ActiveWorkoutView: View {
                             exercise: getExercise(for: exerciseLog),
                             accentColor: accentColor,
                             isExpanded: expandedExercise == exerciseLog.id,
+                            previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
                             onToggleExpand: {
                                 withAnimation(.easeInOut(duration: 0.25)) {
                                     if expandedExercise == exerciseLog.id {
@@ -160,6 +169,11 @@ struct ActiveWorkoutView: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $workoutManager.showingSessionNotes) {
+            SessionNotesSheet(notes: $workoutManager.sessionNotes)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
@@ -197,45 +211,62 @@ struct WorkoutTimerCard: View {
     let startTime: Date
     let accentColor: Color
     let onRestTap: () -> Void
+    let onNotesTap: () -> Void
+    let hasNotes: Bool
     @State private var elapsed: TimeInterval = 0
     
     private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
-        HStack {
-            VStack(alignment: .leading, spacing: 6) {
-                Text("WORKOUT TIME")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.5)
-                    .foregroundColor(.gray)
-                
-                Text(elapsed.formattedDuration)
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
-            }
-            
-            Spacer()
-            
-            // Rest Timer Button
-            Button(action: onRestTap) {
-                HStack(spacing: 8) {
-                    Image(systemName: "timer")
-                        .font(.system(size: 16))
-                    Text("Rest")
-                        .font(.system(size: 15, weight: .semibold))
+        VStack(spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("WORKOUT TIME")
+                        .font(.system(size: 11, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(.gray)
+                    
+                    Text(elapsed.formattedDuration)
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
                 }
-                .foregroundColor(.white)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 12)
-                .background(
-                    LinearGradient(
-                        colors: [accentColor, accentColor.opacity(0.8)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .cornerRadius(25)
-                .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
+                
+                Spacer()
+                
+                VStack(spacing: 10) {
+                    // Rest Timer Button
+                    Button(action: onRestTap) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "timer")
+                                .font(.system(size: 16))
+                            Text("Rest")
+                                .font(.system(size: 15, weight: .semibold))
+                        }
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 20)
+                        .padding(.vertical, 12)
+                        .background(
+                            LinearGradient(
+                                colors: [accentColor, accentColor.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .cornerRadius(25)
+                        .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
+                    }
+                    
+                    // Notes Button
+                    Button(action: onNotesTap) {
+                        HStack(spacing: 6) {
+                            Image(systemName: hasNotes ? "note.text" : "note.text.badge.plus")
+                                .font(.system(size: 14))
+                            Text("Notes")
+                                .font(.system(size: 13, weight: .medium))
+                        }
+                        .foregroundColor(hasNotes ? Color(hex: "#00D4AA") : .gray)
+                    }
+                }
             }
         }
         .padding(24)
@@ -259,10 +290,13 @@ struct ExerciseLogCard: View {
     let exercise: Exercise?
     let accentColor: Color
     let isExpanded: Bool
+    let previousSets: [PreviousSetInfo]
     let onToggleExpand: () -> Void
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
+    
+    @State private var showingNotes = false
     
     private var completedSets: Int {
         exerciseLog.sets.filter { $0.isCompleted }.count
@@ -278,9 +312,17 @@ struct ExerciseLogCard: View {
             Button(action: onToggleExpand) {
                 HStack(spacing: 14) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(exerciseLog.exerciseName)
-                            .font(.system(size: 17, weight: .semibold))
-                            .foregroundColor(.white)
+                        HStack(spacing: 6) {
+                            Text(exerciseLog.exerciseName)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.white)
+                            
+                            if exerciseLog.notes != nil {
+                                Image(systemName: "note.text")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(Color(hex: "#00D4AA"))
+                            }
+                        }
                         
                         if let exercise = exercise {
                             Text("\(exercise.muscleGroup) • \(exercise.defaultSets) × \(exercise.defaultReps)")
@@ -337,26 +379,44 @@ struct ExerciseLogCard: View {
                     
                     // Set Rows
                     ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
+                        let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
                         SetInputRow(
                             setLog: $exerciseLog.sets[index],
                             accentColor: accentColor,
+                            previousSet: previousSet,
                             onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
                             onToggleCompletion: { onToggleSetCompletion(index) }
                         )
                     }
                     
-                    // Add Set Button
-                    Button(action: onAddSet) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 16))
-                            Text("Add Set")
-                                .font(.system(size: 14, weight: .semibold))
+                    // Bottom Row with Add Set and Notes
+                    HStack {
+                        Button(action: onAddSet) {
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.system(size: 16))
+                                Text("Add Set")
+                                    .font(.system(size: 14, weight: .semibold))
+                            }
+                            .foregroundColor(accentColor)
                         }
-                        .foregroundColor(accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                        
+                        Spacer()
+                        
+                        Button {
+                            showingNotes = true
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: exerciseLog.notes != nil ? "note.text" : "note.text.badge.plus")
+                                    .font(.system(size: 14))
+                                Text("Notes")
+                                    .font(.system(size: 13, weight: .medium))
+                            }
+                            .foregroundColor(exerciseLog.notes != nil ? Color(hex: "#00D4AA") : .gray)
+                        }
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
                 }
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
@@ -373,6 +433,11 @@ struct ExerciseLogCard: View {
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
+        .sheet(isPresented: $showingNotes) {
+            ExerciseNotesSheet(exerciseName: exerciseLog.exerciseName, notes: $exerciseLog.notes)
+                .presentationDetents([.medium])
+                .presentationDragIndicator(.visible)
+        }
     }
 }
 
@@ -380,11 +445,19 @@ struct ExerciseLogCard: View {
 struct SetInputRow: View {
     @Binding var setLog: SetLog
     let accentColor: Color
+    let previousSet: PreviousSetInfo?
     let onRemove: (() -> Void)?
     let onToggleCompletion: () -> Void
     
     @State private var weightText: String = ""
     @State private var repsText: String = ""
+    
+    private var previousDataText: String? {
+        guard let prev = previousSet,
+              let weight = prev.weight,
+              let reps = prev.reps else { return nil }
+        return "\(Int(weight))×\(reps)"
+    }
     
     var body: some View {
         HStack(spacing: 0) {
@@ -394,11 +467,19 @@ struct SetInputRow: View {
                 .foregroundColor(.white)
                 .frame(width: 40, alignment: .center)
             
-            // Target Reps
-            Text(setLog.targetReps)
-                .font(.system(size: 13))
-                .foregroundColor(.gray)
-                .frame(width: 55, alignment: .center)
+            // Target Reps with Previous Data
+            VStack(spacing: 2) {
+                Text(setLog.targetReps)
+                    .font(.system(size: 13))
+                    .foregroundColor(.gray)
+                
+                if let prevText = previousDataText {
+                    Text(prevText)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(Color(hex: "#00D4AA").opacity(0.7))
+                }
+            }
+            .frame(width: 55, alignment: .center)
             
             // Weight Input
             HStack(spacing: 4) {
@@ -493,6 +574,137 @@ struct SetInputRow: View {
             }
             if let reps = setLog.actualReps {
                 repsText = String(reps)
+            }
+        }
+    }
+}
+
+// MARK: - Session Notes Sheet
+struct SessionNotesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var notes: String
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("WORKOUT NOTES")
+                        .font(.system(size: 12, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(.gray)
+                    
+                    TextEditor(text: $notes)
+                        .scrollContentBackground(.hidden)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .frame(minHeight: 150)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                        )
+                    
+                    Text("Add any notes about this workout - how you felt, adjustments made, etc.")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+            }
+            .padding(.top, 20)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .navigationTitle("Notes")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Exercise Notes Sheet
+struct ExerciseNotesSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    let exerciseName: String
+    @Binding var notes: String?
+    @State private var localNotes: String = ""
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                VStack(alignment: .leading, spacing: 12) {
+                    Text("EXERCISE NOTES")
+                        .font(.system(size: 12, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(.gray)
+                    
+                    TextEditor(text: $localNotes)
+                        .scrollContentBackground(.hidden)
+                        .font(.system(size: 15))
+                        .foregroundColor(.white)
+                        .frame(minHeight: 150)
+                        .padding(16)
+                        .background(
+                            RoundedRectangle(cornerRadius: 16)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                )
+                        )
+                    
+                    Text("Add notes specific to \(exerciseName)")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+            }
+            .padding(.top, 20)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .navigationTitle(exerciseName)
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        notes = localNotes.isEmpty ? nil : localNotes
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                localNotes = notes ?? ""
             }
         }
     }

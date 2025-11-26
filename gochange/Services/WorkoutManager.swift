@@ -1,6 +1,55 @@
 import SwiftUI
 import SwiftData
 import Combine
+import WidgetKit
+
+// MARK: - Previous Set Info
+struct PreviousSetInfo {
+    let setNumber: Int
+    let weight: Double?
+    let reps: Int?
+    let weightUnit: SetLog.WeightUnit
+}
+
+// MARK: - Widget Data Model (shared with widget)
+struct WidgetWorkoutData: Codable {
+    let workoutsThisWeek: Int
+    let totalWorkoutDays: Int
+    let currentStreak: Int
+    let nextWorkoutName: String?
+    let lastUpdated: Date
+    
+    static let placeholder = WidgetWorkoutData(
+        workoutsThisWeek: 2,
+        totalWorkoutDays: 4,
+        currentStreak: 3,
+        nextWorkoutName: "Push",
+        lastUpdated: Date()
+    )
+}
+
+// MARK: - Widget Data Manager
+class WidgetDataManager {
+    static let shared = WidgetDataManager()
+    
+    private let userDefaults = UserDefaults(suiteName: "group.com.toqitahamid.gochange") ?? UserDefaults.standard
+    private let dataKey = "widgetWorkoutData"
+    
+    func saveData(_ data: WidgetWorkoutData) {
+        if let encoded = try? JSONEncoder().encode(data) {
+            userDefaults.set(encoded, forKey: dataKey)
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+    }
+    
+    func loadData() -> WidgetWorkoutData {
+        guard let data = userDefaults.data(forKey: dataKey),
+              let decoded = try? JSONDecoder().decode(WidgetWorkoutData.self, from: data) else {
+            return WidgetWorkoutData.placeholder
+        }
+        return decoded
+    }
+}
 
 @MainActor
 class WorkoutManager: ObservableObject {
@@ -12,6 +61,11 @@ class WorkoutManager: ObservableObject {
     @Published var isMinimized = false
     @Published var showingRestTimer = false
     @Published var currentWorkoutDay: WorkoutDay?
+    @Published var sessionNotes: String = ""
+    @Published var showingSessionNotes = false
+    
+    // Previous workout data for reference
+    @Published var previousSetData: [UUID: [PreviousSetInfo]] = [:]  // exerciseId -> sets
     
     // MARK: - Dependencies
     private var modelContext: ModelContext?
@@ -51,11 +105,53 @@ class WorkoutManager: ObservableObject {
         self.isWorkoutActive = true
         self.isMinimized = false
         
+        // Fetch previous workout data for reference
+        fetchPreviousWorkoutData(for: workoutDay)
+        
         // Setup logs
         setupExerciseLogs(for: workoutDay)
         
         // Start Live Activity
         startWorkoutLiveActivity(workoutDay: workoutDay)
+    }
+    
+    private func fetchPreviousWorkoutData(for workoutDay: WorkoutDay) {
+        guard let context = modelContext else { return }
+        
+        // Capture the UUID value for the predicate
+        let workoutDayId = workoutDay.id
+        
+        // Fetch completed sessions for this workout day
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { session in
+                session.workoutDayId == workoutDayId && session.isCompleted
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        
+        guard let sessions = try? context.fetch(descriptor),
+              let lastSession = sessions.first else {
+            previousSetData = [:]
+            return
+        }
+        
+        // Build previous set data dictionary
+        var data: [UUID: [PreviousSetInfo]] = [:]
+        for exerciseLog in lastSession.exerciseLogs {
+            let sets = exerciseLog.sets
+                .filter { $0.isCompleted }
+                .sorted { $0.setNumber < $1.setNumber }
+                .map { setLog in
+                    PreviousSetInfo(
+                        setNumber: setLog.setNumber,
+                        weight: setLog.weight,
+                        reps: setLog.actualReps,
+                        weightUnit: setLog.weightUnit
+                    )
+                }
+            data[exerciseLog.exerciseId] = sets
+        }
+        previousSetData = data
     }
     
     func minimize() {
@@ -81,6 +177,7 @@ class WorkoutManager: ObservableObject {
         session.endTime = Date()
         session.duration = session.endTime?.timeIntervalSince(startTime)
         session.isCompleted = true
+        session.notes = sessionNotes.isEmpty ? nil : sessionNotes
         
         // Attach logs
         for log in exerciseLogs {
@@ -91,7 +188,64 @@ class WorkoutManager: ObservableObject {
         context.insert(session)
         try? context.save()
         
+        // Update widget data
+        updateWidgetData(context: context)
+        
         resetState()
+    }
+    
+    private func updateWidgetData(context: ModelContext) {
+        // Fetch all completed sessions
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { session in
+                session.isCompleted
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        
+        guard let sessions = try? context.fetch(descriptor) else { return }
+        
+        // Calculate this week's workouts
+        let calendar = Calendar.current
+        let startOfWeek = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: Date())) ?? Date()
+        let workoutsThisWeek = sessions.filter { $0.date >= startOfWeek }.count
+        
+        // Get total workout days from workout days
+        let workoutDaysDescriptor = FetchDescriptor<WorkoutDay>()
+        let totalWorkoutDays = (try? context.fetch(workoutDaysDescriptor).count) ?? 4
+        
+        // Calculate streak (weeks with at least one workout)
+        var streak = 0
+        var checkDate = Date()
+        while true {
+            let weekStart = calendar.date(from: calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: checkDate)) ?? checkDate
+            let weekEnd = calendar.date(byAdding: .day, value: 7, to: weekStart) ?? checkDate
+            
+            let hasWorkoutInWeek = sessions.contains { $0.date >= weekStart && $0.date < weekEnd }
+            if hasWorkoutInWeek || calendar.isDate(checkDate, equalTo: Date(), toGranularity: .weekOfYear) {
+                if hasWorkoutInWeek {
+                    streak += 1
+                }
+                checkDate = calendar.date(byAdding: .day, value: -7, to: checkDate) ?? checkDate
+            } else {
+                break
+            }
+        }
+        
+        // Get next suggested workout
+        let workoutDays = (try? context.fetch(workoutDaysDescriptor)) ?? []
+        let nextWorkoutName = workoutDays.first?.name
+        
+        // Save widget data
+        let widgetData = WidgetWorkoutData(
+            workoutsThisWeek: workoutsThisWeek,
+            totalWorkoutDays: totalWorkoutDays,
+            currentStreak: streak,
+            nextWorkoutName: nextWorkoutName,
+            lastUpdated: Date()
+        )
+        
+        WidgetDataManager.shared.saveData(widgetData)
     }
     
     private func resetState() {
@@ -102,6 +256,9 @@ class WorkoutManager: ObservableObject {
         isWorkoutActive = false
         isMinimized = false
         showingRestTimer = false
+        sessionNotes = ""
+        showingSessionNotes = false
+        previousSetData = [:]
     }
     
     // MARK: - Exercise Management

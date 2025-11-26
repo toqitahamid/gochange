@@ -230,8 +230,13 @@ struct RestTimerView: View {
     
     private func startTimer() {
         isRunning = true
+        let endTime = Date().addingTimeInterval(remainingTime)
+        
         // Start Live Activity
-        RestTimerActivityManager.shared.start(endTime: Date().addingTimeInterval(remainingTime))
+        RestTimerActivityManager.shared.start(endTime: endTime)
+        
+        // Schedule background notification
+        NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
         
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { _ in
             if remainingTime > 0 {
@@ -248,6 +253,8 @@ struct RestTimerView: View {
         timer = nil
         // End Live Activity
         RestTimerActivityManager.shared.end()
+        // Cancel background notification
+        NotificationService.shared.cancelRestTimerNotification()
     }
     
     private func stopTimer() {

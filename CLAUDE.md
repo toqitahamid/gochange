@@ -91,6 +91,13 @@ All models are SwiftData `@Model` classes with relationships:
 - **MediaService** (`gochange/Services/MediaService.swift`):
   - Photo/video handling for exercise form reference
 
+- **NotificationService** (`gochange/Services/NotificationService.swift`):
+  - Singleton managing local notifications and authorization
+  - Rest timer completion notifications
+  - Scheduled workout reminders (recurring based on weekday)
+  - Methods: requestAuthorization(), scheduleRestTimerNotification(endTime:), scheduleWorkoutReminder(weekday:hour:minute:workoutName:)
+  - Uses UNUserNotificationCenter for local notifications
+
 ### ViewModels
 
 - **WorkoutViewModel** (`gochange/ViewModels/WorkoutViewModel.swift`):
@@ -157,6 +164,15 @@ The `GoChangeWidget` target is a Widget Extension containing:
 - Widget UI in Views/LiveActivity/RestTimerWidget.swift
 - Bundle identifier: com.toqitahamid.gochange.GoChangeWidget
 
+### Static Home Screen Widget
+- **GoChangeStaticWidget** (`gochange/Views/LiveActivity/GoChangeStaticWidget.swift`):
+  - WidgetKit-based home screen widget showing weekly progress
+  - Supports small and medium widget sizes
+  - Shows: workouts completed this week, weekly streak, next suggested workout
+  - Uses App Groups for data sharing: `group.com.toqitahamid.gochange`
+  - WidgetDataManager syncs data between main app and widget extension
+  - Updates every hour via Timeline
+
 ## Dependencies
 
 - **FSCalendar** (v2.8.4+): Calendar UI component via Swift Package Manager
@@ -215,6 +231,7 @@ gochange/
 │   ├── WorkoutManager.swift
 │   ├── RestTimerActivityManager.swift
 │   ├── WorkoutActivityManager.swift
+│   ├── NotificationService.swift
 │   ├── DataService.swift
 │   └── MediaService.swift
 └── Utilities/                    # Extensions and constants

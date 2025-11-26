@@ -2,9 +2,16 @@ import SwiftUI
 import SwiftData
 
 struct SessionDetailView: View {
-    let session: WorkoutSession
+    @Bindable var session: WorkoutSession
     
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    
+    @State private var showingDeleteAlert = false
+    @State private var showingTimeEdit = false
+    @State private var editStartTime: Date = Date()
+    @State private var editEndTime: Date = Date()
+    @State private var isEditMode = false
     
     private var accentColor: Color {
         AppConstants.WorkoutColors.color(for: session.workoutDayName)
@@ -36,6 +43,68 @@ struct SessionDetailView: View {
         .navigationTitle(session.workoutDayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                HStack(spacing: 16) {
+                    Button {
+                        if isEditMode {
+                            // Save changes when exiting edit mode
+                            try? modelContext.save()
+                        }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            isEditMode.toggle()
+                        }
+                    } label: {
+                        Text(isEditMode ? "Done" : "Edit")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundColor(Color(hex: "#00D4AA"))
+                    }
+                    
+                    if !isEditMode {
+                        Button {
+                            showingDeleteAlert = true
+                        } label: {
+                            Image(systemName: "trash")
+                                .foregroundColor(Color(hex: "#FF6B6B"))
+                        }
+                    }
+                }
+            }
+        }
+        .alert("Delete Workout?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete", role: .destructive) {
+                deleteSession()
+            }
+        } message: {
+            Text("This will permanently delete this workout session and all its data. This action cannot be undone.")
+        }
+        .sheet(isPresented: $showingTimeEdit) {
+            TimeEditSheet(
+                startTime: $editStartTime,
+                endTime: $editEndTime,
+                onSave: {
+                    saveTimeChanges()
+                }
+            )
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
+        }
+    }
+    
+    private func deleteSession() {
+        modelContext.delete(session)
+        try? modelContext.save()
+        dismiss()
+    }
+    
+    private func saveTimeChanges() {
+        session.startTime = editStartTime
+        session.endTime = editEndTime
+        session.duration = editEndTime.timeIntervalSince(editStartTime)
+        // Also update the date to match start time's date
+        session.date = Calendar.current.startOfDay(for: editStartTime)
+        try? modelContext.save()
     }
     
     // MARK: - Header Card
@@ -69,9 +138,24 @@ struct SessionDetailView: View {
                     .font(.subheadline)
                     .foregroundColor(.gray)
                 
-                Text(session.startTime.formatted(as: "h:mm a"))
+                // Tappable time display
+                Button {
+                    editStartTime = session.startTime
+                    editEndTime = session.endTime ?? session.startTime
+                    showingTimeEdit = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(session.startTime.formatted(as: "h:mm a"))
+                        if let endTime = session.endTime {
+                            Text("-")
+                            Text(endTime.formatted(as: "h:mm a"))
+                        }
+                        Image(systemName: "pencil")
+                            .font(.system(size: 10))
+                    }
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(Color(hex: "#00D4AA"))
+                }
             }
         }
         .frame(maxWidth: .infinity)
@@ -129,15 +213,29 @@ struct SessionDetailView: View {
     // MARK: - Exercise Section
     private var exerciseSection: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("EXERCISES")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(1.5)
-                .foregroundColor(.gray)
-                .padding(.horizontal, 4)
+            HStack {
+                Text("EXERCISES")
+                    .font(.system(size: 12, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal, 4)
+                
+                Spacer()
+                
+                if isEditMode {
+                    Text("Tap values to edit")
+                        .font(.system(size: 11))
+                        .foregroundColor(Color(hex: "#00D4AA"))
+                }
+            }
             
             VStack(spacing: 12) {
                 ForEach(session.exerciseLogs.sorted { $0.order < $1.order }) { exerciseLog in
-                    SessionExerciseDetailCard(exerciseLog: exerciseLog)
+                    EditableSessionExerciseCard(
+                        exerciseLog: exerciseLog,
+                        isEditMode: isEditMode,
+                        onSave: { try? modelContext.save() }
+                    )
                 }
             }
         }
@@ -164,6 +262,104 @@ struct SessionDetailView: View {
             return String(format: "%.1fk", volume / 1000)
         }
         return String(format: "%.0f", volume)
+    }
+}
+
+// MARK: - Time Edit Sheet
+struct TimeEditSheet: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var startTime: Date
+    @Binding var endTime: Date
+    let onSave: () -> Void
+    
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("EDIT WORKOUT TIME")
+                        .font(.system(size: 12, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(.gray)
+                    
+                    VStack(spacing: 16) {
+                        // Start Time
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Start Time")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            DatePicker("", selection: $startTime)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                        }
+                        
+                        // End Time
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("End Time")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            
+                            DatePicker("", selection: $endTime, in: startTime...)
+                                .datePickerStyle(.compact)
+                                .labelsHidden()
+                        }
+                        
+                        // Duration Preview
+                        HStack {
+                            Text("Duration")
+                                .font(.subheadline)
+                                .foregroundColor(.gray)
+                            Spacer()
+                            Text(calculatedDuration.formattedDuration)
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(Color(hex: "#00D4AA"))
+                        }
+                        .padding(.top, 8)
+                    }
+                    .padding(20)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.white.opacity(0.05))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                            )
+                    )
+                }
+                .padding(.horizontal, 20)
+                
+                Spacer()
+            }
+            .padding(.top, 20)
+            .background(
+                LinearGradient(
+                    colors: [Color.black, Color(hex: "#0A1628")],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+            )
+            .navigationTitle("Edit Time")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        onSave()
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+    
+    private var calculatedDuration: TimeInterval {
+        endTime.timeIntervalSince(startTime)
     }
 }
 
@@ -207,9 +403,11 @@ struct SessionStatCard: View {
     }
 }
 
-// MARK: - Session Exercise Detail Card
-struct SessionExerciseDetailCard: View {
-    let exerciseLog: ExerciseLog
+// MARK: - Editable Session Exercise Card
+struct EditableSessionExerciseCard: View {
+    @Bindable var exerciseLog: ExerciseLog
+    let isEditMode: Bool
+    let onSave: () -> Void
     
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -244,30 +442,7 @@ struct SessionExerciseDetailCard: View {
                 // Rows
                 ForEach(exerciseLog.sets.sorted { $0.setNumber < $1.setNumber }) { setLog in
                     if setLog.isCompleted {
-                        HStack {
-                            Text("\(setLog.setNumber)")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(.white)
-                                .frame(width: 40, alignment: .leading)
-                            
-                            Text(setLog.weight != nil ? "\(String(format: "%.1f", setLog.weight!)) \(setLog.weightUnit.rawValue)" : "-")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                                .frame(width: 80, alignment: .center)
-                            
-                            Text(setLog.actualReps != nil ? "\(setLog.actualReps!)" : "-")
-                                .font(.system(size: 14))
-                                .foregroundColor(.white)
-                                .frame(width: 50, alignment: .center)
-                            
-                            Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .gray)
-                                .frame(width: 40, alignment: .center)
-                            
-                            Spacer()
-                        }
-                        .padding(.vertical, 10)
+                        EditableSetRow(setLog: setLog, isEditMode: isEditMode, onSave: onSave)
                     }
                 }
             }
@@ -283,12 +458,118 @@ struct SessionExerciseDetailCard: View {
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white.opacity(isEditMode ? 0.08 : 0.05))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        .stroke(isEditMode ? Color(hex: "#00D4AA").opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
                 )
         )
+    }
+}
+
+// MARK: - Editable Set Row
+struct EditableSetRow: View {
+    @Bindable var setLog: SetLog
+    let isEditMode: Bool
+    let onSave: () -> Void
+    
+    @State private var weightText: String = ""
+    @State private var repsText: String = ""
+    @State private var showingRIRPicker = false
+    
+    var body: some View {
+        HStack {
+            Text("\(setLog.setNumber)")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundColor(.white)
+                .frame(width: 40, alignment: .leading)
+            
+            // Weight
+            if isEditMode {
+                TextField("0", text: $weightText)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.center)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 60)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.15))
+                    .cornerRadius(6)
+                    .onChange(of: weightText) { _, newValue in
+                        setLog.weight = Double(newValue)
+                        onSave()
+                    }
+                Text(setLog.weightUnit.rawValue)
+                    .font(.system(size: 11))
+                    .foregroundColor(.gray)
+                    .frame(width: 20, alignment: .leading)
+            } else {
+                Text(setLog.weight != nil ? "\(String(format: "%.1f", setLog.weight!)) \(setLog.weightUnit.rawValue)" : "-")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .frame(width: 80, alignment: .center)
+            }
+            
+            // Reps
+            if isEditMode {
+                TextField("0", text: $repsText)
+                    .keyboardType(.numberPad)
+                    .multilineTextAlignment(.center)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 44)
+                    .padding(.vertical, 6)
+                    .background(Color.white.opacity(0.15))
+                    .cornerRadius(6)
+                    .onChange(of: repsText) { _, newValue in
+                        setLog.actualReps = Int(newValue)
+                        onSave()
+                    }
+            } else {
+                Text(setLog.actualReps != nil ? "\(setLog.actualReps!)" : "-")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white)
+                    .frame(width: 50, alignment: .center)
+            }
+            
+            // RIR
+            if isEditMode {
+                Menu {
+                    ForEach(0...5, id: \.self) { rir in
+                        Button {
+                            setLog.rir = rir
+                            onSave()
+                        } label: {
+                            Label(AppConstants.RIR.label(for: rir), systemImage: setLog.rir == rir ? "checkmark" : "")
+                        }
+                    }
+                } label: {
+                    Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(setLog.rir != nil ? Color(hex: "#00D4AA") : .gray)
+                        .frame(width: 32)
+                        .padding(.vertical, 6)
+                        .background(Color.white.opacity(0.15))
+                        .cornerRadius(6)
+                }
+            } else {
+                Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .gray)
+                    .frame(width: 40, alignment: .center)
+            }
+            
+            Spacer()
+        }
+        .padding(.vertical, 10)
+        .onAppear {
+            if let weight = setLog.weight {
+                weightText = String(format: "%.0f", weight)
+            }
+            if let reps = setLog.actualReps {
+                repsText = String(reps)
+            }
+        }
     }
 }
 
