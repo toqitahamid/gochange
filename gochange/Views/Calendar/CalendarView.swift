@@ -405,7 +405,9 @@ struct RestDayRowView: View {
                         Label(restDay.formattedSleepDuration, systemImage: "bed.double.fill")
                     }
 
-                    Label("Recovery: \(Int(restDay.recoveryScore * 100))%", systemImage: "heart.fill")
+                    if let score = restDay.recoveryScore {
+                        Label("Recovery: \(Int(score * 100))%", systemImage: "heart.fill")
+                    }
                 }
                 .font(.caption)
                 .foregroundColor(.gray)
@@ -413,8 +415,10 @@ struct RestDayRowView: View {
 
             Spacer()
 
-            Text(restDay.recoveryStatus.emoji)
-                .font(.title2)
+            if let status = restDay.recoveryStatus {
+                Text(status.emoji)
+                    .font(.title2)
+            }
         }
         .padding(14)
         .background(

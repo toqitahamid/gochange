@@ -154,10 +154,10 @@ class RecoveryService: ObservableObject {
         date: Date = Date(),
         type: RestDayType,
         notes: String? = nil,
-        quality: Int = 3,
+        quality: Int? = nil,
         musclesSore: [String] = [],
-        energyLevel: Int = 3,
-        stressLevel: Int = 3,
+        energyLevel: Int? = nil,
+        stressLevel: Int? = nil,
         context: ModelContext
     ) {
         let calendar = Calendar.current

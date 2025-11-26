@@ -32,19 +32,23 @@ struct RecoveryDashboardView: View {
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity, minHeight: 200)
                     } else {
-                        if !healthKitService.isAuthorized {
+                        // Only show prompt if:
+                        // 1. Not authorized (workout write not granted), OR
+                        // 2. Read permissions are explicitly denied
+                        // Note: .notDetermined for read permissions is normal and means "granted"
+                        if !healthKitService.isAuthorized || healthKitService.hasDeniedReadPermissions {
                             healthKitPromptCard
                         }
 
                         if let metrics = todaysMetrics {
                             // Only show recommendation if we have real data
                             if metrics.hasRealData, let recommendation = recoveryService.recoveryRecommendation {
-                                readinessCard(recommendation)
-                            }
-                            
+                            readinessCard(recommendation)
+                        }
+
                             // Only show recovery score if we have real data
                             if metrics.hasRealData {
-                                recoveryScoreCard(metrics)
+                            recoveryScoreCard(metrics)
                             }
                             
                             sleepCard(metrics)
@@ -106,7 +110,13 @@ struct RecoveryDashboardView: View {
             }
         }
         .task {
+            // Refresh authorization status when view appears
+            healthKitService.checkAuthorizationStatus()
             await loadData()
+        }
+        .onAppear {
+            // Also check when view appears (in case permissions changed)
+            healthKitService.checkAuthorizationStatus()
         }
     }
 
@@ -123,16 +133,33 @@ struct RecoveryDashboardView: View {
                 )
 
             VStack(spacing: 8) {
-                Text("Enable HealthKit Integration")
+                Text(healthKitService.hasDeniedReadPermissions ? "HealthKit Permissions Denied" : "Enable HealthKit Integration")
                     .font(.headline)
                     .foregroundColor(.white)
 
-                Text("Track sleep, heart rate, and HRV for personalized recovery insights")
+                Text(healthKitService.hasDeniedReadPermissions ? 
+                     "Read permissions for sleep, heart rate, and HRV were denied. Please enable them in Settings > Health > Data Access & Devices > GoChange." :
+                     "Track sleep, heart rate, and HRV for personalized recovery insights")
                     .font(.subheadline)
                     .foregroundStyle(.gray)
                     .multilineTextAlignment(.center)
             }
 
+            if healthKitService.hasDeniedReadPermissions {
+                Button {
+                    if let url = URL(string: UIApplication.openSettingsURLString) {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Open Settings")
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 12)
+                        .background(Color(hex: "#FF6B6B"))
+                        .cornerRadius(12)
+                }
+            } else {
             Button {
                 Task {
                     let success = await healthKitService.requestAuthorization()
@@ -150,6 +177,7 @@ struct RecoveryDashboardView: View {
                     .padding(.vertical, 12)
                     .background(Color(hex: "#FF6B6B"))
                     .cornerRadius(12)
+                }
             }
         }
         .padding(20)
@@ -445,16 +473,16 @@ struct RecoveryDashboardView: View {
 
                 // Only show fatigue if it's user-reported
                 if let fatigue = metrics.overallFatigue {
-                    VStack(spacing: 4) {
+                VStack(spacing: 4) {
                         Text("\(fatigue)")
-                            .font(.title2)
-                            .fontWeight(.bold)
-                            .foregroundColor(.white)
-                        Text("Fatigue")
-                            .font(.caption)
-                            .foregroundStyle(.gray)
-                    }
-                    .frame(maxWidth: .infinity)
+                        .font(.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    Text("Fatigue")
+                        .font(.caption)
+                        .foregroundStyle(.gray)
+                }
+                .frame(maxWidth: .infinity)
                 }
             }
 
@@ -486,8 +514,10 @@ struct RecoveryDashboardView: View {
 
                 Spacer()
 
-                Text(restDay.recoveryStatus.emoji)
+                if let status = restDay.recoveryStatus {
+                    Text(status.emoji)
                     .font(.title2)
+                }
             }
 
             HStack(spacing: 16) {
@@ -503,14 +533,26 @@ struct RecoveryDashboardView: View {
 
                 Spacer()
 
+                if let score = restDay.recoveryScore, let status = restDay.recoveryStatus {
+                    VStack(alignment: .trailing, spacing: 4) {
+                        Text("\(Int(score * 100))%")
+                            .font(.subheadline)
+                            .fontWeight(.medium)
+                            .foregroundStyle(Color(hex: status.color))
+                        Text("Recovery")
+                            .font(.caption)
+                            .foregroundStyle(.gray)
+                    }
+                } else {
                 VStack(alignment: .trailing, spacing: 4) {
-                    Text("\(Int(restDay.recoveryScore * 100))%")
+                        Text("No data")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundStyle(Color(hex: restDay.recoveryStatus.color))
+                            .foregroundStyle(.gray)
                     Text("Recovery")
                         .font(.caption)
                         .foregroundStyle(.gray)
+                    }
                 }
             }
 
@@ -582,7 +624,9 @@ struct RecoveryDashboardView: View {
                         .foregroundStyle(.gray)
                 }
 
-                Text(restDay.recoveryStatus.emoji)
+                if let status = restDay.recoveryStatus {
+                    Text(status.emoji)
+                }
             }
         }
         .padding(16)

@@ -11,6 +11,7 @@ class HealthKitService: ObservableObject {
     
     @Published var isAuthorized = false
     @Published var authorizationStatus: HKAuthorizationStatus = .notDetermined
+    @Published var hasDeniedReadPermissions = false
     private var hasRequestedAuthorization = false
     
     // MARK: - Health Data Types
@@ -55,35 +56,42 @@ class HealthKitService: ObservableObject {
         let workoutStatus = healthStore.authorizationStatus(for: workoutType)
         authorizationStatus = workoutStatus
 
-        // For read permissions, HealthKit always returns .notDetermined even after granted
-        // So we consider authorized if workout write permission is authorized (most reliable indicator)
-        // OR if we've explicitly requested authorization and nothing is denied
+        // For read permissions, HealthKit ALWAYS returns .notDetermined even after granted
+        // This is a known HealthKit quirk - .notDetermined for read permissions means "granted"
+        // Only .sharingDenied means actually denied
         let sleepStatus = healthStore.authorizationStatus(for: HKCategoryType(.sleepAnalysis))
         let restingHRStatus = healthStore.authorizationStatus(for: HKQuantityType(.restingHeartRate))
         let hrvStatus = healthStore.authorizationStatus(for: HKQuantityType(.heartRateVariabilitySDNN))
-        
-        // If workout is authorized, we've definitely requested and user granted permissions
-        // This is the most reliable indicator that HealthKit integration is set up
-        let hasDeniedReadPermissions = sleepStatus == .sharingDenied || 
-                                       restingHRStatus == .sharingDenied || 
-                                       hrvStatus == .sharingDenied
         
         // If workout is authorized, we know user has granted permissions before
         if workoutStatus == .sharingAuthorized {
             hasRequestedAuthorization = true
         }
         
+        // Check if any critical read permissions are explicitly denied
+        // Note: .notDetermined for read permissions is NORMAL and means "granted"
+        let deniedReadPermissions = sleepStatus == .sharingDenied || 
+                                    restingHRStatus == .sharingDenied || 
+                                    hrvStatus == .sharingDenied
+        
+        self.hasDeniedReadPermissions = deniedReadPermissions
+        
         // Consider authorized if:
-        // 1. Workout write is authorized (user has granted permissions), OR
-        // 2. We've requested and nothing is explicitly denied
-        isAuthorized = (workoutStatus == .sharingAuthorized) || 
-                      (hasRequestedAuthorization && workoutStatus != .sharingDenied && !hasDeniedReadPermissions)
+        // 1. Workout write is authorized (user has granted HealthKit permissions), AND
+        // 2. No critical read permissions are explicitly denied
+        // Note: .notDetermined for read permissions is the expected state when granted
+        // Only .sharingDenied indicates actual denial
+        isAuthorized = workoutStatus == .sharingAuthorized && !deniedReadPermissions
 
         print("🔐 HealthKit Auth Status:")
-        print("   Sleep: \(sleepStatus == .notDetermined ? "Not Determined" : sleepStatus == .sharingDenied ? "Denied" : "Authorized")")
+        // Note: .notDetermined for read permissions is NORMAL and means "granted" in HealthKit
+        print("   Sleep: \(sleepStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
+        print("   Resting HR: \(restingHRStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
+        print("   HRV: \(hrvStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
         print("   Workout: \(workoutStatus == .notDetermined ? "Not Determined" : workoutStatus == .sharingDenied ? "Denied" : "Authorized")")
         print("   Has requested: \(hasRequestedAuthorization)")
         print("   Is authorized: \(isAuthorized)")
+        print("   Has denied read permissions: \(deniedReadPermissions)")
     }
     
     /// Check if we can read a specific health data type

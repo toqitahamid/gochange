@@ -7,24 +7,24 @@ final class RestDay {
     var date: Date
     var type: RestDayType
     var notes: String?
-    var quality: Int // 1-5 rating of how rested the user feels
+    var quality: Int? // 1-5 rating of how rested the user feels (nil if not reported)
     var sleepDuration: TimeInterval? // in seconds, synced from HealthKit
     var sleepQuality: Double? // 0-1, from HealthKit sleep analysis
     var musclesSore: [String] // Array of muscle groups that are sore
-    var energyLevel: Int // 1-5 rating
-    var stressLevel: Int // 1-5 rating
+    var energyLevel: Int? // 1-5 rating (nil if not reported)
+    var stressLevel: Int? // 1-5 rating (nil if not reported)
     var createdAt: Date
 
     init(
         date: Date,
         type: RestDayType,
         notes: String? = nil,
-        quality: Int = 3,
+        quality: Int? = nil,
         sleepDuration: TimeInterval? = nil,
         sleepQuality: Double? = nil,
         musclesSore: [String] = [],
-        energyLevel: Int = 3,
-        stressLevel: Int = 3
+        energyLevel: Int? = nil,
+        stressLevel: Int? = nil
     ) {
         self.id = UUID()
         self.date = date
@@ -60,19 +60,55 @@ extension RestDay {
         return Int(quality * 100)
     }
 
-    var recoveryScore: Double {
-        // Calculate overall recovery score based on multiple factors
-        // Sleep (40%), Quality (30%), Energy (20%), Stress (10%)
-        let sleepScore = sleepQuality ?? 0.5
-        let qualityScore = Double(quality) / 5.0
-        let energyScore = Double(energyLevel) / 5.0
-        let stressScore = 1.0 - (Double(stressLevel) / 5.0) // Lower stress is better
-
-        return (sleepScore * 0.4) + (qualityScore * 0.3) + (energyScore * 0.2) + (stressScore * 0.1)
+    /// Check if rest day has any real data (not just defaults)
+    var hasRealData: Bool {
+        return sleepDuration != nil ||
+               sleepQuality != nil ||
+               quality != nil ||
+               energyLevel != nil ||
+               stressLevel != nil ||
+               !musclesSore.isEmpty
+    }
+    
+    var recoveryScore: Double? {
+        // Only calculate score if we have real data
+        guard hasRealData else { return nil }
+        
+        var score = 0.0
+        var totalWeight = 0.0
+        
+        // Sleep score (40%)
+        if let sleep = sleepQuality {
+            score += sleep * 0.4
+            totalWeight += 0.4
+        }
+        
+        // Quality score (30%)
+        if let qual = quality {
+            score += (Double(qual) / 5.0) * 0.3
+            totalWeight += 0.3
+        }
+        
+        // Energy score (20%)
+        if let energy = energyLevel {
+            score += (Double(energy) / 5.0) * 0.2
+            totalWeight += 0.2
+        }
+        
+        // Stress score (10%) - Lower stress is better
+        if let stress = stressLevel {
+            score += (1.0 - (Double(stress) / 5.0)) * 0.1
+            totalWeight += 0.1
+        }
+        
+        guard totalWeight > 0 else { return nil }
+        
+        // Normalize score based on available components
+        return score / totalWeight
     }
 
-    var recoveryStatus: RecoveryStatus {
-        let score = recoveryScore
+    var recoveryStatus: RecoveryStatus? {
+        guard let score = recoveryScore else { return nil }
         if score >= 0.8 {
             return .excellent
         } else if score >= 0.6 {
