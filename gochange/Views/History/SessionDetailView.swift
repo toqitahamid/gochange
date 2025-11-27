@@ -51,7 +51,7 @@ struct SessionDetailView: View {
                     } label: {
                         Text(isEditMode ? "Done" : "Edit")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color(hex: "#00D4AA"))
+                            .foregroundColor(Color.blue)
                     }
                     
                     if !isEditMode {
@@ -116,8 +116,8 @@ struct SessionDetailView: View {
                     )
                     .frame(width: 80, height: 80)
                 
-                Text(session.workoutDayName.prefix(1).uppercased())
-                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                Image(systemName: routineIcon)
+                    .font(.system(size: 32))
                     .foregroundColor(.white)
             }
             .shadow(color: accentColor.opacity(0.4), radius: 16, y: 8)
@@ -148,7 +148,7 @@ struct SessionDetailView: View {
                             .font(.system(size: 10))
                     }
                     .font(.caption)
-                    .foregroundColor(Color(hex: "#00D4AA"))
+                    .foregroundColor(Color.blue)
                 }
             }
         }
@@ -186,7 +186,7 @@ struct SessionDetailView: View {
                 title: "Sets",
                 value: "\(totalSets)",
                 icon: "checkmark.circle.fill",
-                color: Color(hex: "#00D4AA")
+                color: Color.blue
             )
             
             SessionStatCard(
@@ -213,7 +213,7 @@ struct SessionDetailView: View {
                 if isEditMode {
                     Text("Tap values to edit")
                         .font(.system(size: 11))
-                        .foregroundColor(Color(hex: "#00D4AA"))
+                        .foregroundColor(Color.blue)
                 }
             }
             
@@ -251,6 +251,16 @@ struct SessionDetailView: View {
         }
         return String(format: "%.0f", volume)
     }
+    
+    private var routineIcon: String {
+        let name = session.workoutDayName.lowercased()
+        if name.contains("push") { return "figure.strengthtraining.traditional" }
+        if name.contains("pull") { return "figure.rower" }
+        if name.contains("leg") { return "figure.walk" }
+        if name.contains("full") { return "figure.cross.training" }
+        if name.contains("cardio") || name.contains("run") { return "figure.run" }
+        return "dumbbell.fill"
+    }
 }
 
 // MARK: - Time Edit Sheet
@@ -267,14 +277,14 @@ struct TimeEditSheet: View {
                     Text("EDIT WORKOUT TIME")
                         .font(.system(size: 12, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     VStack(spacing: 16) {
                         // Start Time
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Start Time")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                             
                             DatePicker("", selection: $startTime)
                                 .datePickerStyle(.compact)
@@ -285,7 +295,7 @@ struct TimeEditSheet: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("End Time")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                             
                             DatePicker("", selection: $endTime, in: startTime...)
                                 .datePickerStyle(.compact)
@@ -296,21 +306,22 @@ struct TimeEditSheet: View {
                         HStack {
                             Text("Duration")
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                             Spacer()
                             Text(calculatedDuration.formattedDuration)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color(hex: "#00D4AA"))
+                                .foregroundColor(Color.blue)
                         }
                         .padding(.top, 8)
                     }
                     .padding(20)
                     .background(
                         RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.white.opacity(0.05))
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                             )
                     )
                 }
@@ -319,14 +330,7 @@ struct TimeEditSheet: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
             .navigationTitle("Edit Time")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -451,7 +455,7 @@ struct EditableSessionExerciseCard: View {
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(isEditMode ? Color(hex: "#00D4AA").opacity(0.5) : Color.gray.opacity(0.1), lineWidth: 1)
+                        .stroke(isEditMode ? Color.blue.opacity(0.5) : Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -536,7 +540,7 @@ struct EditableSetRow: View {
                 } label: {
                     Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(setLog.rir != nil ? Color(hex: "#00D4AA") : .secondary)
+                        .foregroundColor(setLog.rir != nil ? Color.blue : .secondary)
                         .frame(width: 32)
                         .padding(.vertical, 6)
                         .background(Color.gray.opacity(0.1))

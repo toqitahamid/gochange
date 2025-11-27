@@ -42,7 +42,7 @@ struct TimelineItem: View {
                         .fill(Color.white)
                         .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                     
-                    Image(systemName: "figure.strengthtraining.traditional")
+                    Image(systemName: routineIcon)
                         .foregroundColor(.orange)
                         .font(.system(size: 24))
                 }
@@ -102,6 +102,16 @@ struct TimelineItem: View {
     
     private var totalSets: Int {
         workout.exerciseLogs.reduce(0) { $0 + $1.sets.filter { $0.isCompleted }.count }
+    }
+    
+    private var routineIcon: String {
+        let name = workout.workoutDayName.lowercased()
+        if name.contains("push") { return "figure.strengthtraining.traditional" }
+        if name.contains("pull") { return "figure.rower" }
+        if name.contains("leg") { return "figure.walk" }
+        if name.contains("full") { return "figure.cross.training" }
+        if name.contains("cardio") || name.contains("run") { return "figure.run" }
+        return "dumbbell.fill"
     }
 }
 
