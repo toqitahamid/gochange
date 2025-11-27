@@ -87,7 +87,7 @@ struct FitnessHeatmapCard: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            HStack(alignment: .top, spacing: 24) {
+            HStack(alignment: .top, spacing: 16) {
                 // Previous Month Grid
                 MonthGrid(
                     month: previousMonthDate,
@@ -149,12 +149,12 @@ struct MonthGrid: View {
             
             VStack(spacing: 8) {
                 // Day Labels
-                HStack(spacing: 6) {
+                HStack(spacing: 4) {
                     ForEach(days, id: \.self) { day in
                         Text(day)
                             .font(.system(size: 10, weight: .medium))
                             .foregroundColor(.gray.opacity(0.5))
-                            .frame(width: 12)
+                            .frame(maxWidth: .infinity)
                     }
                 }
                 
@@ -163,20 +163,20 @@ struct MonthGrid: View {
                 let firstWeekday = self.firstWeekday
                 let totalSlots = 35 // 5 rows * 7 columns
                 
-                LazyVGrid(columns: Array(repeating: GridItem(.fixed(12), spacing: 6), count: 7), spacing: 6) {
+                LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 7), spacing: 4) {
                     ForEach(0..<totalSlots, id: \.self) { index in
                         if index >= firstWeekday - 1 && index < daysInMonth + firstWeekday - 1 {
                             let day = index - (firstWeekday - 1) + 1
                             let date = date(for: day)
                             let count = activityCount(for: date)
                             
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: 4)
                                 .fill(color(for: count))
-                                .frame(width: 12, height: 12)
+                                .aspectRatio(1, contentMode: .fit)
                         } else {
-                            RoundedRectangle(cornerRadius: 3)
+                            RoundedRectangle(cornerRadius: 4)
                                 .fill(Color.gray.opacity(0.1))
-                                .frame(width: 12, height: 12)
+                                .aspectRatio(1, contentMode: .fit)
                         }
                     }
                 }
@@ -237,72 +237,99 @@ struct LegendItem: View {
 
 // MARK: - Activity Summary Card
 struct ActivitySummaryCard: View {
+    @StateObject private var healthKitService = HealthKitService.shared
+    @State private var steps: Double = 0
+    @State private var distance: Double = 0
+    @State private var activeEnergy: Double = 0
+    @State private var exerciseTime: Double = 0
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
-                Image(systemName: "chart.bar.fill")
-                    .foregroundColor(.gray)
+                Image(systemName: "figure.walk")
+                    .foregroundColor(.blue)
                 Text("Activity Summary")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
                 Spacer()
-                Image(systemName: "arrow.right")
+                Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.gray.opacity(0.5))
             }
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text("4h 12m")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.primary)
-                
+            VStack(alignment: .leading, spacing: 12) {
+                // Steps
                 HStack {
-                    Text("Oct 28 – Nov 27, 2025")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.circle.fill")
-                            .foregroundColor(.gray)
-                        Text("17m")
-                            .font(.caption)
-                            .fontWeight(.bold)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(Int(steps))")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
+                        Text("Steps")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    // Distance
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text(String(format: "%.1f km", distance / 1000))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        Text("Distance")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Divider()
+                
+                // Calories & Time
+                HStack {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("\(Int(activeEnergy))")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        Text("Kcal")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    VStack(alignment: .trailing, spacing: 2) {
+                        Text("\(Int(exerciseTime)) min")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        Text("Exercise")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
             }
-            
-            // Mock Chart
-            Chart {
-                ForEach(0..<30, id: \.self) { index in
-                    LineMark(
-                        x: .value("Day", index),
-                        y: .value("Minutes", [10, 15, 12, 18, 25, 20, 30, 45, 40, 35, 50, 55, 60, 40, 30, 20, 25, 35, 45, 60, 70, 80, 75, 60, 50, 40, 30, 20, 10, 5][index])
-                    )
-                    .foregroundStyle(Color.orange.gradient)
-                    .interpolationMethod(.catmullRom)
-                }
-            }
-            .frame(height: 120)
-            .chartXAxis {
-                AxisMarks(values: [0, 15, 29]) { value in
-                    AxisValueLabel {
-                        if let intValue = value.as(Int.self) {
-                            if intValue == 0 { Text("Oct 28") }
-                            else if intValue == 15 { Text("Nov 12") }
-                            else { Text("Nov 27") }
-                        }
-                    }
-                }
-            }
-            .chartYAxis(.hidden)
         }
         .padding(20)
         .background(Color.white)
         .cornerRadius(24)
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         .padding(.horizontal)
+        .task {
+            await fetchData()
+        }
+    }
+    
+    private func fetchData() async {
+        let today = Date()
+        async let stepsCount = healthKitService.getSteps(for: today)
+        async let dist = healthKitService.getWalkingRunningDistance(for: today)
+        async let energy = healthKitService.getActiveEnergyBurned(for: today)
+        async let time = healthKitService.getExerciseTime(for: today)
+        
+        let (s, d, e, t) = await (stepsCount, dist, energy, time)
+        
+        await MainActor.run {
+            self.steps = s
+            self.distance = d
+            self.activeEnergy = e
+            self.exerciseTime = t
+        }
     }
 }
 
@@ -471,41 +498,56 @@ struct CardioFocusCard: View {
 
 // MARK: - HRR Card
 struct HRRCard: View {
+    @StateObject private var healthKitService = HealthKitService.shared
+    @State private var restingHeartRate: Double = 0
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "heart.fill")
-                    .foregroundColor(.gray)
-                Text("HRR")
+                    .foregroundColor(.red)
+                Text("RHR")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
                 Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.caption)
-                    .foregroundColor(.gray)
             }
             
-            Text("33 bpm")
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
-            
-            Text("Good")
-                .font(.subheadline)
-                .foregroundColor(.orange)
+            if restingHeartRate > 0 {
+                Text("\(Int(restingHeartRate)) bpm")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Text(restingHeartRate < 60 ? "Excellent" : restingHeartRate < 70 ? "Good" : "Average")
+                    .font(.subheadline)
+                    .foregroundColor(restingHeartRate < 60 ? .green : .orange)
+            } else {
+                Text("--")
+                    .font(.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                Text("No Data")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             
             // Slider/Indicator
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color.orange.opacity(0.2))
+                        .fill(Color.gray.opacity(0.1))
                         .frame(height: 4)
                     
-                    Circle()
-                        .fill(Color.orange)
-                        .frame(width: 8, height: 8)
-                        .offset(x: geometry.size.width * 0.6)
+                    if restingHeartRate > 0 {
+                        // Map 40-100 bpm to 0-1 range
+                        let normalized = min(max((restingHeartRate - 40) / 60, 0), 1)
+                        
+                        Circle()
+                            .fill(restingHeartRate < 60 ? Color.green : Color.orange)
+                            .frame(width: 8, height: 8)
+                            .offset(x: geometry.size.width * normalized)
+                    }
                 }
             }
             .frame(height: 8)
@@ -514,6 +556,13 @@ struct HRRCard: View {
         .background(Color.white)
         .cornerRadius(20)
         .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .task {
+            if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
+                await MainActor.run {
+                    self.restingHeartRate = rhr
+                }
+            }
+        }
     }
 }
 

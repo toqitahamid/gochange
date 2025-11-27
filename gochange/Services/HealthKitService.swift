@@ -405,6 +405,48 @@ class HealthKitService: ObservableObject {
             healthStore.execute(query)
         }
     }
+    
+    // MARK: - Activity Stats for Heatmap
+    
+    /// Get daily activity stats (workout count) for a date range
+    func getDailyActivityStats(from startDate: Date, to endDate: Date) async -> [Date: Int] {
+        guard isHealthKitAvailable else { return [:] }
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: workoutType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("Workout query error: \(error.localizedDescription)")
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                guard let workouts = samples as? [HKWorkout] else {
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                var stats: [Date: Int] = [:]
+                let calendar = Calendar.current
+                
+                for workout in workouts {
+                    let date = calendar.startOfDay(for: workout.startDate)
+                    stats[date, default: 0] += 1
+                }
+                
+                continuation.resume(returning: stats)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
 
     // MARK: - Sleep Data
 
@@ -640,6 +682,61 @@ class HealthKitService: ObservableObject {
                 continuation.resume(returning: averageHRV)
             }
 
+            healthStore.execute(query)
+        }
+    }
+
+    
+    // MARK: - Daily Activity Metrics
+    
+    /// Get total steps for a specific date
+    func getSteps(for date: Date) async -> Double {
+        return await getSumQuantity(for: .stepCount, unit: .count(), date: date)
+    }
+    
+    /// Get total walking/running distance for a specific date (in meters)
+    func getWalkingRunningDistance(for date: Date) async -> Double {
+        return await getSumQuantity(for: .distanceWalkingRunning, unit: .meter(), date: date)
+    }
+    
+    /// Get total active energy burned for a specific date (in kcal)
+    func getActiveEnergyBurned(for date: Date) async -> Double {
+        return await getSumQuantity(for: .activeEnergyBurned, unit: .kilocalorie(), date: date)
+    }
+    
+    /// Get total exercise time for a specific date (in minutes)
+    func getExerciseTime(for date: Date) async -> Double {
+        return await getSumQuantity(for: .appleExerciseTime, unit: .minute(), date: date)
+    }
+    
+    // MARK: - Helper for Sum Queries
+    
+    private func getSumQuantity(for typeIdentifier: HKQuantityTypeIdentifier, unit: HKUnit, date: Date) async -> Double {
+        guard isHealthKitAvailable else { return 0 }
+        
+        let type = HKQuantityType(typeIdentifier)
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, error in
+                if let error = error {
+                    print("❌ \(typeIdentifier.rawValue) query error: \(error.localizedDescription)")
+                    continuation.resume(returning: 0)
+                    return
+                }
+                
+                let value = result?.sumQuantity()?.doubleValue(for: unit) ?? 0
+                continuation.resume(returning: value)
+            }
+            
             healthStore.execute(query)
         }
     }
