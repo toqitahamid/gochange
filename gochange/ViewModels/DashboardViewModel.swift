@@ -19,6 +19,15 @@ class DashboardViewModel: ObservableObject {
     @Published var activeCalories: Double = 0
     @Published var workoutDuration: TimeInterval = 0
     
+    // New Real Metrics
+    @Published var respiratoryRate: Double?
+    @Published var oxygenSaturation: Double?
+    @Published var bodyTemperature: Double?
+    @Published var stepCount: Int = 0
+    @Published var vo2Max: Double?
+    
+    @Published var recentWorkouts: [WorkoutSession] = []
+    
     // Status
     @Published var isLoading: Bool = false
     @Published var greeting: String = ""
@@ -33,8 +42,6 @@ class DashboardViewModel: ObservableObject {
         updateGreeting()
     }
     
-    // MARK: - Data Loading
-    
     func loadData(context: ModelContext) async {
         isLoading = true
         
@@ -42,10 +49,30 @@ class DashboardViewModel: ObservableObject {
         async let recoveryTask: () = loadRecoveryData(context: context)
         async let sleepTask: () = loadSleepData()
         async let workoutTask: () = loadWorkoutData(context: context)
+        async let healthTask: () = loadAdditionalHealthData()
         
-        _ = await (recoveryTask, sleepTask, workoutTask)
+        _ = await (recoveryTask, sleepTask, workoutTask, healthTask)
         
         isLoading = false
+    }
+    
+    private func loadAdditionalHealthData() async {
+        let today = Date()
+        
+        // Fetch new metrics in parallel
+        async let rr = healthKitService.getRespiratoryRate(for: today)
+        async let spo2 = healthKitService.getOxygenSaturation(for: today)
+        async let temp = healthKitService.getBodyTemperature(for: today)
+        async let steps = healthKitService.getStepCount(for: today)
+        async let vo2 = healthKitService.getVO2Max()
+        
+        let (rrVal, spo2Val, tempVal, stepsVal, vo2Val) = await (rr, spo2, temp, steps, vo2)
+        
+        self.respiratoryRate = rrVal
+        self.oxygenSaturation = spo2Val
+        self.bodyTemperature = tempVal
+        self.stepCount = stepsVal
+        self.vo2Max = vo2Val
     }
     
     private func loadRecoveryData(context: ModelContext) async {
@@ -94,6 +121,15 @@ class DashboardViewModel: ObservableObject {
             }
         )
         
+        // Fetch recent workouts for timeline (last 7 days)
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: todayStart) ?? todayStart
+        let recentDescriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { session in
+                session.date >= sevenDaysAgo && session.isCompleted == true
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+        
         do {
             let sessions = try context.fetch(descriptor)
             let completedSessions = sessions.filter { $0.isCompleted }
@@ -117,6 +153,9 @@ class DashboardViewModel: ObservableObject {
             
             // Estimate calories (mock)
             self.activeCalories = (workoutDuration / 60.0) * 5.0 // ~5 active cals/min
+            
+            // Load recent workouts
+            self.recentWorkouts = try context.fetch(recentDescriptor)
             
         } catch {
             print("Failed to fetch workout data: \(error)")

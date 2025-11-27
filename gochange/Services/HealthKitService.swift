@@ -29,8 +29,126 @@ class HealthKitService: ObservableObject {
         HKQuantityType(.activeEnergyBurned),
         HKQuantityType(.restingHeartRate),
         HKQuantityType(.heartRateVariabilitySDNN),
-        HKCategoryType(.sleepAnalysis)
+        HKCategoryType(.sleepAnalysis),
+        // New Metrics
+        HKQuantityType(.respiratoryRate),
+        HKQuantityType(.oxygenSaturation),
+        HKQuantityType(.bodyTemperature),
+        HKQuantityType(.stepCount),
+        HKQuantityType(.vo2Max)
     ]
+    
+    // ... (Existing code) ...
+
+    // MARK: - Respiratory Rate
+    
+    func getRespiratoryRate(for date: Date) async -> Double? {
+        return await getQuantitySample(for: .respiratoryRate, unit: HKUnit.count().unitDivided(by: .minute()), date: date)
+    }
+    
+    // MARK: - Oxygen Saturation
+    
+    func getOxygenSaturation(for date: Date) async -> Double? {
+        return await getQuantitySample(for: .oxygenSaturation, unit: .percent(), date: date)
+    }
+    
+    // MARK: - Body Temperature
+    
+    func getBodyTemperature(for date: Date) async -> Double? {
+        return await getQuantitySample(for: .bodyTemperature, unit: .degreeCelsius(), date: date)
+    }
+    
+    // MARK: - Steps
+    
+    func getStepCount(for date: Date) async -> Int {
+        guard isHealthKitAvailable else { return 0 }
+        
+        let stepType = HKQuantityType(.stepCount)
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: stepType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, error in
+                if let error = error {
+                    print("❌ Step count query error: \(error.localizedDescription)")
+                    continuation.resume(returning: 0)
+                    return
+                }
+                
+                let steps = result?.sumQuantity()?.doubleValue(for: .count()) ?? 0
+                continuation.resume(returning: Int(steps))
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
+    // MARK: - VO2 Max
+    
+    func getVO2Max() async -> Double? {
+        // VO2 Max is not daily, so we look back a bit further (e.g., 30 days) to find the latest reading
+        let endDate = Date()
+        let startDate = Calendar.current.date(byAdding: .day, value: -30, to: endDate) ?? endDate
+        
+        return await getQuantitySample(for: .vo2Max, unit: HKUnit(from: "ml/kg*min"), date: endDate, startDate: startDate)
+    }
+    
+    // MARK: - Helper
+    
+    private func getQuantitySample(for typeIdentifier: HKQuantityTypeIdentifier, unit: HKUnit, date: Date, startDate: Date? = nil) async -> Double? {
+        guard isHealthKitAvailable else { return nil }
+        
+        let type = HKQuantityType(typeIdentifier)
+        let calendar = Calendar.current
+        
+        // Default to daily query if no specific start date provided
+        let queryEndDate = date
+        let queryStartDate = startDate ?? calendar.startOfDay(for: date)
+        
+        // If looking for a daily metric (like RHR), we might want the latest sample in that day
+        // If looking for something sporadic (like VO2 Max), we provided a wider range
+        
+        let predicate = HKQuery.predicateForSamples(withStart: queryStartDate, end: queryEndDate, options: .strictEndDate)
+        let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("❌ \(typeIdentifier.rawValue) query error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                guard let sample = (samples as? [HKQuantitySample])?.first else {
+                    // Only print warning for common metrics, not sporadic ones to avoid noise
+                    if typeIdentifier != .vo2Max {
+                         print("⚠️ No data found for \(typeIdentifier.rawValue)")
+                    }
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let value = sample.quantity.doubleValue(for: unit)
+                continuation.resume(returning: value)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
+    // MARK: - Heart Rate Variability
     
     // MARK: - Initialization
     
