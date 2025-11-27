@@ -32,14 +32,8 @@ struct SessionDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
         }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(hex: "#0A1628")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+        .preferredColorScheme(.light)
         .navigationTitle(session.workoutDayName)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
@@ -132,11 +126,11 @@ struct SessionDetailView: View {
                 Text(session.workoutDayName)
                     .font(.title2)
                     .fontWeight(.bold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 Text(session.date.formatted(as: "EEEE, MMMM d, yyyy"))
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                 
                 // Tappable time display
                 Button {
@@ -162,17 +156,11 @@ struct SessionDetailView: View {
         .padding(.vertical, 28)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
-                        .stroke(
-                            LinearGradient(
-                                colors: [accentColor.opacity(0.3), accentColor.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -384,20 +372,21 @@ struct SessionStatCard: View {
             
             Text(value)
                 .font(.system(size: 16, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -414,7 +403,7 @@ struct EditableSessionExerciseCard: View {
             // Exercise Name
             Text(exerciseLog.exerciseName)
                 .font(.system(size: 17, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             // Sets Table
             VStack(spacing: 0) {
@@ -432,11 +421,11 @@ struct EditableSessionExerciseCard: View {
                 }
                 .font(.system(size: 10, weight: .bold))
                 .tracking(0.5)
-                .foregroundColor(.gray.opacity(0.6))
+                .foregroundColor(.secondary)
                 .padding(.bottom, 10)
                 
                 Rectangle()
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.gray.opacity(0.1))
                     .frame(height: 1)
                 
                 // Rows
@@ -451,17 +440,18 @@ struct EditableSessionExerciseCard: View {
             if let notes = exerciseLog.notes, !notes.isEmpty {
                 Text(notes)
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                     .padding(.top, 4)
             }
         }
         .padding(18)
         .background(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(isEditMode ? 0.08 : 0.05))
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
-                        .stroke(isEditMode ? Color(hex: "#00D4AA").opacity(0.3) : Color.white.opacity(0.1), lineWidth: 1)
+                        .stroke(isEditMode ? Color(hex: "#00D4AA").opacity(0.5) : Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -481,7 +471,7 @@ struct EditableSetRow: View {
         HStack {
             Text("\(setLog.setNumber)")
                 .font(.system(size: 14, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .frame(width: 40, alignment: .leading)
             
             // Weight
@@ -490,10 +480,10 @@ struct EditableSetRow: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 60)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.15))
+                    .background(Color.gray.opacity(0.1))
                     .cornerRadius(6)
                     .onChange(of: weightText) { _, newValue in
                         setLog.weight = Double(newValue)
@@ -501,12 +491,12 @@ struct EditableSetRow: View {
                     }
                 Text(setLog.weightUnit.rawValue)
                     .font(.system(size: 11))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                     .frame(width: 20, alignment: .leading)
             } else {
                 Text(setLog.weight != nil ? "\(String(format: "%.1f", setLog.weight!)) \(setLog.weightUnit.rawValue)" : "-")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 80, alignment: .center)
             }
             
@@ -516,10 +506,10 @@ struct EditableSetRow: View {
                     .keyboardType(.numberPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 44)
                     .padding(.vertical, 6)
-                    .background(Color.white.opacity(0.15))
+                    .background(Color.gray.opacity(0.1))
                     .cornerRadius(6)
                     .onChange(of: repsText) { _, newValue in
                         setLog.actualReps = Int(newValue)
@@ -528,7 +518,7 @@ struct EditableSetRow: View {
             } else {
                 Text(setLog.actualReps != nil ? "\(setLog.actualReps!)" : "-")
                     .font(.system(size: 14))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 50, alignment: .center)
             }
             
@@ -546,16 +536,16 @@ struct EditableSetRow: View {
                 } label: {
                     Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(setLog.rir != nil ? Color(hex: "#00D4AA") : .gray)
+                        .foregroundColor(setLog.rir != nil ? Color(hex: "#00D4AA") : .secondary)
                         .frame(width: 32)
                         .padding(.vertical, 6)
-                        .background(Color.white.opacity(0.15))
+                        .background(Color.gray.opacity(0.1))
                         .cornerRadius(6)
                 }
             } else {
                 Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .gray)
+                    .foregroundColor(setLog.rir != nil ? AppConstants.RIR.color(for: setLog.rir!) : .secondary)
                     .frame(width: 40, alignment: .center)
             }
             
