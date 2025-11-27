@@ -26,19 +26,12 @@ struct WorkoutPreviewView: View {
                 startButton
             }
             .padding(.horizontal, 20)
+            .padding(.top, 20)
             .padding(.bottom, 100)
         }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(hex: "#0A1628")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .navigationTitle(workoutDay.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -46,7 +39,7 @@ struct WorkoutPreviewView: View {
                 } label: {
                     Image(systemName: "pencil")
                         .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                 }
             }
         }
@@ -75,7 +68,7 @@ struct WorkoutPreviewView: View {
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundColor(.white)
             }
-            .shadow(color: accentColor.opacity(0.5), radius: 20, y: 10)
+            .shadow(color: accentColor.opacity(0.3), radius: 15, y: 8)
             
             // Workout Info
             VStack(spacing: 8) {
@@ -86,7 +79,7 @@ struct WorkoutPreviewView: View {
                 
                 Text(workoutDay.name)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
             
             // Stats Row
@@ -94,55 +87,48 @@ struct WorkoutPreviewView: View {
                 VStack(spacing: 4) {
                     Text("\(workoutDay.exercises.count)")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Exercises")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
                 
                 Rectangle()
-                    .fill(Color.white.opacity(0.2))
+                    .fill(Color.gray.opacity(0.2))
                     .frame(width: 1, height: 40)
                 
                 VStack(spacing: 4) {
                     Text("\(totalSets)")
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Sets")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
                 
                 Rectangle()
-                    .fill(Color.white.opacity(0.2))
+                    .fill(Color.gray.opacity(0.2))
                     .frame(width: 1, height: 40)
                 
                 VStack(spacing: 4) {
                     Text(estimatedDuration)
                         .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Est. min")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .background(
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(
-                            LinearGradient(
-                                colors: [accentColor.opacity(0.5), accentColor.opacity(0.1)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            ),
-                            lineWidth: 1
-                        )
-                )
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
     }
     
@@ -152,7 +138,7 @@ struct WorkoutPreviewView: View {
             Text("EXERCISES")
                 .font(.system(size: 12, weight: .bold))
                 .tracking(1.5)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
             
             VStack(spacing: 0) {
@@ -168,19 +154,18 @@ struct WorkoutPreviewView: View {
                     
                     if index < workoutDay.exercises.count - 1 {
                         Rectangle()
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.gray.opacity(0.1))
                             .frame(height: 1)
                             .padding(.leading, 60)
                     }
                 }
             }
-            .background(
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 20)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
             )
             .clipShape(RoundedRectangle(cornerRadius: 20))
         }
@@ -250,16 +235,16 @@ struct ExercisePreviewRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(exercise.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 HStack(spacing: 8) {
                     Text(exercise.muscleGroup)
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     Text("•")
                         .font(.system(size: 12))
-                        .foregroundColor(.gray.opacity(0.5))
+                        .foregroundColor(.secondary)
                     
                     Text("\(exercise.defaultSets) × \(exercise.defaultReps)")
                         .font(.system(size: 12, weight: .medium))
