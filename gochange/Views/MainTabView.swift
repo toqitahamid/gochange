@@ -4,7 +4,7 @@ struct MainTabView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
-    
+
     var body: some View {
         TabView(selection: $selectedTab) {
             // Home Tab - shows active workout if running, else HomeView

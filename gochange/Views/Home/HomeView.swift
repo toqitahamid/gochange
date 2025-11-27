@@ -5,87 +5,51 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = DashboardViewModel()
 
-    @State private var scrollOffset: CGFloat = 0
-    @State private var lastScrollOffset: CGFloat = 0
-    @State private var showHeader = true
-
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .top) {
-                ScrollView {
-                    VStack(spacing: 24) {
-                        // Spacer for header
-                        Color.clear
-                            .frame(height: 80)
-                            .readScrollOffset { offset in
-                                handleScroll(offset: offset)
-                            }
+            ScrollView {
+                VStack(spacing: 24) {
+                    // Header
+                    header
 
-                        // Summary Rings
-                        SummaryRingsView(
-                            strain: viewModel.strainScore,
-                            recovery: viewModel.recoveryScore,
-                            sleep: viewModel.sleepScore
-                        )
-
-                        // Daily Insight
-                        dailyInsight
-
-                        // Health Monitor
-                        HealthMonitorGrid(
-                            rhr: viewModel.restingHR,
-                            hrv: viewModel.hrv,
-                            respiratoryRate: viewModel.respiratoryRate,
-                            oxygenSaturation: viewModel.oxygenSaturation,
-                            bodyTemperature: viewModel.bodyTemperature,
-                            stepCount: viewModel.stepCount,
-                            vo2Max: viewModel.vo2Max,
-                            sleepDuration: viewModel.sleepData?.totalDuration
-                        )
-
-                        // Timeline
-                        TimelineView(workouts: viewModel.recentWorkouts)
-
-                        Spacer(minLength: 100)
-                    }
-                    .padding(.horizontal, 20)
-                }
-                .coordinateSpace(name: "scroll")
-                .background(Color(hex: "#F5F5F7").ignoresSafeArea())
-                .preferredColorScheme(.light)
-
-                // Floating Header with Liquid Glass effect
-                header
-                    .padding(.horizontal, 20)
-                    .padding(.top, 20)
-                    .background(
-                        .ultraThinMaterial,
-                        in: RoundedRectangle(cornerRadius: 0)
+                    // Summary Rings
+                    SummaryRingsView(
+                        strain: viewModel.strainScore,
+                        recovery: viewModel.recoveryScore,
+                        sleep: viewModel.sleepScore
                     )
-                    .offset(y: showHeader ? 0 : -100)
-                    .animation(.smooth(duration: 0.3), value: showHeader)
+
+                    // Daily Insight
+                    dailyInsight
+
+                    // Health Monitor
+                    HealthMonitorGrid(
+                        rhr: viewModel.restingHR,
+                        hrv: viewModel.hrv,
+                        respiratoryRate: viewModel.respiratoryRate,
+                        oxygenSaturation: viewModel.oxygenSaturation,
+                        bodyTemperature: viewModel.bodyTemperature,
+                        stepCount: viewModel.stepCount,
+                        vo2Max: viewModel.vo2Max,
+                        sleepDuration: viewModel.sleepData?.totalDuration
+                    )
+
+                    // Timeline
+                    TimelineView(workouts: viewModel.recentWorkouts)
+
+                    Spacer(minLength: 100)
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
             }
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea()) // Light Gray Background
+            .preferredColorScheme(.light) // Force Light Mode for the requested "White/Light Gray" theme
             .onAppear {
                 Task {
                     await viewModel.loadData(context: modelContext)
                 }
             }
         }
-    }
-
-    private func handleScroll(offset: CGFloat) {
-        let delta = offset - lastScrollOffset
-
-        // Scrolling down (content moving up)
-        if delta < -5 && offset < -10 {
-            showHeader = false
-        }
-        // Scrolling up (content moving down) or at top
-        else if delta > 5 || offset > -5 {
-            showHeader = true
-        }
-
-        lastScrollOffset = offset
     }
     
     private var header: some View {

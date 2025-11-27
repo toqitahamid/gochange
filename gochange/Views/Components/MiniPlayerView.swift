@@ -103,12 +103,11 @@ struct MiniPlayerView: View {
                     workoutManager.resume()
                 }
             }
-        }
-        .onReceive(timer) { _ in
-            if let startTime = workoutManager.startTime {
-                elapsed = Date().timeIntervalSince(startTime)
+            .onReceive(timer) { _ in
+                if let startTime = workoutManager.startTime {
+                    elapsed = Date().timeIntervalSince(startTime)
+                }
             }
-        }
     }
 }
 
