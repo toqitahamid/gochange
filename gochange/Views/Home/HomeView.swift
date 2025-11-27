@@ -4,6 +4,8 @@ import SwiftData
 struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = DashboardViewModel()
+    @StateObject private var userProfile = UserProfileService.shared
+    @StateObject private var healthKit = HealthKitService.shared
 
     var body: some View {
         NavigationStack {
@@ -66,17 +68,25 @@ struct HomeView: View {
             
             Spacer()
             
-            // Profile Button
-            Circle()
-                .fill(Color.blue.opacity(0.1))
-                .frame(width: 40, height: 40)
-                .overlay(
-                    Text("TS") // Initials
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundColor(.blue)
-                )
+            // Settings Button (User Initials)
+            NavigationLink(destination: SettingsView()) {
+                Circle()
+                    .fill(Color.blue.opacity(0.1))
+                    .frame(width: 40, height: 40)
+                    .overlay(
+                        Text(userInitials)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.blue)
+                    )
+            }
         }
         .padding(.bottom, 10)
+    }
+    
+    private var userInitials: String {
+        let firstInitial = userProfile.firstName.prefix(1).uppercased()
+        let lastInitial = userProfile.lastName.prefix(1).uppercased()
+        return "\(firstInitial)\(lastInitial)"
     }
     
     private var dailyInsight: some View {

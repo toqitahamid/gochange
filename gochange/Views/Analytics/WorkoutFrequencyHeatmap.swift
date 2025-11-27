@@ -15,7 +15,7 @@ struct WorkoutFrequencyHeatmap: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Activity Heatmap")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
 
                     Text("Last 90 days")
                         .font(.caption)
@@ -46,11 +46,12 @@ struct WorkoutFrequencyHeatmap: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -106,7 +107,7 @@ struct WorkoutFrequencyHeatmap: View {
             .frame(width: cellSize, height: cellSize)
             .overlay(
                 RoundedRectangle(cornerRadius: 2)
-                    .stroke(Color.white.opacity(0.1), lineWidth: 0.5)
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 0.5)
             )
     }
 
@@ -114,7 +115,7 @@ struct WorkoutFrequencyHeatmap: View {
         let baseColor = Color(hex: "#00D4AA")
         switch point.workoutCount {
         case 0:
-            return Color.white.opacity(0.05)
+            return Color.gray.opacity(0.1)
         case 1:
             return baseColor.opacity(0.3)
         case 2:
@@ -145,7 +146,7 @@ struct WorkoutFrequencyHeatmap: View {
     private func legendColor(level: Int) -> Color {
         let baseColor = Color(hex: "#00D4AA")
         switch level {
-        case 0: return Color.white.opacity(0.05)
+        case 0: return Color.gray.opacity(0.1)
         case 1: return baseColor.opacity(0.3)
         case 2: return baseColor.opacity(0.6)
         default: return baseColor

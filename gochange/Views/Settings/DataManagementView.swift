@@ -17,93 +17,186 @@ struct DataManagementView: View {
     private let mediaService = MediaService()
     
     var body: some View {
-        List {
-            Section {
-                Button {
-                    exportWorkoutData()
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.up")
-                            .foregroundColor(Color(hex: "#64B5F6"))
-                        Text("Export Data")
-                            .foregroundColor(.primary)
+        ScrollView {
+            VStack(spacing: 20) {
+                // Data Actions Section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("DATA ACTIONS")
+                        .font(.caption)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 20)
+                        .padding(.top, 4)
+                    
+                    VStack(spacing: 0) {
+                        Button {
+                            exportWorkoutData()
+                        } label: {
+                            HStack {
+                                Image(systemName: "square.and.arrow.up")
+                                    .foregroundColor(Color(hex: "#64B5F6"))
+                                Text("Export Data")
+                                    .foregroundColor(.primary)
+                                Spacer()
+                            }
+                            .padding(20)
+                        }
+                        
+                        Divider()
+                            .background(Color.gray.opacity(0.1))
+                            .padding(.leading, 20)
+                        
+                        Button {
+                            showingImportSheet = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "square.and.arrow.down")
+                                    .foregroundColor(Color(hex: "#4DB6AC"))
+                                Text("Import Data")
+                                    .foregroundColor(.primary)
+                                Spacer()
+                            }
+                            .padding(20)
+                        }
                     }
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                    )
                 }
                 
-                Button {
-                    showingImportSheet = true
-                } label: {
-                    HStack {
-                        Image(systemName: "square.and.arrow.down")
-                            .foregroundColor(Color(hex: "#4DB6AC"))
-                        Text("Import Data")
-                            .foregroundColor(.primary)
-                    }
-                }
-            }
-            
-            Section {
-                NavigationLink(destination: WatchSyncDebugView()) {
-                    HStack {
-                        Image(systemName: "applewatch")
-                            .foregroundColor(Color(hex: "#9C27B0"))
-                        Text("Watch Sync Debug")
-                    }
-                }
-            }
-            
-            Section(header: Text("STATISTICS")) {
-                HStack {
-                    Image(systemName: "flame.fill")
-                        .foregroundColor(Color(hex: "#FF6B35"))
-                    Text("Total Workouts")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Text("\(sessions.filter { $0.isCompleted }.count)")
-                        .font(.system(size: 14, weight: .medium))
+                // Debug Section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("DEBUG")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
+                        .padding(.horizontal, 20)
+                    
+                    NavigationLink(destination: WatchSyncDebugView()) {
+                        HStack {
+                            Image(systemName: "applewatch")
+                                .foregroundColor(Color(hex: "#9C27B0"))
+                            Text("Watch Sync Debug")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(20)
+                    }
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                    )
                 }
                 
-                HStack {
-                    Image(systemName: "dumbbell.fill")
-                        .foregroundColor(Color(hex: "#7CB9A8"))
-                    Text("Exercises")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Text("\(workoutDays.flatMap { $0.exercises }.count)")
-                        .font(.system(size: 14, weight: .medium))
+                // Statistics Section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("STATISTICS")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
+                        .padding(.horizontal, 20)
+                    
+                    VStack(spacing: 0) {
+                        HStack {
+                            Image(systemName: "flame.fill")
+                                .foregroundColor(Color(hex: "#FF6B35"))
+                            Text("Total Workouts")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text("\(sessions.filter { $0.isCompleted }.count)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(20)
+                        
+                        Divider()
+                            .background(Color.gray.opacity(0.1))
+                            .padding(.leading, 20)
+                        
+                        HStack {
+                            Image(systemName: "dumbbell.fill")
+                                .foregroundColor(Color(hex: "#7CB9A8"))
+                            Text("Exercises")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text("\(workoutDays.flatMap { $0.exercises }.count)")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(20)
+                        
+                        Divider()
+                            .background(Color.gray.opacity(0.1))
+                            .padding(.leading, 20)
+                        
+                        HStack {
+                            Image(systemName: "externaldrive.fill")
+                                .foregroundColor(Color(hex: "#64B5F6"))
+                            Text("Media Storage")
+                                .foregroundColor(.primary)
+                            Spacer()
+                            Text(mediaService.formattedStorageSize())
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(.secondary)
+                        }
+                        .padding(20)
+                    }
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                    )
                 }
                 
-                HStack {
-                    Image(systemName: "externaldrive.fill")
-                        .foregroundColor(Color(hex: "#64B5F6"))
-                    Text("Media Storage")
-                        .foregroundColor(.primary)
-                    Spacer()
-                    Text(mediaService.formattedStorageSize())
-                        .font(.system(size: 14, weight: .medium))
+                // Reset Section
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("DANGER ZONE")
+                        .font(.caption)
+                        .fontWeight(.semibold)
                         .foregroundColor(.secondary)
-                }
-            }
-            
-            Section {
-                Button {
-                    showingResetAlert = true
-                } label: {
-                    HStack {
-                        Image(systemName: "arrow.counterclockwise")
-                            .foregroundColor(Color(hex: "#FF6B6B"))
-                        Text("Reset to Defaults")
-                            .foregroundColor(Color(hex: "#FF6B6B"))
+                        .padding(.horizontal, 20)
+                    
+                    Button {
+                        showingResetAlert = true
+                    } label: {
+                        HStack {
+                            Image(systemName: "arrow.counterclockwise")
+                                .foregroundColor(Color(hex: "#FF6B6B"))
+                            Text("Reset to Defaults")
+                                .foregroundColor(Color(hex: "#FF6B6B"))
+                            Spacer()
+                        }
+                        .padding(20)
                     }
+                    .background(Color.white)
+                    .cornerRadius(24)
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 24)
+                            .stroke(Color(hex: "#FF6B6B").opacity(0.2), lineWidth: 1)
+                    )
                 }
+                
+                Spacer(minLength: 100)
             }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
         }
         .navigationTitle("Data Management")
         .navigationBarTitleDisplayMode(.inline)
-        .background(Color(hex: "#F2F2F7"))
-        .scrollContentBackground(.hidden)
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .sheet(isPresented: $showingExportSheet) {
             if let data = exportData {
                 ShareSheet(activityItems: [data])

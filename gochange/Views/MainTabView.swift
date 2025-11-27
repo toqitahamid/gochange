@@ -35,17 +35,12 @@ struct MainTabView: View {
             }
             .tag(1)
             
+            
             FitnessView()
                 .tabItem {
                     Label("Fitness", systemImage: "chart.bar.fill")
                 }
                 .tag(2)
-
-            SettingsView()
-                .tabItem {
-                    Label("More", systemImage: "ellipsis")
-                }
-                .tag(3)
         }
         .tint(AppTheme.accent)
         .overlay(alignment: .bottom) {

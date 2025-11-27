@@ -6,91 +6,260 @@ struct SettingsView: View {
     
     var body: some View {
         NavigationStack {
-            List {
-                // General Section
-                Section(header: Text("GENERAL")) {
-                    NavigationLink(destination: AccountSettingsView()) {
-                        Label("Account", systemImage: "person.circle.fill")
-                            .foregroundColor(.primary)
+            ScrollView {
+                VStack(spacing: 20) {
+                    // General Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("GENERAL")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                            .padding(.top, 4)
+                        
+                        VStack(spacing: 0) {
+                            NavigationLink(destination: AccountSettingsView()) {
+                                HStack {
+                                    Image(systemName: "person.circle.fill")
+                                        .foregroundColor(Color(hex: "#4DB6AC"))
+                                    Text("Account")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            NavigationLink(destination: CustomizationSettingsView()) {
+                                HStack {
+                                    Image(systemName: "slider.horizontal.3")
+                                        .foregroundColor(Color(hex: "#FFB74D"))
+                                    Text("Customization")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            NavigationLink(destination: NotificationSettingsView()) {
+                                HStack {
+                                    Image(systemName: "bell.fill")
+                                        .foregroundColor(Color(hex: "#FF6B6B"))
+                                    Text("Notifications")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                        }
+                        .background(Color.white)
+                        .cornerRadius(24)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     
-                    NavigationLink(destination: CustomizationSettingsView()) {
-                        Label("Customization", systemImage: "slider.horizontal.3")
-                            .foregroundColor(.primary)
+                    // Data Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("DATA")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 0) {
+                            NavigationLink(destination: DataSourcesView()) {
+                                HStack {
+                                    Image(systemName: "externaldrive.fill")
+                                        .foregroundColor(Color(hex: "#64B5F6"))
+                                    Text("Data Sources")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            NavigationLink(destination: DataManagementView()) {
+                                HStack {
+                                    Image(systemName: "folder.fill")
+                                        .foregroundColor(Color(hex: "#9575CD"))
+                                    Text("Data Management")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                        }
+                        .background(Color.white)
+                        .cornerRadius(24)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     
-                    NavigationLink(destination: NotificationSettingsView()) {
-                        Label("Notifications", systemImage: "bell.fill")
-                            .foregroundColor(.primary)
-                    }
-                }
-                
-                // Data Section
-                Section(header: Text("DATA")) {
-                    NavigationLink(destination: DataSourcesView()) {
-                        Label("Data Sources", systemImage: "externaldrive.fill")
-                            .foregroundColor(.primary)
+                    // Resources Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("RESOURCES")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 0) {
+                            NavigationLink(destination: RecoveryDashboardView()) {
+                                HStack {
+                                    Image(systemName: "heart.text.square.fill")
+                                        .foregroundColor(Color(hex: "#FF6B6B"))
+                                    Text("Recovery Dashboard")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            NavigationLink(destination: AnalyticsDashboardView()) {
+                                HStack {
+                                    Image(systemName: "chart.bar.xaxis")
+                                        .foregroundColor(Color(hex: "#4DB6AC"))
+                                    Text("Advanced Analytics")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            NavigationLink(destination: ExerciseLibraryView()) {
+                                HStack {
+                                    Image(systemName: "figure.strengthtraining.traditional")
+                                        .foregroundColor(Color(hex: "#7CB9A8"))
+                                    Text("Exercise Library")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    HStack(spacing: 4) {
+                                        Text("\(workoutDays.flatMap { $0.exercises }.count)")
+                                            .font(.system(size: 14, weight: .medium))
+                                            .foregroundColor(.secondary)
+                                        Image(systemName: "chevron.right")
+                                            .font(.system(size: 12, weight: .semibold))
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
+                                .padding(20)
+                            }
+                        }
+                        .background(Color.white)
+                        .cornerRadius(24)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     
-                    NavigationLink(destination: DataManagementView()) {
-                        Label("Data Management", systemImage: "folder.fill")
-                            .foregroundColor(.primary)
-                    }
-                }
-                
-                // Resources Section
-                Section(header: Text("RESOURCES")) {
-                    NavigationLink(destination: RecoveryDashboardView()) {
-                        Label("Recovery Dashboard", systemImage: "heart.text.square.fill")
-                            .foregroundColor(.primary)
-                    }
-                    
-                    NavigationLink(destination: AnalyticsDashboardView()) {
-                        Label("Advanced Analytics", systemImage: "chart.bar.xaxis")
-                            .foregroundColor(.primary)
-                    }
-                    
-                    NavigationLink(destination: ExerciseLibraryView()) {
-                        Label {
+                    // About Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("ABOUT")
+                            .font(.caption)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.secondary)
+                            .padding(.horizontal, 20)
+                        
+                        VStack(spacing: 0) {
                             HStack {
-                                Text("Exercise Library")
+                                Image(systemName: "info.circle.fill")
+                                    .foregroundColor(Color(hex: "#64B5F6"))
+                                Text("Version")
+                                    .foregroundColor(.primary)
                                 Spacer()
-                                Text("\(workoutDays.flatMap { $0.exercises }.count)")
+                                Text("1.0.0")
                                     .font(.system(size: 14, weight: .medium))
                                     .foregroundColor(.secondary)
                             }
-                        } icon: {
-                            Image(systemName: "figure.strengthtraining.traditional")
+                            .padding(20)
+                            
+                            Divider()
+                                .background(Color.gray.opacity(0.1))
+                                .padding(.leading, 20)
+                            
+                            Button {
+                                if let url = URL(string: "https://github.com") {
+                                    UIApplication.shared.open(url)
+                                }
+                            } label: {
+                                HStack {
+                                    Image(systemName: "chevron.left.forwardslash.chevron.right")
+                                        .foregroundColor(Color(hex: "#9575CD"))
+                                    Text("View Source Code")
+                                        .foregroundColor(.primary)
+                                    Spacer()
+                                    Image(systemName: "arrow.up.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.secondary)
+                                }
+                                .padding(20)
+                            }
                         }
-                        .foregroundColor(.primary)
-                    }
-                }
-                
-                // About Section
-                Section(header: Text("ABOUT")) {
-                    HStack {
-                        Label("Version", systemImage: "info.circle.fill")
-                            .foregroundColor(.primary)
-                        Spacer()
-                        Text("1.0.0")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundColor(.secondary)
+                        .background(Color.white)
+                        .cornerRadius(24)
+                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 24)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                        )
                     }
                     
-                    Button {
-                        if let url = URL(string: "https://github.com") {
-                            UIApplication.shared.open(url)
-                        }
-                    } label: {
-                        Label("View Source Code", systemImage: "chevron.left.forwardslash.chevron.right")
-                            .foregroundColor(.primary)
-                    }
+                    Spacer(minLength: 100)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 20)
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-            .background(Color(hex: "#F2F2F7"))
-            .scrollContentBackground(.hidden)
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         }
     }
 }

@@ -13,12 +13,8 @@ struct AnalyticsDashboardView: View {
         NavigationStack {
             ZStack {
                 // Background
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
+                // Background
+                Color(hex: "#F5F5F7").ignoresSafeArea()
 
                 if viewModel.isLoading {
                     loadingView
@@ -156,7 +152,7 @@ struct AnalyticsDashboardView: View {
 
                 Text("View Personal Records")
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Spacer()
 
@@ -166,10 +162,10 @@ struct AnalyticsDashboardView: View {
             }
             .padding(20)
             .background(
-                RoundedRectangle(cornerRadius: 20)
-                    .fill(Color.white.opacity(0.05))
+                RoundedRectangle(cornerRadius: 24)
+                    .fill(Color.white)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20)
+                        RoundedRectangle(cornerRadius: 24)
                             .stroke(
                                 LinearGradient(
                                     colors: [Color(hex: "#FFD700").opacity(0.3), Color(hex: "#FFD700").opacity(0.1)],
@@ -238,7 +234,7 @@ struct AnalyticsStatCard: View {
             VStack(spacing: 4) {
                 Text(value)
                     .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Text(label)
                     .font(.system(size: 12, weight: .medium))
@@ -249,11 +245,12 @@ struct AnalyticsStatCard: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 20)
         .background(
-            RoundedRectangle(cornerRadius: 18)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 18)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -268,7 +265,7 @@ struct PersonalRecordsSheet: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color.black.ignoresSafeArea()
+                Color(hex: "#F5F5F7").ignoresSafeArea()
 
                 if records.isEmpty {
                     VStack(spacing: 16) {
@@ -320,7 +317,7 @@ struct PersonalRecordRow: View {
             // Exercise name
             Text(record.exerciseName)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
 
             // Records
             VStack(spacing: 8) {
@@ -351,11 +348,12 @@ struct PersonalRecordRow: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -388,7 +386,7 @@ struct RecordItem: View {
 
                 Text(value)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
 
             Spacer()
@@ -398,7 +396,7 @@ struct RecordItem: View {
                 .foregroundColor(.gray)
         }
         .padding(10)
-        .background(Color.white.opacity(0.03))
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(10)
     }
 }

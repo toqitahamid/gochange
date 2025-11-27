@@ -19,7 +19,7 @@ struct MuscleGroupBalanceView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Muscle Group Balance")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
 
                     if !data.isEmpty {
                         Text("Volume distribution")
@@ -60,11 +60,12 @@ struct MuscleGroupBalanceView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -85,7 +86,7 @@ struct MuscleGroupBalanceView: View {
             .chartXAxis {
                 AxisMarks(position: .bottom) { _ in
                     AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                        .foregroundStyle(Color.white.opacity(0.1))
+                        .foregroundStyle(Color.gray.opacity(0.2))
                     AxisValueLabel()
                         .foregroundStyle(.gray)
                         .font(.caption2)
@@ -94,7 +95,7 @@ struct MuscleGroupBalanceView: View {
             .chartYAxis {
                 AxisMarks(position: .leading) { value in
                     AxisValueLabel()
-                        .foregroundStyle(.white)
+                        .foregroundStyle(.primary)
                         .font(.caption)
                 }
             }
@@ -125,7 +126,7 @@ struct MuscleGroupBalanceView: View {
 
                         Text(item.muscleGroup)
                             .font(.system(size: 11))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
 
                         Spacer()
 
@@ -162,7 +163,7 @@ struct MuscleGroupBalanceView: View {
                 Text("Balance Analysis")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Spacer()
             }
@@ -284,7 +285,7 @@ struct BalanceStatRow: View {
 
                 Text(muscleGroup)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
 
             Spacer()
@@ -298,7 +299,7 @@ struct BalanceStatRow: View {
                 .cornerRadius(6)
         }
         .padding(10)
-        .background(Color.white.opacity(0.03))
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(10)
     }
 }

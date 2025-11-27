@@ -13,12 +13,12 @@ struct RepsTrendsChart: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Reps Trends")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
 
                     if let average = averageReps {
                         Text("Avg: \(formatReps(average))")
                             .font(.caption)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                     }
                 }
 
@@ -64,7 +64,7 @@ struct RepsTrendsChart: View {
                 .chartXAxis {
                     AxisMarks(values: .automatic(desiredCount: 5)) { value in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(Color.white.opacity(0.1))
+                            .foregroundStyle(Color.gray.opacity(0.2))
                         AxisValueLabel()
                             .foregroundStyle(.gray)
                             .font(.caption2)
@@ -73,7 +73,7 @@ struct RepsTrendsChart: View {
                 .chartYAxis {
                     AxisMarks(position: .leading) { value in
                         AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                            .foregroundStyle(Color.white.opacity(0.1))
+                            .foregroundStyle(Color.gray.opacity(0.2))
                         AxisValueLabel {
                             if let reps = value.as(Int.self) {
                                 Text("\(reps)")
@@ -90,11 +90,12 @@ struct RepsTrendsChart: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }

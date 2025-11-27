@@ -29,7 +29,7 @@ struct RecoveryDashboardView: View {
                 VStack(spacing: 20) {
                     if isLoading {
                         ProgressView("Loading recovery data...")
-                            .foregroundColor(.white)
+                            .tint(Color(hex: "#00D4AA"))
                             .frame(maxWidth: .infinity, minHeight: 200)
                     } else {
                         // Only show prompt if:
@@ -67,14 +67,7 @@ struct RecoveryDashboardView: View {
                 .padding(.top, 20)
                 .padding(.bottom, 100)
             }
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
             .toolbar(.hidden, for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -135,7 +128,7 @@ struct RecoveryDashboardView: View {
             VStack(spacing: 8) {
                 Text(healthKitService.hasDeniedReadPermissions ? "HealthKit Permissions Denied" : "Enable HealthKit Integration")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Text(healthKitService.hasDeniedReadPermissions ? 
                      "Read permissions for sleep, heart rate, and HRV were denied. Please enable them in Settings > Health > Data Access & Devices > GoChange." :
@@ -153,7 +146,7 @@ struct RecoveryDashboardView: View {
                 } label: {
                     Text("Open Settings")
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
                         .background(Color(hex: "#FF6B6B"))
@@ -172,7 +165,7 @@ struct RecoveryDashboardView: View {
             } label: {
                 Text("Connect HealthKit")
                     .fontWeight(.semibold)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(Color(hex: "#FF6B6B"))
@@ -181,13 +174,12 @@ struct RecoveryDashboardView: View {
             }
         }
         .padding(20)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
     }
 
@@ -197,7 +189,7 @@ struct RecoveryDashboardView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Training Readiness")
                         .font(.headline)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text(recommendation.readiness.rawValue)
                         .font(.title)
                         .fontWeight(.bold)
@@ -214,7 +206,7 @@ struct RecoveryDashboardView: View {
                     Text("\(Int(recommendation.score * 100))%")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                 }
                 .frame(width: 80, height: 80)
             }
@@ -228,7 +220,7 @@ struct RecoveryDashboardView: View {
                     Text("Suggested Activities")
                         .font(.subheadline)
                         .fontWeight(.semibold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
 
                     ForEach(recommendation.suggestedActivities, id: \.self) { activity in
                         HStack(spacing: 8) {
@@ -237,28 +229,29 @@ struct RecoveryDashboardView: View {
                                 .font(.caption)
                             Text(activity)
                                 .font(.caption)
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                     }
                 }
                 .padding(12)
                 .background(
                     RoundedRectangle(cornerRadius: 12)
-                        .fill(Color.white.opacity(0.03))
+                        .fill(Color.white)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12)
-                                .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                                .stroke(Color.gray.opacity(0.05), lineWidth: 1)
                         )
                 )
             }
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -267,7 +260,7 @@ struct RecoveryDashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Recovery Score")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
 
             HStack(spacing: 16) {
                 ZStack {
@@ -278,7 +271,7 @@ struct RecoveryDashboardView: View {
                     Text("\(Int(metrics.overallRecoveryScore * 100))%")
                         .font(.caption)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                 }
                 .frame(width: 60, height: 60)
 
@@ -286,7 +279,7 @@ struct RecoveryDashboardView: View {
                     Text("\(Int(metrics.overallRecoveryScore * 100))%")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Overall Recovery")
                         .font(.caption)
                         .foregroundStyle(.gray)
@@ -295,11 +288,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -311,7 +305,7 @@ struct RecoveryDashboardView: View {
                     .foregroundStyle(Color(hex: "#7B68EE"))
                 Text("Sleep")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
 
             if metrics.sleepDuration != nil {
@@ -320,7 +314,7 @@ struct RecoveryDashboardView: View {
                         Text(metrics.formattedSleepDuration)
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                         Text("Total Sleep")
                             .font(.caption)
                             .foregroundStyle(.gray)
@@ -379,11 +373,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -395,7 +390,7 @@ struct RecoveryDashboardView: View {
                     .foregroundStyle(Color(hex: "#FF6B35"))
                 Text("Muscle Recovery")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
 
             if metrics.muscleRecovery.isEmpty {
@@ -410,11 +405,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -425,7 +421,7 @@ struct RecoveryDashboardView: View {
                 Text(recovery.muscleGroup)
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 if let lastWorked = recovery.lastWorked {
                     Text("Last worked: \(lastWorked.formatted(.relative(presentation: .named)))")
@@ -453,7 +449,7 @@ struct RecoveryDashboardView: View {
                     .foregroundStyle(Color(hex: "#FF6B6B"))
                 Text("Vital Signs")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
             }
 
             HStack(spacing: 16) {
@@ -462,7 +458,7 @@ struct RecoveryDashboardView: View {
                         Text("\(Int(rhr))")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                         Text("Resting HR")
                             .font(.caption)
                             .foregroundStyle(.gray)
@@ -475,7 +471,7 @@ struct RecoveryDashboardView: View {
                         Text("\(Int(hrv))")
                             .font(.title2)
                             .fontWeight(.bold)
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                         Text("HRV (ms)")
                             .font(.caption)
                             .foregroundStyle(.gray)
@@ -489,7 +485,7 @@ struct RecoveryDashboardView: View {
                         Text("\(fatigue)")
                         .font(.title2)
                         .fontWeight(.bold)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Fatigue")
                         .font(.caption)
                         .foregroundStyle(.gray)
@@ -506,11 +502,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -522,7 +519,7 @@ struct RecoveryDashboardView: View {
                     .foregroundStyle(Color(hex: "#00D4AA"))
                 Text("Today's Rest Day")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Spacer()
 
@@ -537,7 +534,7 @@ struct RecoveryDashboardView: View {
                     Text(restDay.type.rawValue.capitalized)
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     Text("Type")
                         .font(.caption)
                         .foregroundStyle(.gray)
@@ -578,11 +575,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -591,7 +589,7 @@ struct RecoveryDashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Recent Rest Days")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
 
             if restDays.isEmpty {
                 Text("No rest days logged yet")
@@ -600,11 +598,12 @@ struct RecoveryDashboardView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(20)
                     .background(
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(Color.white.opacity(0.05))
+                        RoundedRectangle(cornerRadius: 24)
+                            .fill(Color.white)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
-                                    .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 24)
+                                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                             )
                     )
             } else {
@@ -621,7 +620,7 @@ struct RecoveryDashboardView: View {
                 Text(restDay.date.formatted(date: .abbreviated, time: .omitted))
                     .font(.subheadline)
                     .fontWeight(.medium)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Text(restDay.type.rawValue.capitalized)
                     .font(.caption)
                     .foregroundStyle(.gray)
@@ -643,11 +642,12 @@ struct RecoveryDashboardView: View {
         }
         .padding(16)
         .background(
-            RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.03))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.05), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }

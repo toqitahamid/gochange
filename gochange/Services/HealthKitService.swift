@@ -740,6 +740,21 @@ class HealthKitService: ObservableObject {
             healthStore.execute(query)
         }
     }
+    
+    // MARK: - User Characteristics
+    
+    /// Get user's date of birth from HealthKit
+    func getBirthdate() -> Date? {
+        guard isHealthKitAvailable else { return nil }
+        
+        do {
+            let birthdateComponents = try healthStore.dateOfBirthComponents()
+            return Calendar.current.date(from: birthdateComponents)
+        } catch {
+            print("❌ Error fetching birthdate: \(error.localizedDescription)")
+            return nil
+        }
+    }
 }
 
 // MARK: - Supporting Types

@@ -8,7 +8,7 @@ struct TopExercisesView: View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Top Exercises")
                 .font(.headline)
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
 
             if exercises.isEmpty {
                 emptyStateView
@@ -22,11 +22,12 @@ struct TopExercisesView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -66,7 +67,7 @@ struct TopExerciseRow: View {
             // Name
             Text(exercise.exerciseName)
                 .font(.system(size: 16, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             Spacer()
 
@@ -74,7 +75,7 @@ struct TopExerciseRow: View {
             VStack(alignment: .trailing, spacing: 2) {
                 Text("\(exercise.count) workouts")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 Text("\(exercise.totalReps) reps")
                     .font(.system(size: 12))
@@ -82,8 +83,8 @@ struct TopExerciseRow: View {
             }
         }
         .padding(12)
-        .background(Color.white.opacity(0.03))
-        .cornerRadius(12)
+        .background(Color.gray.opacity(0.05))
+        .cornerRadius(16)
     }
 
     private var rankColor: Color {

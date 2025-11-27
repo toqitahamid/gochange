@@ -19,7 +19,7 @@ struct ProgressSummariesView: View {
             HStack {
                 Text("Progress Summary")
                     .font(.headline)
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
 
                 Spacer()
 
@@ -42,11 +42,12 @@ struct ProgressSummariesView: View {
         }
         .padding(20)
         .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
+            RoundedRectangle(cornerRadius: 24)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 24)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
         )
     }
@@ -103,7 +104,7 @@ struct ProgressSummariesView: View {
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.white.opacity(0.1))
+                    .foregroundStyle(Color.gray.opacity(0.2))
                 AxisValueLabel()
                     .foregroundStyle(.gray)
                     .font(.caption2)
@@ -163,7 +164,7 @@ struct ProgressSummariesView: View {
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
                 AxisGridLine(stroke: StrokeStyle(lineWidth: 0.5))
-                    .foregroundStyle(Color.white.opacity(0.1))
+                    .foregroundStyle(Color.gray.opacity(0.2))
                 AxisValueLabel()
                     .foregroundStyle(.gray)
                     .font(.caption2)
@@ -199,7 +200,7 @@ struct MonthlyProgressRow: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(progress.monthName)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 Text(String(progress.year))
                     .font(.system(size: 11))
                     .foregroundColor(.gray)
@@ -232,7 +233,7 @@ struct MonthlyProgressRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.gray.opacity(0.05))
         )
     }
 
@@ -262,7 +263,7 @@ struct YearlyProgressRow: View {
             // Year
             Text(String(progress.year))
                 .font(.system(size: 16, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .frame(width: 60, alignment: .leading)
 
             Spacer()
@@ -291,7 +292,7 @@ struct YearlyProgressRow: View {
         .padding(12)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.03))
+                .fill(Color.gray.opacity(0.05))
         )
     }
 
@@ -326,7 +327,7 @@ struct StatBadge: View {
 
             Text(value)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
