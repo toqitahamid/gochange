@@ -285,6 +285,33 @@ struct SettingsView: View {
                             
                             Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
                             
+                            NavigationLink(destination: WatchSyncDebugView()) {
+                                HStack(spacing: 14) {
+                                    ZStack {
+                                        Circle()
+                                            .fill(Color(hex: "#9C27B0").opacity(0.15))
+                                            .frame(width: 36, height: 36)
+                                        
+                                        Image(systemName: "applewatch")
+                                            .font(.system(size: 15))
+                                            .foregroundColor(Color(hex: "#9C27B0"))
+                                    }
+                                    
+                                    Text("Watch Sync Debug")
+                                        .foregroundColor(.white)
+                                    
+                                    Spacer()
+                                    
+                                    Image(systemName: "chevron.right")
+                                        .font(.system(size: 12, weight: .semibold))
+                                        .foregroundColor(.gray.opacity(0.5))
+                                }
+                                .padding(16)
+                            }
+                            .buttonStyle(.plain)
+                            
+                            Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading,  52)
+                            
                             SettingsButton(icon: "arrow.counterclockwise", iconColor: Color(hex: "#FF6B6B"), title: "Reset to Defaults", isDestructive: true) {
                                 showingResetAlert = true
                             }

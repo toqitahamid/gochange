@@ -47,11 +47,20 @@ class WatchConnectivityService: NSObject, ObservableObject {
     /// Send workout days to the Apple Watch
     func sendWorkoutDays(_ workoutDays: [WorkoutDayTransfer]) {
         guard let session = session,
-              session.activationState == .activated,
-              session.isWatchAppInstalled else {
-            print("Cannot send data: Watch app not available")
+              session.activationState == .activated else {
+            print("❌ Cannot send data: Session not activated")
             return
         }
+        
+        guard session.isWatchAppInstalled else {
+            print("❌ Cannot send data: Watch app not installed")
+            return
+        }
+        
+        print("📤 Preparing to send \(workoutDays.count) workout days to watch")
+        print("   isPaired: \(session.isPaired)")
+        print("   isReachable: \(session.isReachable)")
+        print("   isWatchAppInstalled: \(session.isWatchAppInstalled)")
         
         do {
             let data = try JSONEncoder().encode(workoutDays)
@@ -60,19 +69,23 @@ class WatchConnectivityService: NSObject, ObservableObject {
                 "data": data
             ]
             
+            // Always update application context for persistence
+            try session.updateApplicationContext(message)
+            print("✅ Updated application context with \(workoutDays.count) workouts")
+            
+            // Also send immediate message if watch is reachable
             if session.isReachable {
-                // Send immediately if watch is reachable
-                session.sendMessage(message, replyHandler: nil) { error in
-                    print("Error sending workout days: \(error.localizedDescription)")
+                session.sendMessage(message, replyHandler: { response in
+                    print("✅ Watch acknowledged receipt: \(response)")
+                }) { error in
+                    print("⚠️ Error sending immediate message: \(error.localizedDescription)")
                 }
-            } else {
-                // Queue for background transfer
-                try session.updateApplicationContext(message)
             }
         } catch {
-            print("Error encoding workout days: \(error)")
+            print("❌ Error encoding workout days: \(error)")
         }
     }
+    
     
     /// Send a message to the watch
     func sendMessage(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil) {
@@ -131,8 +144,10 @@ class WatchConnectivityService: NSObject, ObservableObject {
     /// Fetch workout days from SwiftData and send to watch
     @MainActor
     func fetchAndSendWorkoutDays() async {
+        print("🔄 Fetching workout days for watch...")
+        
         guard let context = modelContext else {
-            print("Model context not set")
+            print("❌ Model context not set")
             return
         }
         
@@ -142,15 +157,16 @@ class WatchConnectivityService: NSObject, ObservableObject {
             )
             let workoutDays = try context.fetch(descriptor)
             
+            print("📊 Found \(workoutDays.count) workout days in database")
+            
             // Convert to transfer models
             let transferDays = workoutDays.map { WorkoutDayTransfer(from: $0) }
             
             // Send to watch
             sendWorkoutDays(transferDays)
             
-            print("Sent \(transferDays.count) workout days to watch")
         } catch {
-            print("Error fetching workout days: \(error)")
+            print("❌ Error fetching workout days: \(error)")
         }
     }
 }
@@ -170,6 +186,14 @@ extension WatchConnectivityService: WCSessionDelegate {
             print("WCSession activation failed: \(error.localizedDescription)")
         } else {
             print("WCSession activated with state: \(activationState.rawValue)")
+            print("isPaired: \(session.isPaired), isWatchAppInstalled: \(session.isWatchAppInstalled)")
+            
+            // Automatically send workout data when session activates
+            if activationState == .activated && session.isWatchAppInstalled {
+                Task {
+                    await self.fetchAndSendWorkoutDays()
+                }
+            }
         }
     }
     
@@ -186,6 +210,14 @@ extension WatchConnectivityService: WCSessionDelegate {
     func sessionReachabilityDidChange(_ session: WCSession) {
         DispatchQueue.main.async {
             self.isReachable = session.isReachable
+            print("WCSession reachability changed: \(session.isReachable)")
+        }
+        
+        // Automatically sync when watch becomes reachable
+        if session.isReachable {
+            Task {
+                await self.fetchAndSendWorkoutDays()
+            }
         }
     }
     

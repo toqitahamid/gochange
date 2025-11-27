@@ -29,18 +29,20 @@ class WatchConnectivityManager: NSObject, ObservableObject {
     func sendMessage(_ message: [String: Any], replyHandler: (([String: Any]) -> Void)? = nil) {
         guard let session = session,
               session.isReachable else {
-            // Queue message for later
+            print("⚠️ iPhone not reachable, cannot send message")
             return
         }
         
+        print("📤 Sending message to iPhone: \(message)")
         session.sendMessage(message, replyHandler: replyHandler) { error in
-            print("Error sending message: \(error)")
+            print("❌ Error sending message: \(error.localizedDescription)")
         }
     }
     
     func requestWorkoutDays() {
+        print("🔄 Requesting workout days from iPhone...")
         sendMessage(["type": "requestWorkoutDays"]) { response in
-            // Handle response
+            print("✅ Received response from iPhone: \(response)")
         }
     }
 }
@@ -53,8 +55,15 @@ extension WatchConnectivityManager: WCSessionDelegate {
             self.isConnected = activationState == .activated
         }
         
+        if let error = error {
+            print("❌ Watch session activation error: \(error)")
+        } else {
+            print("✅ Watch session activated with state: \(activationState.rawValue)")
+        }
+        
         // Request workout days on activation
         if activationState == .activated {
+            print("📤 Requesting workout days from iPhone...")
             requestWorkoutDays()
         }
     }
@@ -63,6 +72,7 @@ extension WatchConnectivityManager: WCSessionDelegate {
         DispatchQueue.main.async {
             self.isConnected = session.isReachable
         }
+        print("📱 iPhone reachability changed: \(session.isReachable)")
     }
     
     // MARK: - Receiving Data
@@ -81,23 +91,39 @@ extension WatchConnectivityManager: WCSessionDelegate {
     }
     
     private func handleReceivedMessage(_ message: [String: Any]) {
-        guard let type = message["type"] as? String else { return }
+        print("📩 Watch received message with keys: \(message.keys)")
+        
+        guard let type = message["type"] as? String else {
+            print("❌ No 'type' field in message")
+            return
+        }
+        
+        print("📩 Message type: \(type)")
         
         switch type {
         case "workoutDays":
+            print("🏋️ Processing workoutDays message...")
             if let data = message["data"] as? Data {
+                print("📊 Data size: \(data.count) bytes")
                 do {
                     let days = try JSONDecoder().decode([WatchWorkoutDay].self, from: data)
+                    print("✅ Successfully decoded \(days.count) workout days")
+                    for (index, day) in days.enumerated() {
+                        print("  Day \(index + 1): \(day.name) with \(day.exercises.count) exercises")
+                    }
                     DispatchQueue.main.async {
                         self.workoutDays = days
+                        print("✅ Updated workoutDays array on main thread")
                     }
                 } catch {
-                    print("Error decoding workout days: \(error)")
+                    print("❌ Error decoding workout days: \(error)")
                 }
+            } else {
+                print("❌ No 'data' field found or wrong type. Message contents: \(message)")
             }
             
         default:
-            print("Unknown message type: \(type)")
+            print("⚠️ Unknown message type: \(type)")
         }
     }
 }
