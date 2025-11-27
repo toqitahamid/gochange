@@ -40,6 +40,9 @@ struct GoChangeApp: App {
             MainTabView()
                 .onAppear {
                     workoutManager.setModelContext(modelContainer.mainContext)
+                    
+                    // Initialize Watch Connectivity
+                    WatchConnectivityService.shared.setModelContext(modelContainer.mainContext)
                 }
         }
         .modelContainer(modelContainer)

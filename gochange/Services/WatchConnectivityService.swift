@@ -1,6 +1,7 @@
 import Foundation
 import WatchConnectivity
 import Combine
+import SwiftData
 
 /// Service for communication between iPhone and Apple Watch
 /// Handles sending workout data to watch and receiving completed workouts back
@@ -12,6 +13,7 @@ class WatchConnectivityService: NSObject, ObservableObject {
     @Published var isWatchAppInstalled = false
     
     private var session: WCSession?
+    private var modelContext: ModelContext?
     
     // Callback for when a workout is received from the watch
     var onWorkoutReceived: (([String: Any]) -> Void)?
@@ -111,6 +113,46 @@ class WatchConnectivityService: NSObject, ObservableObject {
             print("Error updating application context: \(error)")
         }
     }
+    
+    // MARK: - Model Context Setup
+    
+    /// Set the model context for fetching workout data
+    func setModelContext(_ context: ModelContext) {
+        self.modelContext = context
+        
+        // Send workout days immediately if watch is already connected
+        if isSessionActive && isWatchAppInstalled {
+            Task {
+                await fetchAndSendWorkoutDays()
+            }
+        }
+    }
+    
+    /// Fetch workout days from SwiftData and send to watch
+    @MainActor
+    func fetchAndSendWorkoutDays() async {
+        guard let context = modelContext else {
+            print("Model context not set")
+            return
+        }
+        
+        do {
+            let descriptor = FetchDescriptor<WorkoutDay>(
+                sortBy: [SortDescriptor(\.dayNumber, order: .forward)]
+            )
+            let workoutDays = try context.fetch(descriptor)
+            
+            // Convert to transfer models
+            let transferDays = workoutDays.map { WorkoutDayTransfer(from: $0) }
+            
+            // Send to watch
+            sendWorkoutDays(transferDays)
+            
+            print("Sent \(transferDays.count) workout days to watch")
+        } catch {
+            print("Error fetching workout days: \(error)")
+        }
+    }
 }
 
 // MARK: - WCSessionDelegate
@@ -166,6 +208,12 @@ extension WatchConnectivityService: WCSessionDelegate {
         guard let type = message["type"] as? String else { return }
         
         switch type {
+        case "requestWorkoutDays":
+            // Watch is requesting workout days - fetch and send them
+            Task {
+                await self.fetchAndSendWorkoutDays()
+            }
+            
         case "completedWorkout":
             // Workout completed on watch - process and save
             if let workoutData = message["workout"] as? [String: Any] {
