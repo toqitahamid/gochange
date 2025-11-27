@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-GoChange is a native iOS workout tracking app built with SwiftUI and SwiftData. It helps users log gym sessions following a 4-day Push/Pull/Legs/Fullbody split with intelligent workout scheduling, progress tracking, and Live Activity support for rest timers.
+GoChange is a native iOS and watchOS workout tracking app built with SwiftUI and SwiftData. It helps users log gym sessions following a 4-day Push/Pull/Legs/Fullbody split with intelligent workout scheduling, progress tracking, HealthKit integration for recovery metrics, and Live Activity support for rest timers and active workouts. The app includes a companion Apple Watch app for viewing and starting workouts on the wrist.
 
 ## Building and Running
 
@@ -18,8 +18,13 @@ xcodebuild -scheme gochange -configuration Debug build
 xcodebuild -scheme GoChangeWidgetExtension -configuration Debug build
 ```
 
+### Build the Apple Watch app
+```bash
+xcodebuild -scheme "GoChangeWatch Watch App" -configuration Debug build
+```
+
 ### Run in simulator (recommended for development)
-Open `gochange.xcodeproj` in Xcode and use Cmd+R to build and run. The app requires iOS 17.0+.
+Open `gochange.xcodeproj` in Xcode and use Cmd+R to build and run. The app requires iOS 17.0+. To run the Watch app, select the Watch scheme and run on a paired Watch simulator.
 
 ### Clean build
 ```bash
@@ -56,6 +61,14 @@ All models are SwiftData `@Model` classes with relationships:
 - **RestTimerAttributes**: ActivityKit attributes for Live Activity rest timer
 
 - **WorkoutActivityAttributes**: ActivityKit attributes for Live Activity workout tracking
+
+- **RestDay**: Represents a scheduled rest day
+  - Properties: date, reason, notes
+
+- **RecoveryMetrics**: Tracks recovery and readiness data
+  - HealthKit data: sleepDuration, sleepQuality, deepSleep, REMsleep, restingHeartRate, HRV
+  - User-reported: muscleRecovery (array of MuscleGroupRecovery), overallFatigue, motivationLevel
+  - Computed: overallRecoveryScore (0-1), readinessToTrain (TrainingReadiness enum)
 
 ### Key Services
 
@@ -98,6 +111,29 @@ All models are SwiftData `@Model` classes with relationships:
   - Methods: requestAuthorization(), scheduleRestTimerNotification(endTime:), scheduleWorkoutReminder(weekday:hour:minute:workoutName:)
   - Uses UNUserNotificationCenter for local notifications
 
+- **HealthKitService** (`gochange/Services/HealthKitService.swift`):
+  - Singleton managing HealthKit integration
+  - Writes workout sessions to Apple Health with activity type and calories
+  - Reads extensive health metrics: sleep data, heart rate, HRV, respiratory rate, oxygen saturation, VO2 max, steps, etc.
+  - Methods: requestAuthorization(), saveWorkout(), getSleepData(), getRestingHeartRate(), getHRV()
+  - Requires proper Info.plist privacy usage descriptions
+
+- **RecoveryService** (`gochange/Services/RecoveryService.swift`):
+  - Singleton managing recovery metrics
+  - Fetches/creates RecoveryMetrics for given dates
+  - Syncs with HealthKit for sleep and vitals
+  - Calculates recovery scores from multiple data sources
+
+- **AnalyticsService** (`gochange/Services/AnalyticsService.swift`):
+  - Workout analytics and statistics
+  - Calculates: active days, total exercises, total reps, top exercises, volume trends
+
+- **WatchConnectivityService** (`gochange/Services/WatchConnectivityService.swift`):
+  - Singleton managing iPhone side of Watch Connectivity
+  - Sends workout day templates to Apple Watch
+  - Receives completed workout sessions from Watch
+  - Uses WCSession for bidirectional communication
+
 ### ViewModels
 
 - **WorkoutViewModel** (`gochange/ViewModels/WorkoutViewModel.swift`):
@@ -107,32 +143,48 @@ All models are SwiftData `@Model` classes with relationships:
   - Calculates statistics: completedSessionsThisWeek, totalVolume, averageWorkoutDuration
   - Uses SchedulingService.suggestNextWorkout()
 
-- **CalendarViewModel** (`gochange/ViewModels/CalendarViewModel.swift`):
-  - Calendar-specific logic and data transformation
+- **DashboardViewModel** (`gochange/ViewModels/DashboardViewModel.swift`):
+  - Main dashboard data aggregation
+  - Calculates recovery, sleep, and strain scores (0-100)
+  - Fetches data from HealthKitService and RecoveryService
+  - Displays: HRV, resting HR, sleep data, active calories, VO2 max, respiratory rate, oxygen saturation
+
+- **FitnessViewModel** (`gochange/ViewModels/FitnessViewModel.swift`):
+  - Fitness and strength analytics
+  - Calculates muscle group volumes, frequency, and load
+  - Displays strength metrics and workout distribution
+
+- **AnalyticsViewModel** (`gochange/ViewModels/AnalyticsViewModel.swift`):
+  - Advanced analytics and trends
+  - Weekly/monthly workout statistics
 
 ### View Structure
 
-- **MainTabView.swift**: Tab-based navigation (Home, Workout, Calendar, History, More/Settings)
+- **MainTabView.swift**: Tab-based navigation (Home, Workout, Fitness, More/Settings)
   - Dynamically shows ActiveWorkoutView when WorkoutManager.isWorkoutActive is true
   - Shows MiniPlayerView at bottom when workout is minimized
   - Injects WorkoutManager as EnvironmentObject
 
 - **Views/Workout/**: ActiveWorkoutView (main workout logging UI), WorkoutDaySelectionView, EditWorkoutDayView, WorkoutPreviewView
-- **Views/LiveActivity/**: RestTimerWidget (WidgetKit/ActivityKit UI), RestTimerWidgetBundle
-- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView, MiniPlayerView
-- **Views/Home/**: HomeView
-- **Views/Calendar/**: CalendarView
-- **Views/History/**: HistoryListView, SessionDetailView
+- **Views/LiveActivity/**: RestTimerWidget (WidgetKit/ActivityKit UI), RestTimerWidgetBundle, GoChangeStaticWidget (home screen widget)
+- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView, MiniPlayerView, CircularProgressView
+- **Views/Home/**: HomeView with new dashboard showing Recovery/Strain/Sleep metrics
+- **Views/Recovery/**: Recovery metrics detail view
+- **Views/Sleep/**: Sleep data detail view
+- **Views/Fitness/**: Fitness/strength analytics view
+- **Views/Analytics/**: Advanced analytics view
+- **Views/History/**: SessionDetailView (individual workout session details, used in homepage timeline)
 - **Views/Exercise/**: ExerciseLibraryView, ExerciseDetailView
 - **Views/Settings/**: SettingsView
 
 ### App Initialization
 
 In `gochange/App/GoChangeApp.swift`:
-- SwiftData ModelContainer is initialized with schema including all 5 models
+- SwiftData ModelContainer is initialized with schema including all models: WorkoutDay, Exercise, WorkoutSession, ExerciseLog, SetLog, RestDay, RecoveryMetrics
 - Default workout data is seeded on first launch via `DefaultWorkoutData.createDefaultWorkouts()`
 - ModelContainer is injected into environment via `.modelContainer(modelContainer)`
 - WorkoutManager singleton is created as @StateObject and injected via `.environmentObject(workoutManager)`
+- WatchConnectivityService is initialized with model context for iPhone-Watch communication
 
 ## Important Patterns
 
@@ -157,6 +209,19 @@ When starting a workout via WorkoutManager:
 - WorkoutActivityManager is a singleton that manages the workout progress Live Activity. It's automatically started/updated/ended by WorkoutManager.
 - The widget extension (GoChangeWidget) renders the UI for both activities.
 
+### HealthKit Integration
+- Request authorization on first use via `HealthKitService.shared.requestAuthorization()`
+- Save completed workouts to Apple Health: `HealthKitService.shared.saveWorkout(session:)`
+- Fetch sleep, heart rate, HRV data for recovery metrics
+- Info.plist must include privacy usage descriptions for all HealthKit data types
+
+### Watch Connectivity
+- iPhone app initializes `WatchConnectivityService.shared` and provides model context
+- Watch app uses `WatchConnectivityManager.shared` to communicate
+- Workout templates are synced from iPhone to Watch via JSON encoding
+- Watch can request workout data: `requestWorkoutDays()`
+- Completed Watch workouts can be synced back to iPhone (planned feature)
+
 ## Widget Extension
 
 The `GoChangeWidget` target is a Widget Extension containing:
@@ -172,6 +237,27 @@ The `GoChangeWidget` target is a Widget Extension containing:
   - Uses App Groups for data sharing: `group.com.toqitahamid.gochange`
   - WidgetDataManager syncs data between main app and widget extension
   - Updates every hour via Timeline
+
+## Apple Watch App
+
+The `GoChangeWatch Watch App` target is a standalone watchOS app:
+- Bundle identifier: com.toqitahamid.gochange.watchkitapp
+- Minimum watchOS version: watchOS 10.0+
+- Uses WatchConnectivity to sync workout templates from iPhone
+
+### Watch App Structure
+- **GoChangeWatchApp.swift**: Entry point, initializes WatchConnectivityManager
+- **WatchWorkoutManager**: Manages active workout state on Watch (similar to iOS WorkoutManager)
+- **WatchConnectivityManager**: Handles communication with iPhone, receives workout templates
+- **WatchHealthKitService**: Saves completed workouts to HealthKit on Watch
+- **Views**: WorkoutListView, WorkoutDetailView, WatchActiveWorkoutView, SetInputView
+- **DesignSystem.swift**: Watch-specific design tokens and styling
+
+### Watch-iPhone Communication
+- Watch requests workout templates on launch via `requestWorkoutDays()`
+- iPhone responds with JSON-encoded workout data via WCSession
+- Watch uses local `WatchWorkoutDay` and `WatchExercise` models (Codable structs, not SwiftData)
+- Communication is bidirectional: sendMessage() with optional reply handlers
 
 ## Dependencies
 
@@ -210,17 +296,24 @@ gochange/
 │   ├── WorkoutSession.swift
 │   ├── ExerciseLog.swift
 │   ├── SetLog.swift
+│   ├── RestDay.swift
+│   ├── RecoveryMetrics.swift
 │   ├── RestTimerAttributes.swift
 │   ├── WorkoutActivityAttributes.swift
 │   └── DefaultWorkoutData.swift
 ├── ViewModels/                   # MVVM ViewModels
 │   ├── WorkoutViewModel.swift
-│   └── CalendarViewModel.swift
+│   ├── DashboardViewModel.swift
+│   ├── FitnessViewModel.swift
+│   └── AnalyticsViewModel.swift
 ├── Views/                        # SwiftUI views
 │   ├── MainTabView.swift
 │   ├── Home/
 │   ├── Workout/
-│   ├── Calendar/
+│   ├── Recovery/
+│   ├── Sleep/
+│   ├── Fitness/
+│   ├── Analytics/
 │   ├── History/
 │   ├── Exercise/
 │   ├── Settings/
@@ -233,7 +326,11 @@ gochange/
 │   ├── WorkoutActivityManager.swift
 │   ├── NotificationService.swift
 │   ├── DataService.swift
-│   └── MediaService.swift
+│   ├── MediaService.swift
+│   ├── HealthKitService.swift
+│   ├── RecoveryService.swift
+│   ├── AnalyticsService.swift
+│   └── WatchConnectivityService.swift
 └── Utilities/                    # Extensions and constants
     ├── Extensions.swift
     └── Constants.swift
@@ -241,4 +338,17 @@ gochange/
 GoChangeWidget/                   # Widget Extension target
 ├── Info.plist
 └── Assets.xcassets/
+
+GoChangeWatch Watch App/          # watchOS app target
+├── GoChangeWatchApp.swift
+├── DesignSystem.swift
+├── Services/
+│   ├── WatchWorkoutManager.swift
+│   ├── WatchConnectivityManager.swift
+│   └── WatchHealthKitService.swift
+└── Views/
+    ├── WorkoutListView.swift
+    ├── WorkoutDetailView.swift
+    ├── WatchActiveWorkoutView.swift
+    └── SetInputView.swift
 ```
