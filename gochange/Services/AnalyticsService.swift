@@ -41,6 +41,96 @@ struct AnalyticsService {
             .sorted { $0.volume > $1.volume }
     }
 
+    // MARK: - New Analytics
+
+    /// Calculate total active days for a time period
+    static func calculateActiveDays(sessions: [WorkoutSession], period: TimePeriod) -> Int {
+        let filteredSessions = filterSessions(sessions, for: period)
+        let calendar = Calendar.current
+        let uniqueDays = Set(filteredSessions.map { calendar.startOfDay(for: $0.date) })
+        return uniqueDays.count
+    }
+
+    /// Calculate total exercises performed for a time period
+    static func calculateTotalExercises(sessions: [WorkoutSession], period: TimePeriod) -> Int {
+        let filteredSessions = filterSessions(sessions, for: period)
+        return filteredSessions.reduce(0) { sum, session in
+            sum + session.exerciseLogs.count
+        }
+    }
+
+    /// Calculate total reps performed for a time period
+    static func calculateTotalReps(sessions: [WorkoutSession], period: TimePeriod) -> Int {
+        let filteredSessions = filterSessions(sessions, for: period)
+        return filteredSessions.reduce(0) { sessionSum, session in
+            sessionSum + session.exerciseLogs.reduce(0) { logSum, log in
+                logSum + log.sets.reduce(0) { setSum, set in
+                    guard set.isCompleted, let reps = set.actualReps else { return setSum }
+                    return setSum + reps
+                }
+            }
+        }
+    }
+
+    /// Calculate top exercises by frequency
+    static func calculateTopExercises(sessions: [WorkoutSession], period: TimePeriod, limit: Int = 5) -> [ExerciseStats] {
+        let filteredSessions = filterSessions(sessions, for: period)
+        var exerciseStats: [String: (count: Int, volume: Double, reps: Int)] = [:]
+
+        for session in filteredSessions {
+            for log in session.exerciseLogs {
+                let name = log.exerciseName
+                let current = exerciseStats[name] ?? (count: 0, volume: 0, reps: 0)
+                
+                let logVolume = log.sets.reduce(0.0) { sum, set in
+                    guard set.isCompleted, let weight = set.weight, let reps = set.actualReps else { return sum }
+                    return sum + (weight * Double(reps))
+                }
+                
+                let logReps = log.sets.reduce(0) { sum, set in
+                    guard set.isCompleted, let reps = set.actualReps else { return sum }
+                    return sum + reps
+                }
+
+                exerciseStats[name] = (
+                    count: current.count + 1,
+                    volume: current.volume + logVolume,
+                    reps: current.reps + logReps
+                )
+            }
+        }
+
+        return exerciseStats.map { name, stats in
+            ExerciseStats(
+                exerciseName: name,
+                count: stats.count,
+                totalVolume: stats.volume,
+                totalReps: stats.reps
+            )
+        }
+        .sorted { $0.count > $1.count } // Sort by frequency
+        .prefix(limit)
+        .map { $0 }
+    }
+
+    /// Calculate total reps for a time period (for graph)
+    static func calculateRepsOverTime(sessions: [WorkoutSession], period: TimePeriod) -> [RepsDataPoint] {
+        let filteredSessions = filterSessions(sessions, for: period)
+        let groupedByDate = groupSessionsByDate(filteredSessions)
+
+        return groupedByDate.map { date, sessions in
+            let totalReps = sessions.reduce(0) { sessionSum, session in
+                sessionSum + session.exerciseLogs.reduce(0) { logSum, log in
+                    logSum + log.sets.reduce(0) { setSum, set in
+                        guard set.isCompleted, let reps = set.actualReps else { return setSum }
+                        return setSum + reps
+                    }
+                }
+            }
+            return RepsDataPoint(date: date, reps: totalReps)
+        }.sorted { $0.date < $1.date }
+    }
+
     // MARK: - Frequency Analytics
 
     /// Generate workout frequency data for heatmap
@@ -364,6 +454,20 @@ struct PersonalRecord: Identifiable {
     let maxRepsDate: Date
     let maxVolume: Double
     let maxVolumeDate: Date
+}
+
+struct ExerciseStats: Identifiable {
+    let id = UUID()
+    let exerciseName: String
+    let count: Int
+    let totalVolume: Double
+    let totalReps: Int
+}
+
+struct RepsDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let reps: Int
 }
 
 // MARK: - Builder Helpers

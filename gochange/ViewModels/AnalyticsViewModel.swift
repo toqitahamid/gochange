@@ -6,11 +6,17 @@ import Combine
 @MainActor
 class AnalyticsViewModel: ObservableObject {
     @Published var volumeData: [VolumeDataPoint] = []
+    @Published var repsData: [RepsDataPoint] = []
     @Published var frequencyData: [WorkoutFrequencyPoint] = []
     @Published var muscleGroupData: [MuscleGroupVolume] = []
     @Published var monthlyProgress: [MonthlyProgress] = []
     @Published var yearlyProgress: [YearlyProgress] = []
     @Published var personalRecords: [PersonalRecord] = []
+    @Published var topExercises: [ExerciseStats] = []
+
+    @Published var activeDays: Int = 0
+    @Published var totalExercises: Int = 0
+    @Published var totalReps: Int = 0
 
     @Published var selectedTimePeriod: TimePeriod = .month
     @Published var isLoading = false
@@ -33,7 +39,16 @@ class AnalyticsViewModel: ObservableObject {
         // Volume trends
         volumeData = AnalyticsService.calculateVolume(sessions: sessions, period: selectedTimePeriod)
 
-        // Workout frequency for last 90 days
+        // Reps trends
+        repsData = AnalyticsService.calculateRepsOverTime(sessions: sessions, period: selectedTimePeriod)
+
+        // New Metrics
+        activeDays = AnalyticsService.calculateActiveDays(sessions: sessions, period: selectedTimePeriod)
+        totalExercises = AnalyticsService.calculateTotalExercises(sessions: sessions, period: selectedTimePeriod)
+        totalReps = AnalyticsService.calculateTotalReps(sessions: sessions, period: selectedTimePeriod)
+        topExercises = AnalyticsService.calculateTopExercises(sessions: sessions, period: selectedTimePeriod)
+
+        // Workout frequency for last 90 days (heatmap always shows 90 days context)
         let endDate = Date()
         let startDate = Calendar.current.date(byAdding: .day, value: -90, to: endDate)!
         frequencyData = AnalyticsService.calculateWorkoutFrequency(
@@ -62,7 +77,13 @@ class AnalyticsViewModel: ObservableObject {
 
     func updateTimePeriod(_ period: TimePeriod) {
         selectedTimePeriod = period
+        // Refresh period-dependent data
         volumeData = AnalyticsService.calculateVolume(sessions: sessions, period: period)
+        repsData = AnalyticsService.calculateRepsOverTime(sessions: sessions, period: period)
+        activeDays = AnalyticsService.calculateActiveDays(sessions: sessions, period: period)
+        totalExercises = AnalyticsService.calculateTotalExercises(sessions: sessions, period: period)
+        totalReps = AnalyticsService.calculateTotalReps(sessions: sessions, period: period)
+        topExercises = AnalyticsService.calculateTopExercises(sessions: sessions, period: period)
     }
 
     // MARK: - Computed Properties

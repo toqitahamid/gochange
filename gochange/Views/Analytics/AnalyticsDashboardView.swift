@@ -37,6 +37,15 @@ struct AnalyticsDashboardView: View {
                                 viewModel.updateTimePeriod(newPeriod)
                             }
 
+                            // Reps trends
+                            RepsTrendsChart(
+                                data: viewModel.repsData,
+                                selectedPeriod: $viewModel.selectedTimePeriod
+                            )
+
+                            // Top Exercises
+                            TopExercisesView(exercises: viewModel.topExercises)
+
                             // Workout frequency heatmap
                             WorkoutFrequencyHeatmap(data: viewModel.frequencyData)
 
@@ -91,16 +100,16 @@ struct AnalyticsDashboardView: View {
             // Top row
             HStack(spacing: 12) {
                 AnalyticsStatCard(
-                    icon: "chart.bar.fill",
-                    value: "\(viewModel.totalWorkouts)",
-                    label: "Total Workouts",
+                    icon: "calendar.badge.clock",
+                    value: "\(viewModel.activeDays)",
+                    label: "Active Days",
                     color: Color(hex: "#00D4AA")
                 )
 
                 AnalyticsStatCard(
-                    icon: "flame.fill",
-                    value: formatVolume(viewModel.totalVolume),
-                    label: "Total Volume",
+                    icon: "figure.strengthtraining.traditional",
+                    value: "\(viewModel.totalExercises)",
+                    label: "Exercises",
                     color: Color(hex: "#FF6B35")
                 )
             }
@@ -108,19 +117,29 @@ struct AnalyticsDashboardView: View {
             // Bottom row
             HStack(spacing: 12) {
                 AnalyticsStatCard(
-                    icon: "clock.fill",
-                    value: formatDuration(viewModel.averageWorkoutDuration),
-                    label: "Avg Duration",
+                    icon: "number",
+                    value: formatReps(Double(viewModel.totalReps)),
+                    label: "Total Reps",
                     color: Color(hex: "#FFD700")
                 )
 
                 AnalyticsStatCard(
-                    icon: "calendar",
-                    value: "\(viewModel.workoutsThisMonth)",
-                    label: "This Month",
+                    icon: "flame.fill",
+                    value: formatVolume(viewModel.volumeData.reduce(0) { $0 + $1.volume }),
+                    label: "Volume",
                     color: Color(hex: "#4ECDC4")
                 )
             }
+        }
+    }
+
+    private func formatReps(_ reps: Double) -> String {
+        if reps >= 1_000_000 {
+            return String(format: "%.1fM", reps / 1_000_000)
+        } else if reps >= 1_000 {
+            return String(format: "%.1fK", reps / 1_000)
+        } else {
+            return String(format: "%.0f", reps)
         }
     }
 
