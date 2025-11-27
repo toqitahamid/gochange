@@ -1,5 +1,6 @@
 import Foundation
 import HealthKit
+import Combine
 
 /// HealthKit service for Apple Watch - handles workout sessions and heart rate monitoring
 class WatchHealthKitService: NSObject, ObservableObject {
@@ -83,7 +84,7 @@ class WatchHealthKitService: NSObject, ObservableObject {
         let startDate = Date()
         workoutSession?.startActivity(with: startDate)
         
-        try await workoutBuilder?.beginCollection(withStart: startDate)
+        try await workoutBuilder?.beginCollection(at: startDate)
     }
     
     func pauseWorkout() {
@@ -103,8 +104,24 @@ class WatchHealthKitService: NSObject, ObservableObject {
         let endDate = Date()
         workoutSession.end()
         
-        try await workoutBuilder.endCollection(withEnd: endDate)
-        let workout = try await workoutBuilder.finishWorkout()
+        let workout = try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<HKWorkout?, Error>) in
+            workoutBuilder.endCollection(withEnd: endDate) { success, error in
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                workoutBuilder.finishWorkout { workout, error in
+                    if let error = error {
+                        continuation.resume(throwing: error)
+                    } else if let workout = workout {
+                        continuation.resume(returning: workout)
+                    } else {
+                        continuation.resume(returning: nil)
+                    }
+                }
+            }
+        }
         
         // Clean up
         self.workoutSession = nil

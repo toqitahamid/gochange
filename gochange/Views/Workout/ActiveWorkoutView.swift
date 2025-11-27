@@ -88,6 +88,7 @@ struct ActiveWorkoutView: View {
                         WorkoutTimerCard(
                             startTime: startTime,
                             accentColor: accentColor,
+                            currentHeartRate: workoutManager.currentHeartRate,
                             onRestTap: {
                                 workoutManager.showingRestTimer = true
                             },
@@ -210,6 +211,7 @@ struct ActiveWorkoutView: View {
 struct WorkoutTimerCard: View {
     let startTime: Date
     let accentColor: Color
+    var currentHeartRate: Double? = nil
     let onRestTap: () -> Void
     let onNotesTap: () -> Void
     let hasNotes: Bool
@@ -229,6 +231,20 @@ struct WorkoutTimerCard: View {
                     Text(elapsed.formattedDuration)
                         .font(.system(size: 42, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
+                    
+                    if let heartRate = currentHeartRate {
+                        HStack(spacing: 6) {
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 14))
+                                .foregroundColor(Color(hex: "#FF3B30"))
+                            
+                            Text("\(Int(heartRate)) BPM")
+                                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                                .foregroundColor(.white)
+                        }
+                        .padding(.top, 4)
+                        .transition(.opacity.combined(with: .scale))
+                    }
                 }
                 
                 Spacer()

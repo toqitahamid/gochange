@@ -3,7 +3,7 @@ import HealthKit
 import Combine
 
 @MainActor
-class WatchWorkoutManager: ObservableObject {
+class WatchWorkoutManager: NSObject, ObservableObject {
     // MARK: - Published State
     
     @Published var isWorkoutActive = false
@@ -51,7 +51,7 @@ class WatchWorkoutManager: ObservableObject {
     
     // MARK: - Initialization
     
-    init() {
+    override init() {
         if HKHealthStore.isHealthDataAvailable() {
             healthStore = HKHealthStore()
         }
@@ -90,6 +90,12 @@ class WatchWorkoutManager: ObservableObject {
         startHealthKitWorkout()
         
         isWorkoutActive = true
+        
+        // Notify iPhone
+        WatchConnectivityManager.shared.sendMessage([
+            "type": "workoutStarted",
+            "date": Date()
+        ])
     }
     
     func endWorkout() {
@@ -101,6 +107,12 @@ class WatchWorkoutManager: ObservableObject {
         
         // Send completed workout to iPhone
         sendCompletedWorkout()
+        
+        // Notify iPhone of end
+        WatchConnectivityManager.shared.sendMessage([
+            "type": "workoutEnded",
+            "date": Date()
+        ])
         
         // Reset state
         isWorkoutActive = false
@@ -170,7 +182,8 @@ class WatchWorkoutManager: ObservableObject {
     
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            Task { @MainActor in
+            guard let self = self else { return }
+            Task { @MainActor [weak self] in
                 guard let self = self, let startTime = self.startTime else { return }
                 self.elapsedTime = Date().timeIntervalSince(startTime)
             }
@@ -310,6 +323,14 @@ extension WatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
                 
                 Task { @MainActor in
                     self.currentHeartRate = heartRate
+                    
+                    // Send to iPhone
+                    if let heartRate = heartRate {
+                        WatchConnectivityManager.shared.sendMessage([
+                            "type": "heartRateUpdate",
+                            "heartRate": heartRate
+                        ])
+                    }
                 }
             }
         }

@@ -1,5 +1,6 @@
 import Foundation
 import WatchConnectivity
+import Combine
 
 /// Connectivity manager for the Watch side of communication
 class WatchConnectivityManager: NSObject, ObservableObject {

@@ -56,42 +56,29 @@ class HealthKitService: ObservableObject {
         let workoutStatus = healthStore.authorizationStatus(for: workoutType)
         authorizationStatus = workoutStatus
 
-        // For read permissions, HealthKit ALWAYS returns .notDetermined even after granted
-        // This is a known HealthKit quirk - .notDetermined for read permissions means "granted"
-        // Only .sharingDenied means actually denied
-        let sleepStatus = healthStore.authorizationStatus(for: HKCategoryType(.sleepAnalysis))
-        let restingHRStatus = healthStore.authorizationStatus(for: HKQuantityType(.restingHeartRate))
-        let hrvStatus = healthStore.authorizationStatus(for: HKQuantityType(.heartRateVariabilitySDNN))
-        
         // If workout is authorized, we know user has granted permissions before
         if workoutStatus == .sharingAuthorized {
             hasRequestedAuthorization = true
         }
         
-        // Check if any critical read permissions are explicitly denied
-        // Note: .notDetermined for read permissions is NORMAL and means "granted"
-        let deniedReadPermissions = sleepStatus == .sharingDenied || 
-                                    restingHRStatus == .sharingDenied || 
-                                    hrvStatus == .sharingDenied
+        // For read permissions, HealthKit does not allow apps to check status
+        // It always returns .notDetermined or .sharingDenied to protect user privacy
+        // We can only infer authorization if we've successfully requested it (based on write status)
+        
+        // Only mark as denied if workout write is explicitly denied
+        // This is a proxy check - if workout is authorized, user has likely granted permissions
+        let deniedReadPermissions = workoutStatus == .sharingDenied
         
         self.hasDeniedReadPermissions = deniedReadPermissions
         
-        // Consider authorized if:
-        // 1. Workout write is authorized (user has granted HealthKit permissions), AND
-        // 2. No critical read permissions are explicitly denied
-        // Note: .notDetermined for read permissions is the expected state when granted
-        // Only .sharingDenied indicates actual denial
-        isAuthorized = workoutStatus == .sharingAuthorized && !deniedReadPermissions
+        // Consider authorized if workout write is authorized
+        isAuthorized = workoutStatus == .sharingAuthorized
 
         print("🔐 HealthKit Auth Status:")
-        // Note: .notDetermined for read permissions is NORMAL and means "granted" in HealthKit
-        print("   Sleep: \(sleepStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
-        print("   Resting HR: \(restingHRStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
-        print("   HRV: \(hrvStatus == .sharingDenied ? "Denied" : "Granted (notDetermined is normal)")")
-        print("   Workout: \(workoutStatus == .notDetermined ? "Not Determined" : workoutStatus == .sharingDenied ? "Denied" : "Authorized")")
+        print("   Read Permissions: Status is private (HealthKit does not reveal read status)")
+        print("   Workout (Write): \(workoutStatus == .notDetermined ? "Not Determined" : workoutStatus == .sharingDenied ? "Denied" : "Authorized")")
         print("   Has requested: \(hasRequestedAuthorization)")
         print("   Is authorized: \(isAuthorized)")
-        print("   Has denied read permissions: \(deniedReadPermissions)")
     }
     
     /// Check if we can read a specific health data type
@@ -277,15 +264,10 @@ class HealthKitService: ObservableObject {
 
         let sleepType = HKCategoryType(.sleepAnalysis)
         
-        // Check if authorization is explicitly denied
-        let authStatus = healthStore.authorizationStatus(for: sleepType)
-        if authStatus == .sharingDenied {
-            print("❌ Sleep query error: Authorization denied")
-            return nil
-        }
-        
-        // Note: HealthKit returns .notDetermined for read permissions even after granted
-        // So we just proceed with the query - HealthKit will handle it
+        // Note: HealthKit's authorizationStatus(for:) is unreliable for read permissions
+        // It can return .sharingDenied even when permission is granted in Settings
+        // We proceed with the query and let HealthKit handle authorization properly
+        // The query will fail with an authorization error if truly denied
 
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
@@ -307,7 +289,12 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("❌ Sleep query error: \(error.localizedDescription)")
+                    // Check if it's an authorization error
+                    if let hkError = error as? HKError, hkError.code == .errorAuthorizationDenied {
+                        print("❌ Sleep query error: Authorization denied")
+                    } else {
+                        print("❌ Sleep query error: \(error.localizedDescription)")
+                    }
                     continuation.resume(returning: nil)
                     return
                 }
@@ -403,15 +390,10 @@ class HealthKitService: ObservableObject {
 
         let restingHRType = HKQuantityType(.restingHeartRate)
         
-        // Check if authorization is explicitly denied
-        let authStatus = healthStore.authorizationStatus(for: restingHRType)
-        if authStatus == .sharingDenied {
-            print("❌ Resting HR query error: Authorization denied")
-            return nil
-        }
-        
-        // Note: HealthKit returns .notDetermined for read permissions even after granted
-        // So we just proceed with the query - HealthKit will handle it
+        // Note: HealthKit's authorizationStatus(for:) is unreliable for read permissions
+        // It can return .sharingDenied even when permission is granted in Settings
+        // We proceed with the query and let HealthKit handle authorization properly
+        // The query will fail with an authorization error if truly denied
 
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
@@ -428,7 +410,12 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("❌ Resting HR query error: \(error.localizedDescription)")
+                    // Check if it's an authorization error
+                    if let hkError = error as? HKError, hkError.code == .errorAuthorizationDenied {
+                        print("❌ Resting HR query error: Authorization denied")
+                    } else {
+                        print("❌ Resting HR query error: \(error.localizedDescription)")
+                    }
                     continuation.resume(returning: nil)
                     return
                 }
@@ -456,15 +443,10 @@ class HealthKitService: ObservableObject {
 
         let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
         
-        // Check if authorization is explicitly denied
-        let authStatus = healthStore.authorizationStatus(for: hrvType)
-        if authStatus == .sharingDenied {
-            print("❌ HRV query error: Authorization denied")
-            return nil
-        }
-        
-        // Note: HealthKit returns .notDetermined for read permissions even after granted
-        // So we just proceed with the query - HealthKit will handle it
+        // Note: HealthKit's authorizationStatus(for:) is unreliable for read permissions
+        // It can return .sharingDenied even when permission is granted in Settings
+        // We proceed with the query and let HealthKit handle authorization properly
+        // The query will fail with an authorization error if truly denied
 
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
@@ -481,7 +463,12 @@ class HealthKitService: ObservableObject {
                 sortDescriptors: [sortDescriptor]
             ) { _, samples, error in
                 if let error = error {
-                    print("❌ HRV query error: \(error.localizedDescription)")
+                    // Check if it's an authorization error
+                    if let hkError = error as? HKError, hkError.code == .errorAuthorizationDenied {
+                        print("❌ HRV query error: Authorization denied")
+                    } else {
+                        print("❌ HRV query error: \(error.localizedDescription)")
+                    }
                     continuation.resume(returning: nil)
                     return
                 }

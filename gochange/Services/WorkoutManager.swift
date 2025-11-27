@@ -64,12 +64,36 @@ class WorkoutManager: ObservableObject {
     @Published var currentWorkoutDay: WorkoutDay?
     @Published var sessionNotes: String = ""
     @Published var showingSessionNotes = false
+    @Published var currentHeartRate: Double?
     
     // Previous workout data for reference
     @Published var previousSetData: [UUID: [PreviousSetInfo]] = [:]  // exerciseId -> sets
     
     // MARK: - Dependencies
     private var modelContext: ModelContext?
+    private var cancellables = Set<AnyCancellable>()
+    
+    init() {
+        setupNotifications()
+    }
+    
+    private func setupNotifications() {
+        NotificationCenter.default.publisher(for: .watchHeartRateUpdate)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] notification in
+                if let heartRate = notification.userInfo?["heartRate"] as? Double {
+                    self?.currentHeartRate = heartRate
+                }
+            }
+            .store(in: &cancellables)
+            
+        NotificationCenter.default.publisher(for: .watchWorkoutEnded)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.currentHeartRate = nil
+            }
+            .store(in: &cancellables)
+    }
     
     // MARK: - Computed Properties
     var completedSetsCount: Int {

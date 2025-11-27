@@ -30,6 +30,10 @@
 	<string>com.toqitahamid.gochange</string>
 	<key>WKRunsIndependentlyOfCompanionApp</key>
 	<false/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>workout-processing</string>
+	</array>
 </dict>
 </plist>
 

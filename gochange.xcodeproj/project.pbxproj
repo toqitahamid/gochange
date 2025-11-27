@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		964160952ED7C59100F428EC /* GoChangeWatch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 9641608B2ED7C58E00F428EC /* GoChangeWatch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		964F1CEF2ED5B5E00081B1EF /* FSCalendar in Frameworks */ = {isa = PBXBuildFile; productRef = 964F1CEE2ED5B5E00081B1EF /* FSCalendar */; };
 		969A6FAF2ED5C76100272209 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 969A6FAE2ED5C76000272209 /* WidgetKit.framework */; };
 		969A6FB12ED5C76100272209 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 969A6FB02ED5C76100272209 /* SwiftUI.framework */; };
@@ -14,6 +15,13 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		964160932ED7C59100F428EC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 964F1C8F2ED5B38B0081B1EF /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 9641608A2ED7C58E00F428EC;
+			remoteInfo = "GoChangeWatch Watch App";
+		};
 		969A6FC02ED5C76200272209 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 964F1C8F2ED5B38B0081B1EF /* Project object */;
@@ -24,6 +32,17 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
+		964160992ED7C59100F428EC /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				964160952ED7C59100F428EC /* GoChangeWatch Watch App.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		969A6FC72ED5C76200272209 /* Embed Foundation Extensions */ = {
 			isa = PBXCopyFilesBuildPhase;
 			buildActionMask = 2147483647;
@@ -38,6 +57,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		9641608B2ED7C58E00F428EC /* GoChangeWatch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GoChangeWatch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		964F1C972ED5B38B0081B1EF /* gochange.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = gochange.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		969A6FAC2ED5C76000272209 /* GoChangeWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = GoChangeWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		969A6FAE2ED5C76000272209 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
@@ -45,6 +65,13 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		964160C42ED7C93400F428EC /* Exceptions for "GoChangeWatch Watch App" folder in "GoChangeWatch Watch App" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 9641608A2ED7C58E00F428EC /* GoChangeWatch Watch App */;
+		};
 		969A6FC32ED5C76200272209 /* Exceptions for "GoChangeWidget" folder in "GoChangeWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -76,6 +103,14 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		9641608C2ED7C58E00F428EC /* GoChangeWatch Watch App */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				964160C42ED7C93400F428EC /* Exceptions for "GoChangeWatch Watch App" folder in "GoChangeWatch Watch App" target */,
+			);
+			path = "GoChangeWatch Watch App";
+			sourceTree = "<group>";
+		};
 		964F1C992ED5B38B0081B1EF /* gochange */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -96,6 +131,13 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		964160882ED7C58E00F428EC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		964F1C942ED5B38B0081B1EF /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -121,6 +163,7 @@
 			children = (
 				964F1C992ED5B38B0081B1EF /* gochange */,
 				969A6FB22ED5C76100272209 /* GoChangeWidget */,
+				9641608C2ED7C58E00F428EC /* GoChangeWatch Watch App */,
 				969A6FAD2ED5C76000272209 /* Frameworks */,
 				964F1C982ED5B38B0081B1EF /* Products */,
 			);
@@ -131,6 +174,7 @@
 			children = (
 				964F1C972ED5B38B0081B1EF /* gochange.app */,
 				969A6FAC2ED5C76000272209 /* GoChangeWidgetExtension.appex */,
+				9641608B2ED7C58E00F428EC /* GoChangeWatch Watch App.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -147,6 +191,28 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		9641608A2ED7C58E00F428EC /* GoChangeWatch Watch App */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 964160962ED7C59100F428EC /* Build configuration list for PBXNativeTarget "GoChangeWatch Watch App" */;
+			buildPhases = (
+				964160872ED7C58E00F428EC /* Sources */,
+				964160882ED7C58E00F428EC /* Frameworks */,
+				964160892ED7C58E00F428EC /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				9641608C2ED7C58E00F428EC /* GoChangeWatch Watch App */,
+			);
+			name = "GoChangeWatch Watch App";
+			packageProductDependencies = (
+			);
+			productName = "GoChangeWatch Watch App";
+			productReference = 9641608B2ED7C58E00F428EC /* GoChangeWatch Watch App.app */;
+			productType = "com.apple.product-type.application";
+		};
 		964F1C962ED5B38B0081B1EF /* gochange */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 964F1CA42ED5B38D0081B1EF /* Build configuration list for PBXNativeTarget "gochange" */;
@@ -155,11 +221,13 @@
 				964F1C942ED5B38B0081B1EF /* Frameworks */,
 				964F1C952ED5B38B0081B1EF /* Resources */,
 				969A6FC72ED5C76200272209 /* Embed Foundation Extensions */,
+				964160992ED7C59100F428EC /* Embed Watch Content */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				969A6FC12ED5C76200272209 /* PBXTargetDependency */,
+				964160942ED7C59100F428EC /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				964F1C992ED5B38B0081B1EF /* gochange */,
@@ -204,6 +272,9 @@
 				LastSwiftUpdateCheck = 2610;
 				LastUpgradeCheck = 2610;
 				TargetAttributes = {
+					9641608A2ED7C58E00F428EC = {
+						CreatedOnToolsVersion = 26.1.1;
+					};
 					964F1C962ED5B38B0081B1EF = {
 						CreatedOnToolsVersion = 26.1.1;
 					};
@@ -231,11 +302,19 @@
 			targets = (
 				964F1C962ED5B38B0081B1EF /* gochange */,
 				969A6FAB2ED5C76000272209 /* GoChangeWidgetExtension */,
+				9641608A2ED7C58E00F428EC /* GoChangeWatch Watch App */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		964160892ED7C58E00F428EC /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		964F1C952ED5B38B0081B1EF /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -253,6 +332,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		964160872ED7C58E00F428EC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		964F1C932ED5B38B0081B1EF /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -270,6 +356,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		964160942ED7C59100F428EC /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 9641608A2ED7C58E00F428EC /* GoChangeWatch Watch App */;
+			targetProxy = 964160932ED7C59100F428EC /* PBXContainerItemProxy */;
+		};
 		969A6FC12ED5C76200272209 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 969A6FAB2ED5C76000272209 /* GoChangeWidgetExtension */;
@@ -278,6 +369,80 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		964160972ED7C59100F428EC /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "GoChangeWatch Watch App/GoChangeWatch Watch App.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR9VB4UHUR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GoChangeWatch-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your workout data to Apple Health.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.toqitahamid.gochange;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqitahamid.gochange.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Debug;
+		};
+		964160982ED7C59100F428EC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "GoChangeWatch Watch App/GoChangeWatch Watch App.entitlements";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = BR9VB4UHUR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = "GoChangeWatch-Watch-App-Info.plist";
+				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your workout data to Apple Health.";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.toqitahamid.gochange;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.toqitahamid.gochange.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 26.1;
+			};
+			name = Release;
+		};
 		964F1CA22ED5B38D0081B1EF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -415,6 +580,8 @@
 				INFOPLIST_FILE = gochange/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "GoChange needs access to your health data to read heart rate, sleep analysis, HRV, and resting heart rate to provide personalized recovery insights and optimize your training.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your completed workouts to Apple Health, including duration and estimated calories burned.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -455,6 +622,8 @@
 				INFOPLIST_FILE = gochange/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "GoChange needs access to your health data to read heart rate, sleep analysis, HRV, and resting heart rate to provide personalized recovery insights and optimize your training.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your completed workouts to Apple Health, including duration and estimated calories burned.";
 				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -542,6 +711,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		964160962ED7C59100F428EC /* Build configuration list for PBXNativeTarget "GoChangeWatch Watch App" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				964160972ED7C59100F428EC /* Debug */,
+				964160982ED7C59100F428EC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		964F1C922ED5B38B0081B1EF /* Build configuration list for PBXProject "gochange" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

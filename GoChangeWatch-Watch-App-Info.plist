@@ -3,9 +3,10 @@
 <plist version="1.0">
 <dict>
 	<key>UIBackgroundModes</key>
+	<array/>
+	<key>WKBackgroundModes</key>
 	<array>
-		<string>fetch</string>
-		<string>remote-notification</string>
+		<string>workout-processing</string>
 	</array>
 </dict>
 </plist>
