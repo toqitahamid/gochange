@@ -35,9 +35,9 @@ struct MainTabView: View {
             }
             .tag(1)
             
-            CalendarView()
+            FitnessView()
                 .tabItem {
-                    Label("Calendar", systemImage: "calendar")
+                    Label("Fitness", systemImage: "chart.bar.fill")
                 }
                 .tag(2)
             

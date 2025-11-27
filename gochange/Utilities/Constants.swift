@@ -5,7 +5,7 @@ enum AppConstants {
     enum WorkoutColors {
         static let push = Color(hex: "#7CB9A8")      // Teal
         static let pull = Color(hex: "#9B59B6")      // Purple
-        static let legs = Color(hex: "#5DADE2")      // Light Blue
+        static let legs = Color(hex: "#5DADE2")      // Light Bluex
         static let fullbody = Color(hex: "#85C1E9")  // Sky Blue
         
         static func color(for workoutName: String) -> Color {

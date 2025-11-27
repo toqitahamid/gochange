@@ -24,18 +24,51 @@ class HealthKitService: ObservableObject {
     ]
 
     private let typesToRead: Set<HKObjectType> = [
+        // Activity & Workouts
         HKObjectType.workoutType(),
-        HKQuantityType(.heartRate),
+        HKSeriesType.workoutRoute(),
         HKQuantityType(.activeEnergyBurned),
+        HKQuantityType(.appleExerciseTime),
+        HKQuantityType(.stepCount),
+        HKQuantityType(.distanceCycling),
+        HKQuantityType(.distanceSwimming),
+        HKQuantityType(.distanceWalkingRunning),
+        HKQuantityType(.distanceWheelchair),
+        HKQuantityType(.distanceDownhillSnowSports),
+        HKQuantityType(.swimmingStrokeCount),
+        HKQuantityType(.flightsClimbed),
+        HKQuantityType(.pushCount), // Wheelchair pushes
+        
+        // Vitals & Measurements
+        HKQuantityType(.heartRate),
         HKQuantityType(.restingHeartRate),
         HKQuantityType(.heartRateVariabilitySDNN),
-        HKCategoryType(.sleepAnalysis),
-        // New Metrics
         HKQuantityType(.respiratoryRate),
         HKQuantityType(.oxygenSaturation),
         HKQuantityType(.bodyTemperature),
-        HKQuantityType(.stepCount),
-        HKQuantityType(.vo2Max)
+        HKQuantityType(.vo2Max),
+        HKQuantityType(.walkingHeartRateAverage),
+        HKQuantityType(.runningPower),
+        HKQuantityType(.runningSpeed),
+        HKQuantityType(.walkingSpeed),
+        HKQuantityType(.cyclingPower),
+        HKQuantityType(.cyclingSpeed),
+        HKQuantityType(.cyclingCadence),
+        HKQuantityType(.runningStrideLength),
+        HKQuantityType(.runningVerticalOscillation),
+        HKQuantityType(.runningGroundContactTime),
+        HKQuantityType(.environmentalAudioExposure),
+        HKQuantityType(.headphoneAudioExposure),
+        
+        // Sleep & Mindfulness
+        HKCategoryType(.sleepAnalysis),
+        HKCategoryType(.mindfulSession),
+        
+        // Characteristics
+        HKCharacteristicType(.dateOfBirth),
+        HKCharacteristicType(.biologicalSex),
+        HKCharacteristicType(.wheelchairUse),
+        HKCharacteristicType(.activityMoveMode)
     ]
     
     // ... (Existing code) ...
