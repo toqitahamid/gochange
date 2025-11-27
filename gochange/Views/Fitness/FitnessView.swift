@@ -3,6 +3,9 @@ import Charts
 import SwiftData
 
 struct FitnessView: View {
+    @StateObject private var viewModel = FitnessViewModel()
+    @Environment(\.modelContext) private var modelContext
+    
     var body: some View {
         NavigationStack {
             ScrollView {
@@ -31,7 +34,7 @@ struct FitnessView: View {
                                 .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
                         }
                     }
-                    .padding(.horizontal)
+                    // .padding(.horizontal) removed
                     
                     // Heatmap Card
                     FitnessHeatmapCard()
@@ -52,8 +55,8 @@ struct FitnessView: View {
                         CardioLoadCard()
                         
                         HStack(spacing: 16) {
-                            CardioFocusCard()
-                            HRRCard()
+                            CardioFocusCard(viewModel: viewModel)
+                            HRRCard(viewModel: viewModel)
                         }
                         .padding(.horizontal)
                     }
@@ -65,13 +68,20 @@ struct FitnessView: View {
                             .fontWeight(.bold)
                             .padding(.horizontal)
                         
-                        TotalVolumeCard()
+                        StrengthRadarCard(viewModel: viewModel)
+                        
+                        StrengthProgressionCard(viewModel: viewModel)
                     }
                 }
+                .padding(.horizontal, 20)
                 .padding(.vertical)
                 .padding(.bottom, 80)
             }
             .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+        }
+        .task {
+            viewModel.setModelContext(modelContext)
+            await viewModel.fetchData()
         }
     }
 }
@@ -110,11 +120,8 @@ struct FitnessHeatmapCard: View {
                 LegendItem(color: Color.blue, label: "3+ activities")
             }
         }
-        .padding(24)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+
+        .fitnessCardStyle()
         .task {
             await fetchActivityData()
         }
@@ -305,11 +312,16 @@ struct ActivitySummaryCard: View {
                 }
             }
         }
-        .padding(20)
+
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
         .background(Color.white)
         .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
         .task {
             await fetchData()
         }
@@ -381,11 +393,16 @@ struct StrainPerformanceCard: View {
             .chartXAxis(.hidden)
             .chartYAxis(.hidden)
         }
-        .padding(20)
+
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
         .background(Color.white)
         .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
     }
 }
 
@@ -441,20 +458,28 @@ struct CardioLoadCard: View {
                 .chartYAxis(.hidden)
             }
         }
-        .padding(20)
+
+        .padding(.vertical, 24)
+        .padding(.horizontal, 16)
         .background(Color.white)
         .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
     }
 }
 
 // MARK: - Cardio Focus Card
+// MARK: - Cardio Focus Card
 struct CardioFocusCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "square.stack.3d.up")
+                Image(systemName: "square.stack.3d.up.fill")
                     .foregroundColor(.gray)
                 Text("Cardio Focus")
                     .font(.caption)
@@ -466,14 +491,14 @@ struct CardioFocusCard: View {
                     .foregroundColor(.gray)
             }
             
-            Text("Low Aerobic")
+            Text(viewModel.cardioFocusStatus)
                 .font(.headline)
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
             
-            Text("94%")
+            Text("\(Int(viewModel.cardioFocusPercentage * 100))%")
                 .font(.subheadline)
-                .foregroundColor(Color(hex: "#00D4AA"))
+                .foregroundColor(Color(hex: "#00D4AA")) // Teal color
             
             // Progress Bar
             GeometryReader { geometry in
@@ -484,44 +509,51 @@ struct CardioFocusCard: View {
                     
                     Capsule()
                         .fill(Color(hex: "#00D4AA"))
-                        .frame(width: geometry.size.width * 0.94, height: 6)
+                        .frame(width: geometry.size.width * viewModel.cardioFocusPercentage, height: 6)
+                    
+                    // Indicator dot
+                    Circle()
+                        .fill(Color.blue)
+                        .frame(width: 8, height: 8)
+                        .offset(x: geometry.size.width * 0.1) // Example position
+                        .offset(y: 10) // Below the bar
                 }
             }
-            .frame(height: 6)
+            .frame(height: 20) // Increased height for dot
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .fitnessCardStyle()
     }
 }
 
 // MARK: - HRR Card
+// MARK: - HRR Card
 struct HRRCard: View {
-    @StateObject private var healthKitService = HealthKitService.shared
-    @State private var restingHeartRate: Double = 0
+    @ObservedObject var viewModel: FitnessViewModel
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Image(systemName: "heart.fill")
-                    .foregroundColor(.red)
-                Text("RHR")
+                Image(systemName: "heart.fill") // Icon with plus
+                    .foregroundColor(.gray)
+                Text("HRR")
                     .font(.caption)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
                 Spacer()
+                Image(systemName: "arrow.right")
+                    .font(.caption)
+                    .foregroundColor(.gray)
             }
             
-            if restingHeartRate > 0 {
-                Text("\(Int(restingHeartRate)) bpm")
+            if viewModel.restingHeartRate > 0 {
+                Text("\(Int(viewModel.restingHeartRate)) bpm")
                     .font(.headline)
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
-                Text(restingHeartRate < 60 ? "Excellent" : restingHeartRate < 70 ? "Good" : "Average")
+                Text("Good") // Placeholder logic
                     .font(.subheadline)
-                    .foregroundColor(restingHeartRate < 60 ? .green : .orange)
+                    .foregroundColor(.orange)
             } else {
                 Text("--")
                     .font(.headline)
@@ -535,122 +567,300 @@ struct HRRCard: View {
             // Slider/Indicator
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
+                    // Track
                     Capsule()
-                        .fill(Color.gray.opacity(0.1))
+                        .fill(
+                            LinearGradient(
+                                colors: [.orange.opacity(0.3), .orange],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
                         .frame(height: 4)
+                        .frame(width: 60) // Short track
+                        .position(x: geometry.size.width / 2, y: geometry.size.height / 2)
                     
-                    if restingHeartRate > 0 {
-                        // Map 40-100 bpm to 0-1 range
-                        let normalized = min(max((restingHeartRate - 40) / 60, 0), 1)
-                        
-                        Circle()
-                            .fill(restingHeartRate < 60 ? Color.green : Color.orange)
-                            .frame(width: 8, height: 8)
-                            .offset(x: geometry.size.width * normalized)
-                    }
+                    // Knob
+                    Circle()
+                        .strokeBorder(Color.orange, lineWidth: 2)
+                        .background(Circle().fill(Color.white))
+                        .frame(width: 12, height: 12)
+                        .position(x: geometry.size.width / 2 + 10, y: geometry.size.height / 2) // Example position
                 }
             }
-            .frame(height: 8)
+            .frame(height: 20)
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
-        .task {
-            if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
-                await MainActor.run {
-                    self.restingHeartRate = rhr
-                }
-            }
-        }
+        .fitnessCardStyle()
     }
 }
 
-// MARK: - Total Volume Card (Radar Chart Placeholder)
-struct TotalVolumeCard: View {
+// MARK: - Strength Radar Card
+struct StrengthRadarCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "scalemass.fill")
                     .foregroundColor(.gray)
-                Text("Total Volume")
+                
+                Text(viewModel.selectedStrengthMetric.rawValue)
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Menu {
+                    ForEach(FitnessViewModel.StrengthMetric.allCases, id: \.self) { metric in
+                        Button {
+                            viewModel.selectedStrengthMetric = metric
+                        } label: {
+                            HStack {
+                                Text(metric.rawValue)
+                                if viewModel.selectedStrengthMetric == metric {
+                                    Image(systemName: "checkmark")
+                                }
+                            }
+                        }
+                    }
+                } label: {
+                    Image(systemName: "chevron.up.chevron.down")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            // Radar Chart
+            let data = currentData
+            RadarChart(
+                data: data,
+                maxValue: maxValue,
+                isPercentage: viewModel.selectedStrengthMetric == .muscularLoad
+            )
+            .frame(height: 250)
+            .frame(maxWidth: .infinity)
+        }
+        .fitnessCardStyle()
+    }
+    
+    private var currentData: [String: Double] {
+        switch viewModel.selectedStrengthMetric {
+        case .totalVolume: return viewModel.muscleGroupVolumes
+        case .workoutFrequency: return viewModel.muscleGroupFrequency
+        case .muscularLoad: return viewModel.muscleGroupLoad
+        }
+    }
+    
+    private var maxValue: Double {
+        let values = currentData.values
+        if values.isEmpty { return 1 }
+        return values.max() ?? 1
+    }
+}
+
+struct RadarChart: View {
+    let data: [String: Double]
+    let maxValue: Double
+    let isPercentage: Bool
+    
+    private let categories = ["Chest", "Back", "Legs", "Shoulders", "Core", "Arms"]
+    
+    var body: some View {
+        GeometryReader { geometry in
+            let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
+            let radius = min(geometry.size.width, geometry.size.height) / 2 - 40
+            let step = radius / 4
+            
+            ZStack {
+                // Grid (White/Clean style)
+                ForEach(1...4, id: \.self) { i in
+                    Circle()
+                        .stroke(Color.white, lineWidth: 2) // White lines for "cutout" effect
+                        .background(Circle().stroke(Color.gray.opacity(0.1), lineWidth: 1))
+                        .frame(width: step * CGFloat(i) * 2, height: step * CGFloat(i) * 2)
+                }
+                
+                // Axes
+                ForEach(0..<categories.count, id: \.self) { i in
+                    Path { path in
+                        path.move(to: center)
+                        let angle = Angle(degrees: Double(i) * 60 - 90)
+                        let x = center.x + radius * cos(angle.radians)
+                        let y = center.y + radius * sin(angle.radians)
+                        path.addLine(to: CGPoint(x: x, y: y))
+                    }
+                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                }
+                
+                // Data Shape
+                if !data.isEmpty {
+                    let normalizedData = categories.map { category -> Double in
+                        let value = data[category] ?? 0
+                        return maxValue > 0 ? value / maxValue : 0
+                    }
+                    
+                    Path { path in
+                        for (i, value) in normalizedData.enumerated() {
+                            let angle = Angle(degrees: Double(i) * 60 - 90)
+                            let r = radius * value
+                            let x = center.x + r * cos(angle.radians)
+                            let y = center.y + r * sin(angle.radians)
+                            
+                            if i == 0 {
+                                path.move(to: CGPoint(x: x, y: y))
+                            } else {
+                                path.addLine(to: CGPoint(x: x, y: y))
+                            }
+                        }
+                        path.closeSubpath()
+                    }
+                    .fill(Color.gray.opacity(0.05))
+                    
+                    Path { path in
+                        for (i, value) in normalizedData.enumerated() {
+                            let angle = Angle(degrees: Double(i) * 60 - 90)
+                            let r = radius * value
+                            let x = center.x + r * cos(angle.radians)
+                            let y = center.y + r * sin(angle.radians)
+                            
+                            if i == 0 {
+                                path.move(to: CGPoint(x: x, y: y))
+                            } else {
+                                path.addLine(to: CGPoint(x: x, y: y))
+                            }
+                        }
+                        path.closeSubpath()
+                    }
+                    .stroke(Color.gray.opacity(0.2), lineWidth: 1)
+                }
+                
+                // Labels
+                ForEach(0..<categories.count, id: \.self) { i in
+                    let angle = Angle(degrees: Double(i) * 60 - 90)
+                    let labelRadius = radius + 25
+                    let x = center.x + labelRadius * cos(angle.radians)
+                    let y = center.y + labelRadius * sin(angle.radians)
+                    
+                    VStack(spacing: 2) {
+                        let value = data[categories[i]] ?? 0
+                        Text(formatValue(value))
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Text(categories[i])
+                            .font(.caption2)
+                            .fontWeight(.medium)
+                            .foregroundColor(.primary)
+                    }
+                    .position(x: x, y: y)
+                }
+            }
+        }
+    }
+    
+    private func formatValue(_ value: Double) -> String {
+        if isPercentage {
+            return "\(Int(value * 100))%"
+        } else {
+            // Check if it's frequency (likely small integer) or volume (large number)
+            if value < 100 && value.truncatingRemainder(dividingBy: 1) == 0 {
+                 return "\(Int(value))"
+            }
+            return "\(Int(value)) lb"
+        }
+    }
+}
+
+// MARK: - Strength Progression Card
+struct StrengthProgressionCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "chart.xyaxis.line")
+                    .foregroundColor(.gray)
+                Text("Strength Progression")
                     .font(.subheadline)
                     .fontWeight(.medium)
                     .foregroundColor(.secondary)
                 Spacer()
-                Image(systemName: "chevron.up.chevron.down")
+                Image(systemName: "arrow.right")
                     .font(.caption)
                     .foregroundColor(.gray)
             }
             
-            // Radar Chart Visualization
-            ZStack {
-                // Spider Web Grid
-                ForEach(1...4, id: \.self) { i in
-                    Circle()
-                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                        .frame(width: CGFloat(i) * 50, height: CGFloat(i) * 50)
-                }
-                
-                // Lines
-                ForEach(0..<6, id: \.self) { i in
-                    Rectangle()
-                        .fill(Color.gray.opacity(0.1))
-                        .frame(width: 1, height: 200)
-                        .rotationEffect(.degrees(Double(i) * 60))
-                }
-                
-                // Labels
-                VStack {
-                    Text("0 lb\nChest")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(y: -110)
+            // Placeholder Content
+            VStack(spacing: 12) {
+                // Mock lines
+                HStack {
+                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 40, height: 4)
                     Spacer()
-                    Text("0 lb\nShoulders")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(y: 110)
+                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 80, height: 4)
                 }
-                .frame(height: 240)
+                HStack {
+                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 60, height: 4)
+                    Spacer()
+                }
+                
+                Spacer().frame(height: 10)
+                
+                Text("No progression data")
+                    .font(.headline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.gray)
+                
+                Text("No \(viewModel.selectedStrengthMetric.rawValue.lowercased()) recorded in the last 30 days.")
+                    .font(.caption)
+                    .foregroundColor(.gray.opacity(0.7))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                
+                Spacer().frame(height: 10)
                 
                 HStack {
-                    Text("0 lb\nArms")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(x: -110)
                     Spacer()
-                    Text("0 lb\nBack")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(x: 110)
+                    Button {
+                        // Add workout action
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundColor(.primary)
+                            .frame(width: 44, height: 44)
+                            .background(Color.white)
+                            .clipShape(Circle())
+                            .shadow(color: Color.black.opacity(0.1), radius: 5, x: 0, y: 2)
+                    }
                 }
-                .frame(width: 240)
-                
-                HStack {
-                    Text("0 lb\nCore")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(x: -80, y: 80)
-                    Spacer()
-                    Text("0 lb\nLegs")
-                        .font(.caption2)
-                        .multilineTextAlignment(.center)
-                        .offset(x: 80, y: 80)
-                }
-                .frame(width: 240)
             }
-            .frame(height: 250)
-            .frame(maxWidth: .infinity)
+            .frame(height: 150)
         }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .padding(.horizontal)
+        .fitnessCardStyle()
     }
 }
 
 #Preview {
     FitnessView()
+}
+
+// MARK: - Card Style Modifier
+struct FitnessCardStyle: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(.vertical, 24)
+            .padding(.horizontal, 16)
+            .background(Color.white)
+            .cornerRadius(24)
+            .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+            )
+    }
+}
+
+extension View {
+    func fitnessCardStyle() -> some View {
+        modifier(FitnessCardStyle())
+    }
 }
