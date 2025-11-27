@@ -7,17 +7,12 @@ struct SleepView: View {
     var body: some View {
         ZStack {
             // Background
-            Image("sleep_bg")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .ignoresSafeArea()
-                .overlay(
-                    LinearGradient(
-                        colors: [.black.opacity(0.4), .black.opacity(0.2)],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                )
+            LinearGradient(
+                colors: [Color(hex: "#0F2027"), Color(hex: "#203A43"), Color(hex: "#2C5364")], // Midnight Blue/Violet theme
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
             
             ScrollView {
                 VStack(spacing: 24) {
@@ -70,10 +65,12 @@ struct SleepView: View {
             Text("Sleep")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
             
             Text(Date().formatted(date: .long, time: .omitted))
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
         }
     }
     

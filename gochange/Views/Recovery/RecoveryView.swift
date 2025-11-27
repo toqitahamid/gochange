@@ -7,7 +7,7 @@ struct RecoveryView: View {
     var body: some View {
         ZStack {
             // Background
-            Image("recovery_bg")
+            Image("RecoveryBackground")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .ignoresSafeArea()
@@ -67,10 +67,12 @@ struct RecoveryView: View {
             Text("Recovery")
                 .font(.system(size: 24, weight: .bold))
                 .foregroundColor(.white)
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
             
             Text(Date().formatted(date: .long, time: .omitted))
                 .font(.subheadline)
                 .foregroundColor(.white.opacity(0.8))
+                .shadow(color: .black.opacity(0.3), radius: 2, x: 0, y: 1)
         }
     }
     

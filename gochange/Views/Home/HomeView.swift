@@ -25,7 +25,7 @@ struct HomeView: View {
                                     "HRV": "\(Int(viewModel.hrv)) ms",
                                     "RHR": "\(Int(viewModel.restingHR)) bpm"
                                 ],
-                                background: "recovery_bg"
+                                background: "RecoveryBackground"
                             )
                         }
                         
@@ -40,7 +40,7 @@ struct HomeView: View {
                                     "Time in bed": viewModel.sleepData?.formattedTotal ?? "--",
                                     "Quality": "\(viewModel.sleepScore)%"
                                 ],
-                                background: "sleep_bg"
+                                background: "SleepGradient" // Triggers gradient fallback
                             )
                         }
                         
@@ -55,7 +55,7 @@ struct HomeView: View {
                                     "Duration": formatDuration(viewModel.workoutDuration),
                                     "Energy": "\(Int(viewModel.activeCalories)) kcal"
                                 ],
-                                background: "strain_bg"
+                                background: "StrainGradient" // Triggers gradient fallback
                             )
                         }
                     }
@@ -116,19 +116,26 @@ struct DashboardCard: View {
     
     var body: some View {
         ZStack {
-            // Background Image
-            Image(background)
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(height: 180)
-                .clipped()
-                .overlay(
-                    LinearGradient(
-                        colors: [.black.opacity(0.6), .black.opacity(0.2)],
-                        startPoint: .leading,
-                        endPoint: .trailing
+            // Background
+            if background.hasSuffix("Background") {
+                // Image Asset
+                Image(background)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(height: 180)
+                    .clipped()
+                    .overlay(
+                        LinearGradient(
+                            colors: [.black.opacity(0.7), .black.opacity(0.3)],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
                     )
-                )
+            } else {
+                // Fallback Gradient
+                gradientFor(title: title)
+                    .frame(height: 180)
+            }
             
             HStack {
                 VStack(alignment: .leading, spacing: 12) {
@@ -138,6 +145,7 @@ struct DashboardCard: View {
                         Text(title)
                             .font(.headline)
                             .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1) // Text shadow
                     }
                     
                     Spacer()
@@ -147,13 +155,14 @@ struct DashboardCard: View {
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(key)
                                     .font(.caption2)
-                                    .foregroundColor(.white.opacity(0.7))
+                                    .foregroundColor(.white.opacity(0.8))
                                 Text(value)
                                     .font(.system(size: 14, weight: .semibold))
                                     .foregroundColor(.white)
+                                    .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                             }
                             .padding(8)
-                            .background(Color.white.opacity(0.1))
+                            .background(.ultraThinMaterial) // Glassmorphism for metrics
                             .cornerRadius(8)
                         }
                     }
@@ -161,35 +170,54 @@ struct DashboardCard: View {
                 
                 Spacer()
                 
-                // Circular Score
-                ZStack {
-                    Circle()
-                        .stroke(Color.white.opacity(0.2), lineWidth: 8)
-                        .frame(width: 80, height: 80)
-                    
-                    Circle()
-                        .trim(from: 0, to: Double(score) / 100.0)
-                        .stroke(
-                            color,
-                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
-                        )
-                        .rotationEffect(.degrees(-90))
-                        .frame(width: 80, height: 80)
-                    
-                    VStack(spacing: 0) {
+                // Score Circle
+                CircularProgressView(
+                    progress: Double(score) / 100.0,
+                    lineWidth: 12,
+                    color: color
+                )
+                .frame(width: 80, height: 80)
+                .overlay(
+                    VStack(spacing: 2) {
                         Text("\(score)%")
-                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundColor(.white)
+                            .shadow(color: .black.opacity(0.5), radius: 2, x: 0, y: 1)
                         Text(title.lowercased())
-                            .font(.caption2)
-                            .foregroundColor(.white.opacity(0.7))
+                            .font(.system(size: 10))
+                            .foregroundColor(.white.opacity(0.8))
                     }
-                }
+                )
             }
             .padding(20)
         }
         .cornerRadius(24)
         .shadow(color: Color.black.opacity(0.2), radius: 10, x: 0, y: 5)
+    }
+    
+    private func gradientFor(title: String) -> LinearGradient {
+        switch title {
+        case "Recovery":
+            return LinearGradient(
+                colors: [Color(hex: "#0F2027"), Color(hex: "#203A43"), Color(hex: "#2C5364")],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case "Sleep":
+            return LinearGradient(
+                colors: [Color(hex: "#0F2027"), Color(hex: "#203A43"), Color(hex: "#2C5364")], // Midnight Blue/Violet
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        case "Strain":
+            return LinearGradient(
+                colors: [Color(hex: "#451e11"), Color(hex: "#6e2c18"), Color(hex: "#9c3d21")], // Burnt Orange/Red
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        default:
+            return LinearGradient(colors: [.gray, .black], startPoint: .top, endPoint: .bottom)
+        }
     }
 }
 

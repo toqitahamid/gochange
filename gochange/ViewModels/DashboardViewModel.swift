@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import HealthKit
+import Combine
 
 @MainActor
 class DashboardViewModel: ObservableObject {
@@ -85,9 +86,11 @@ class DashboardViewModel: ObservableObject {
     
     private func loadWorkoutData(context: ModelContext) async {
         // Fetch today's workouts from SwiftData
+        let todayStart = Calendar.current.startOfDay(for: Date())
+        
         let descriptor = FetchDescriptor<WorkoutSession>(
             predicate: #Predicate<WorkoutSession> { session in
-                session.date >= Calendar.current.startOfDay(for: Date())
+                session.date >= todayStart
             }
         )
         

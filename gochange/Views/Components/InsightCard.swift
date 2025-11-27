@@ -20,29 +20,21 @@ struct InsightCard: View {
                 
                 Image(systemName: "arrow.up.left.and.arrow.down.right")
                     .font(.caption)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.5))
             }
             
             Text(message)
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.white.opacity(0.8))
                 .lineLimit(nil)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(20)
-        .background(
+        .background(.ultraThinMaterial)
+        .cornerRadius(20)
+        .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .fill(
-                    LinearGradient(
-                        colors: [color.opacity(0.1), color.opacity(0.05)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(color.opacity(0.2), lineWidth: 1)
-                )
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
     }
 }

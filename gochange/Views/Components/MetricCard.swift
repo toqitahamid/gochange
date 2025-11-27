@@ -37,7 +37,7 @@ struct MetricCard: View {
                 
                 Text(title)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.white.opacity(0.7))
                 
                 Spacer()
             }
@@ -50,7 +50,7 @@ struct MetricCard: View {
                 if let unit = unit {
                     Text(unit)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 
                 Spacer()
@@ -60,19 +60,17 @@ struct MetricCard: View {
                         .font(.system(size: 12, weight: .bold))
                         .foregroundColor(trend.color)
                         .padding(6)
-                        .background(trend.color.opacity(0.1))
+                        .background(trend.color.opacity(0.2))
                         .clipShape(Circle())
                 }
             }
         }
         .padding(16)
-        .background(
+        .background(.ultraThinMaterial)
+        .cornerRadius(16)
+        .overlay(
             RoundedRectangle(cornerRadius: 16)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+                .stroke(Color.white.opacity(0.1), lineWidth: 1)
         )
     }
 }
