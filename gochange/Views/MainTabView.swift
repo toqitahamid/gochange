@@ -40,18 +40,12 @@ struct MainTabView: View {
                     Label("Fitness", systemImage: "chart.bar.fill")
                 }
                 .tag(2)
-            
-            HistoryListView()
-                .tabItem {
-                    Label("History", systemImage: "clock.fill")
-                }
-                .tag(3)
-            
+
             SettingsView()
                 .tabItem {
                     Label("More", systemImage: "ellipsis")
                 }
-                .tag(4)
+                .tag(3)
         }
         .tint(AppTheme.accent)
         .overlay(alignment: .bottom) {

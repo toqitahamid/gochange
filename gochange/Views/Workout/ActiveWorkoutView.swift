@@ -44,9 +44,9 @@ struct ActiveWorkoutView: View {
                     } label: {
                         Image(systemName: "chevron.down")
                             .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .frame(width: 36, height: 36)
-                            .background(Color.white.opacity(0.1))
+                            .background(Color.gray.opacity(0.1))
                             .clipShape(Circle())
                     }
                     
@@ -64,7 +64,7 @@ struct ActiveWorkoutView: View {
                 
                 Text(workoutDay.name)
                     .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 Spacer()
                 
@@ -79,7 +79,13 @@ struct ActiveWorkoutView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .background(.ultraThinMaterial)
+            .background(Color.white)
+            .overlay(
+                Rectangle()
+                    .fill(Color.gray.opacity(0.15))
+                    .frame(height: 1)
+                    .frame(maxHeight: .infinity, alignment: .bottom)
+            )
             
             ScrollView {
                 VStack(spacing: 16) {
@@ -129,17 +135,11 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .padding(.horizontal, 20)
+                .padding(.top, 20)
                 .padding(.bottom, 120) // Extra padding for tab bar
             }
         }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(hex: "#0A1628")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .toolbar(.visible, for: .tabBar)
         .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
             Button("Keep Going", role: .cancel) { }
@@ -226,11 +226,11 @@ struct WorkoutTimerCard: View {
                     Text("WORKOUT TIME")
                         .font(.system(size: 11, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     Text(elapsed.formattedDuration)
                         .font(.system(size: 42, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                     
                     if let heartRate = currentHeartRate {
                         HStack(spacing: 6) {
@@ -240,7 +240,7 @@ struct WorkoutTimerCard: View {
                             
                             Text("\(Int(heartRate)) BPM")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                         }
                         .padding(.top, 4)
                         .transition(.opacity.combined(with: .scale))
@@ -286,13 +286,12 @@ struct WorkoutTimerCard: View {
             }
         }
         .padding(24)
-        .background(
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
         .onReceive(timer) { _ in
             elapsed = Date().timeIntervalSince(startTime)
@@ -331,7 +330,7 @@ struct ExerciseLogCard: View {
                         HStack(spacing: 6) {
                             Text(exerciseLog.exerciseName)
                                 .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.white)
+                                .foregroundColor(.primary)
                             
                             if exerciseLog.notes != nil {
                                 Image(systemName: "note.text")
@@ -343,7 +342,7 @@ struct ExerciseLogCard: View {
                         if let exercise = exercise {
                             Text("\(exercise.muscleGroup) • \(exercise.defaultSets) × \(exercise.defaultReps)")
                                 .font(.system(size: 13))
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                         }
                     }
                     
@@ -353,11 +352,11 @@ struct ExerciseLogCard: View {
                     HStack(spacing: 8) {
                         Text("\(completedSets)/\(exerciseLog.sets.count)")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(isFullyCompleted ? Color(hex: "#00D4AA") : .gray)
+                            .foregroundColor(isFullyCompleted ? Color(hex: "#00D4AA") : .secondary)
                         
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .semibold))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                             .rotationEffect(.degrees(isExpanded ? -180 : 0))
                     }
                 }
@@ -368,7 +367,7 @@ struct ExerciseLogCard: View {
             // Expanded Content
             if isExpanded {
                 Rectangle()
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.gray.opacity(0.1))
                     .frame(height: 1)
                 
                 VStack(spacing: 0) {
@@ -389,7 +388,7 @@ struct ExerciseLogCard: View {
                     }
                     .font(.system(size: 10, weight: .bold))
                     .tracking(0.5)
-                    .foregroundColor(Color.white.opacity(0.4))
+                    .foregroundColor(.secondary)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 12)
                     
@@ -437,15 +436,14 @@ struct ExerciseLogCard: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(
-                            isFullyCompleted ? Color(hex: "#00D4AA").opacity(0.3) : Color.white.opacity(0.1),
-                            lineWidth: 1
-                        )
+                .stroke(
+                    isFullyCompleted ? Color(hex: "#00D4AA").opacity(0.3) : Color.gray.opacity(0.15),
+                    lineWidth: 1
                 )
         )
         .clipShape(RoundedRectangle(cornerRadius: 20))
@@ -480,14 +478,14 @@ struct SetInputRow: View {
             // Set Number
             Text("\(setLog.setNumber)")
                 .font(.system(size: 15, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .frame(width: 40, alignment: .center)
             
             // Target Reps with Previous Data
             VStack(spacing: 2) {
                 Text(setLog.targetReps)
                     .font(.system(size: 13))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                 
                 if let prevText = previousDataText {
                     Text(prevText)
@@ -503,10 +501,10 @@ struct SetInputRow: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                     .frame(width: 50)
                     .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.1))
+                    .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
                     .onChange(of: weightText) { _, newValue in
                         setLog.weight = Double(newValue)
@@ -514,7 +512,7 @@ struct SetInputRow: View {
                 
                 Text(setLog.weightUnit.rawValue)
                     .font(.system(size: 11))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
             .frame(maxWidth: .infinity, alignment: .center)
             
@@ -523,10 +521,10 @@ struct SetInputRow: View {
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
                 .frame(width: 44)
                 .padding(.vertical, 8)
-                .background(Color.white.opacity(0.1))
+                .background(Color.gray.opacity(0.1))
                 .cornerRadius(8)
                 .onChange(of: repsText) { _, newValue in
                     setLog.actualReps = Int(newValue)
@@ -545,10 +543,10 @@ struct SetInputRow: View {
             } label: {
                 Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
                     .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(setLog.rir != nil ? accentColor : .gray)
+                    .foregroundColor(setLog.rir != nil ? accentColor : .secondary)
                     .frame(width: 36)
                     .padding(.vertical, 8)
-                    .background(Color.white.opacity(0.1))
+                    .background(Color.gray.opacity(0.1))
                     .cornerRadius(8)
             }
             .frame(width: 50, alignment: .center)
@@ -607,40 +605,31 @@ struct SessionNotesSheet: View {
                     Text("WORKOUT NOTES")
                         .font(.system(size: 12, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     TextEditor(text: $notes)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 15))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .frame(minHeight: 150)
                         .padding(16)
-                        .background(
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                )
+                                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                         )
                     
                     Text("Add any notes about this workout - how you felt, adjustments made, etc.")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 20)
                 
                 Spacer()
             }
             .padding(.top, 20)
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
             .navigationTitle("Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -669,40 +658,31 @@ struct ExerciseNotesSheet: View {
                     Text("EXERCISE NOTES")
                         .font(.system(size: 12, weight: .bold))
                         .tracking(1.5)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     TextEditor(text: $localNotes)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 15))
-                        .foregroundColor(.white)
+                        .foregroundColor(.primary)
                         .frame(minHeight: 150)
                         .padding(16)
-                        .background(
+                        .background(Color.white)
+                        .cornerRadius(16)
+                        .overlay(
                             RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                )
+                                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                         )
                     
                     Text("Add notes specific to \(exerciseName)")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
                 .padding(.horizontal, 20)
                 
                 Spacer()
             }
             .padding(.top, 20)
-            .background(
-                LinearGradient(
-                    colors: [Color.black, Color(hex: "#0A1628")],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .ignoresSafeArea()
-            )
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
             .navigationTitle(exerciseName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

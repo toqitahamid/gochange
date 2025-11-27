@@ -43,17 +43,9 @@ struct ExerciseDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
         }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(hex: "#0A1628")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .navigationTitle(exercise.name)
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .onAppear {
             notesText = exercise.notes ?? ""
         }
@@ -79,7 +71,7 @@ struct ExerciseDetailView: View {
                 if let workoutDay = exercise.workoutDay {
                     Text("Day \(workoutDay.dayNumber): \(workoutDay.name)")
                         .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
             }
             
@@ -90,13 +82,12 @@ struct ExerciseDetailView: View {
             }
         }
         .padding(20)
-        .background(
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
     }
     
@@ -106,7 +97,7 @@ struct ExerciseDetailView: View {
             HStack {
                 Text("Form Reference")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 Spacer()
                 
@@ -135,13 +126,12 @@ struct ExerciseDetailView: View {
             }
         }
         .padding(20)
-        .background(
+        .background(Color.white)
+        .cornerRadius(20)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
             RoundedRectangle(cornerRadius: 20)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
     }
     
@@ -170,26 +160,26 @@ struct ExerciseDetailView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.white.opacity(0.05))
+                    .fill(Color.gray.opacity(0.1))
                     .frame(width: 60, height: 60)
                 
                 Image(systemName: "photo.on.rectangle.angled")
                     .font(.system(size: 24))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
             
             Text("No form reference added")
                 .font(.subheadline)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
             
             Text("Add a photo or video to remember proper form")
                 .font(.caption)
-                .foregroundColor(.gray.opacity(0.7))
+                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 30)
-        .background(Color.white.opacity(0.03))
+        .background(Color.gray.opacity(0.05))
         .cornerRadius(12)
     }
     
@@ -199,7 +189,7 @@ struct ExerciseDetailView: View {
             Text("PERSONAL RECORDS")
                 .font(.system(size: 12, weight: .bold))
                 .tracking(1.5)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
             
             HStack(spacing: 10) {
@@ -233,7 +223,7 @@ struct ExerciseDetailView: View {
             Text("RECENT HISTORY")
                 .font(.system(size: 12, weight: .bold))
                 .tracking(1.5)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
             
             VStack(spacing: 0) {
@@ -241,11 +231,11 @@ struct ExerciseDetailView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "clock.arrow.circlepath")
                             .font(.system(size: 28))
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                         
                         Text("No history yet")
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 32)
@@ -255,19 +245,18 @@ struct ExerciseDetailView: View {
                         
                         if index < min(exerciseHistory.count - 1, 4) {
                             Rectangle()
-                                .fill(Color.white.opacity(0.08))
+                                .fill(Color.gray.opacity(0.1))
                                 .frame(height: 1)
                         }
                     }
                 }
             }
-            .background(
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .overlay(
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color.white.opacity(0.05))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16)
-                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                    )
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
             )
         }
     }
@@ -278,19 +267,19 @@ struct ExerciseDetailView: View {
             Text("NOTES")
                 .font(.system(size: 12, weight: .bold))
                 .tracking(1.5)
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 4)
             
             TextEditor(text: $notesText)
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 80)
                 .padding(12)
-                .background(Color.white.opacity(0.05))
-                .foregroundColor(.white)
+                .background(Color.gray.opacity(0.05))
+                .foregroundColor(.primary)
                 .cornerRadius(12)
                 .overlay(
                     RoundedRectangle(cornerRadius: 12)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                 )
                 .onChange(of: notesText) { _, newValue in
                     exercise.notes = newValue.isEmpty ? nil : newValue
@@ -421,17 +410,17 @@ struct ExerciseStatBox: View {
         VStack(spacing: 6) {
             Text(value)
                 .font(.system(size: 24, weight: .bold, design: .rounded))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             Text(title)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.08))
+                .fill(Color.gray.opacity(0.05))
         )
     }
 }
@@ -457,21 +446,20 @@ struct ExercisePRCard: View {
             
             Text(value)
                 .font(.system(size: 15, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(.primary)
             
             Text(title)
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 14)
-        .background(
+        .background(Color.white)
+        .cornerRadius(12)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .overlay(
             RoundedRectangle(cornerRadius: 12)
-                .fill(Color.white.opacity(0.05))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 12)
-                        .stroke(color.opacity(0.2), lineWidth: 1)
-                )
+                .stroke(color.opacity(0.2), lineWidth: 1)
         )
     }
 }
@@ -486,7 +474,7 @@ struct ExerciseHistoryRowView: View {
             if let date = sessionDate {
                 Text(date.formatted(as: "MMM d, yyyy"))
                     .font(.system(size: 12, weight: .medium))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
             
             ScrollView(.horizontal, showsIndicators: false) {
@@ -494,10 +482,10 @@ struct ExerciseHistoryRowView: View {
                     ForEach(log.sets.filter { $0.isCompleted }) { set in
                         Text("\(set.weight != nil ? String(format: "%.0f", set.weight!) : "-") × \(set.actualReps ?? 0)")
                             .font(.system(size: 13, weight: .medium))
-                            .foregroundColor(.white)
+                            .foregroundColor(.primary)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(Color.white.opacity(0.08))
+                            .background(Color.gray.opacity(0.1))
                             .cornerRadius(6)
                     }
                 }

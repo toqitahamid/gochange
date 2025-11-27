@@ -64,8 +64,8 @@ struct WorkoutPreviewView: View {
                     )
                     .frame(width: 100, height: 100)
                 
-                Text(workoutDay.name.prefix(1).uppercased())
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
+                Image(systemName: workoutIcon)
+                    .font(.system(size: 48, weight: .medium))
                     .foregroundColor(.white)
             }
             .shadow(color: accentColor.opacity(0.3), radius: 15, y: 8)
@@ -201,6 +201,19 @@ struct WorkoutPreviewView: View {
     }
     
     // MARK: - Computed Properties
+    private var workoutIcon: String {
+        let name = workoutDay.name.lowercased()
+        if name.contains("push") { return "figure.strengthtraining.traditional" }
+        if name.contains("pull") { return "figure.rower" }
+        if name.contains("leg") { return "figure.walk" }
+        if name.contains("full") { return "figure.cross.training" }
+        if name.contains("cardio") || name.contains("run") { return "figure.run" }
+        if name.contains("arm") { return "figure.arms.open" }
+        if name.contains("shoulder") { return "figure.flexibility" }
+        if name.contains("core") || name.contains("ab") { return "figure.core.training" }
+        return "dumbbell.fill"
+    }
+    
     private var totalSets: Int {
         workoutDay.exercises.reduce(0) { $0 + $1.defaultSets }
     }

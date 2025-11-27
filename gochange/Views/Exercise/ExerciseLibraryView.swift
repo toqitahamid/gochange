@@ -45,13 +45,13 @@ struct ExerciseLibraryView: View {
                             // Section Header
                             HStack(spacing: 8) {
                                 Circle()
-                                    .fill(AppConstants.WorkoutColors.color(for: workoutName))
-                                    .frame(width: 10, height: 10)
+                                    .fill(Color.blue)
+                                    .frame(width: 6, height: 6)
                                 
                                 Text(workoutName.uppercased())
-                                    .font(.system(size: 12, weight: .bold))
+                                    .font(.system(size: 11, weight: .bold))
                                     .tracking(1)
-                                    .foregroundColor(.gray)
+                                    .foregroundColor(.secondary)
                             }
                             .padding(.horizontal, 4)
                             
@@ -64,19 +64,18 @@ struct ExerciseLibraryView: View {
                                     
                                     if index < (groupedExercises[workoutName]?.count ?? 0) - 1 {
                                         Rectangle()
-                                            .fill(Color.white.opacity(0.08))
+                                            .fill(Color.gray.opacity(0.1))
                                             .frame(height: 1)
                                             .padding(.leading, 60)
                                     }
                                 }
                             }
-                            .background(
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+                            .overlay(
                                 RoundedRectangle(cornerRadius: 16)
-                                    .fill(Color.white.opacity(0.05))
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 16)
-                                            .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                                    )
+                                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                             )
                             .clipShape(RoundedRectangle(cornerRadius: 16))
                         }
@@ -86,17 +85,9 @@ struct ExerciseLibraryView: View {
                 .padding(.bottom, 100)
             }
         }
-        .background(
-            LinearGradient(
-                colors: [Color.black, Color(hex: "#0A1628")],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
-        )
+        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .navigationTitle("Exercises")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
         .searchable(text: $searchText, prompt: "Search exercises")
     }
     
@@ -143,12 +134,12 @@ struct ExerciseFilterChip: View {
         Button(action: action) {
             Text(title)
                 .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                .foregroundColor(isSelected ? .white : .gray)
+                .foregroundColor(isSelected ? .white : .secondary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 8)
                 .background(
                     RoundedRectangle(cornerRadius: 16)
-                        .fill(isSelected ? Color(hex: "#00D4AA") : Color.white.opacity(0.08))
+                        .fill(isSelected ? Color(hex: "#00D4AA") : Color.gray.opacity(0.1))
                 )
         }
     }
@@ -174,15 +165,15 @@ struct ExerciseLibraryRowView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(exercise.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
+                    .foregroundColor(.primary)
                 
                 HStack(spacing: 8) {
                     Text(exercise.muscleGroup)
                         .font(.system(size: 12))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                     
                     Text("•")
-                        .foregroundColor(.gray.opacity(0.5))
+                        .foregroundColor(.secondary)
                     
                     Text("\(exercise.defaultSets) × \(exercise.defaultReps)")
                         .font(.system(size: 12, weight: .medium))
@@ -200,7 +191,7 @@ struct ExerciseLibraryRowView: View {
             
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.5))
+                .foregroundColor(.secondary)
         }
         .padding(14)
     }

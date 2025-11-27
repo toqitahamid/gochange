@@ -5,84 +5,123 @@ import SwiftData
 struct FitnessView: View {
     @StateObject private var viewModel = FitnessViewModel()
     @Environment(\.modelContext) private var modelContext
-    
+
+    @State private var scrollOffset: CGFloat = 0
+    @State private var lastScrollOffset: CGFloat = 0
+    @State private var showHeader = true
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Fitness")
-                                .font(.system(size: 34, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                            Text("Last 30 days")
-                                .font(.system(size: 15, design: .rounded))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        
-                        Button {
-                            // Add action
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.primary)
-                                .frame(width: 40, height: 40)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        }
-                    }
-                    // .padding(.horizontal) removed
-                    
-                    // Heatmap Card
-                    FitnessHeatmapCard()
-                    
-                    // Activity Summary Card
-                    ActivitySummaryCard()
-                    
-                    // Strain Performance Card
-                    StrainPerformanceCard()
-                    
-                    // Cardio Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Cardio")
-                            .font(.title3)
-                            .fontWeight(.bold)
+            ZStack(alignment: .top) {
+                ScrollView {
+                    VStack(spacing: 20) {
+                        // Spacer for header
+                        Color.clear
+                            .frame(height: 80)
+                            .readScrollOffset { offset in
+                                handleScroll(offset: offset)
+                            }
+
+                        // Heatmap Card
+                        FitnessHeatmapCard()
+
+                        // Activity Summary Card
+                        ActivitySummaryCard()
+
+                        // Strain Performance Card
+                        StrainPerformanceCard()
+
+                        // Cardio Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Cardio")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .padding(.horizontal)
+
+                            CardioLoadCard()
+
+                            HStack(spacing: 16) {
+                                CardioFocusCard(viewModel: viewModel)
+                                HRRCard(viewModel: viewModel)
+                            }
                             .padding(.horizontal)
-                        
-                        CardioLoadCard()
-                        
-                        HStack(spacing: 16) {
-                            CardioFocusCard(viewModel: viewModel)
-                            HRRCard(viewModel: viewModel)
                         }
-                        .padding(.horizontal)
+
+                        // Strength Section
+                        VStack(alignment: .leading, spacing: 16) {
+                            Text("Strength")
+                                .font(.title3)
+                                .fontWeight(.bold)
+                                .padding(.horizontal)
+
+                            StrengthRadarCard(viewModel: viewModel)
+
+                            StrengthProgressionCard(viewModel: viewModel)
+                        }
                     }
-                    
-                    // Strength Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("Strength")
-                            .font(.title3)
-                            .fontWeight(.bold)
-                            .padding(.horizontal)
-                        
-                        StrengthRadarCard(viewModel: viewModel)
-                        
-                        StrengthProgressionCard(viewModel: viewModel)
-                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 80)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical)
-                .padding(.bottom, 80)
+                .coordinateSpace(name: "scroll")
+                .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+
+                // Floating Header with Liquid Glass effect
+                fitnessHeader
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+                    .background(
+                        .ultraThinMaterial,
+                        in: RoundedRectangle(cornerRadius: 0)
+                    )
+                    .offset(y: showHeader ? 0 : -100)
+                    .animation(.smooth(duration: 0.3), value: showHeader)
             }
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         }
         .task {
             viewModel.setModelContext(modelContext)
             await viewModel.fetchData()
         }
+    }
+
+    private var fitnessHeader: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Fitness")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .foregroundColor(.primary)
+                Text("Last 30 days")
+                    .font(.system(size: 15, design: .rounded))
+                    .foregroundColor(.secondary)
+            }
+            Spacer()
+
+            Button {
+                // Add action
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.primary)
+                    .frame(width: 40, height: 40)
+                    .background(Color.white)
+                    .clipShape(Circle())
+                    .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+            }
+        }
+    }
+
+    private func handleScroll(offset: CGFloat) {
+        let delta = offset - lastScrollOffset
+
+        // Scrolling down (content moving up)
+        if delta < -5 && offset < -10 {
+            showHeader = false
+        }
+        // Scrolling up (content moving down) or at top
+        else if delta > 5 || offset > -5 {
+            showHeader = true
+        }
+
+        lastScrollOffset = offset
     }
 }
 
