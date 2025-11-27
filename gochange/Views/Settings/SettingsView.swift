@@ -168,28 +168,6 @@ struct SettingsView: View {
                                 .padding(20)
                             }
                             
-                            Divider()
-                                .background(Color.gray.opacity(0.1))
-                                .padding(.leading, 20)
-                            
-                            NavigationLink(destination: ExerciseLibraryView()) {
-                                HStack {
-                                    Image(systemName: "figure.strengthtraining.traditional")
-                                        .foregroundColor(Color(hex: "#7CB9A8"))
-                                    Text("Exercise Library")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    HStack(spacing: 4) {
-                                        Text("\(workoutDays.flatMap { $0.exercises }.count)")
-                                            .font(.system(size: 14, weight: .medium))
-                                            .foregroundColor(.secondary)
-                                        Image(systemName: "chevron.right")
-                                            .font(.system(size: 12, weight: .semibold))
-                                            .foregroundColor(.secondary)
-                                    }
-                                }
-                                .padding(20)
-                            }
                         }
                         .background(Color.white)
                         .cornerRadius(24)

@@ -48,6 +48,11 @@ struct WorkoutDaySelectionView: View {
                         AddWorkoutCard {
                             showingAddWorkout = true
                         }
+                        
+                        // Exercise Library Card
+                        NavigationLink(destination: ExerciseLibraryView()) {
+                            ExerciseLibraryCard()
+                        }
                     }
                 }
                 .padding(.horizontal, 20)
@@ -311,6 +316,52 @@ struct ScaleButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Exercise Library Card
+struct ExerciseLibraryCard: View {
+    var body: some View {
+        HStack(spacing: 16) {
+            // Icon
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(hex: "#7CB9A8").opacity(0.1))
+                    .frame(width: 60, height: 60)
+                
+                Image(systemName: "figure.strengthtraining.traditional")
+                    .font(.system(size: 24))
+                    .foregroundColor(Color(hex: "#7CB9A8"))
+            }
+            
+            // Text
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Exercise Library")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text("Browse and manage exercises")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundColor(.gray.opacity(0.5))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(Color.white)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                )
+        )
+        .buttonStyle(ScaleButtonStyle())
     }
 }
 
