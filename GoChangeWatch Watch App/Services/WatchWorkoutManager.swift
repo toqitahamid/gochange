@@ -24,6 +24,8 @@ class WatchWorkoutManager: NSObject, ObservableObject {
     
     // MARK: - Private State
     
+    @Published var isPaused = false
+    
     private var workoutDay: WatchWorkoutDay?
     private var exerciseLogs: [[WatchSetLog]] = []
     private var startTime: Date?
@@ -116,11 +118,31 @@ class WatchWorkoutManager: NSObject, ObservableObject {
         
         // Reset state
         isWorkoutActive = false
+        isPaused = false
         workoutDay = nil
         exerciseLogs = []
         currentExerciseIndex = 0
         currentSetIndex = 0
         completedSets = 0
+    }
+    
+    func pauseWorkout() {
+        guard isWorkoutActive && !isPaused else { return }
+        isPaused = true
+        timer?.invalidate()
+        timer = nil
+        
+        // Pause HealthKit session
+        WatchHealthKitService.shared.pauseWorkout()
+    }
+    
+    func resumeWorkout() {
+        guard isWorkoutActive && isPaused else { return }
+        isPaused = false
+        startTimer()
+        
+        // Resume HealthKit session
+        WatchHealthKitService.shared.resumeWorkout()
     }
     
     // MARK: - Set Management
@@ -172,10 +194,19 @@ class WatchWorkoutManager: NSObject, ObservableObject {
     }
     
     private func loadPreviousWeight() {
+        // Extract first number from reps string (e.g., "8-12" -> 8, "12" -> 12)
+        if let repsString = currentExercise?.defaultReps,
+           let firstNum = repsString.components(separatedBy: CharacterSet.decimalDigits.inverted)
+               .first(where: { !$0.isEmpty }),
+           let reps = Int(firstNum) {
+            currentReps = reps
+        } else {
+            currentReps = 8
+        }
+        
         // Try to get previous weight for this exercise
         // For now, default to 0 - could be enhanced with UserDefaults storage
         currentWeight = 0
-        currentReps = Int(currentExercise?.defaultReps.components(separatedBy: CharacterSet.decimalDigits.inverted).first ?? "8") ?? 8
     }
     
     // MARK: - Timer

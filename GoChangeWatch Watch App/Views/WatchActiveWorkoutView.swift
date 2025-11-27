@@ -28,158 +28,217 @@ struct WatchActiveWorkoutView: View {
     // MARK: - Current Exercise Tab
     
     private var currentExerciseTab: some View {
-        VStack(spacing: 8) {
-            if let exercise = workoutManager.currentExercise {
-                // Exercise name
-                Text(exercise.name)
-                    .font(.headline)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.center)
-                
-                // Set info
-                HStack {
-                    Text("Set \(workoutManager.currentSetIndex + 1)")
-                        .font(.title3)
-                        .fontWeight(.bold)
-                    Text("of \(exercise.defaultSets)")
-                        .font(.caption)
-                        .foregroundColor(.gray)
+        ZStack {
+            // Full-screen gradient background
+            Color.workoutGradient(hex: workoutManager.workoutColorHex, style: .vibrant)
+                .ignoresSafeArea()
+            
+            VStack(spacing: Spacing.lg) {
+                // Header
+                VStack(spacing: Spacing.xs) {
+                    if let exercise = workoutManager.currentExercise {
+                        Text(exercise.name)
+                            .font(.titleSecondary)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                            .lineLimit(2)
+                            .minimumScaleFactor(0.8)
+                        
+                        Text("SET \(workoutManager.currentSetIndex + 1) OF \(exercise.defaultSets)")
+                            .font(.captionPrimary)
+                            .foregroundColor(.white.opacity(0.8))
+                            .tracking(1)
+                    }
                 }
+                .padding(.top, Spacing.sm)
                 
-                Divider()
-                
-                // Weight and Reps input
+                // Input Controls
                 SetInputView(
                     weight: $workoutManager.currentWeight,
                     reps: $workoutManager.currentReps,
                     weightUnit: workoutManager.weightUnit
                 )
                 
-                // Complete Set Button
-                Button(action: {
-                    workoutManager.completeSet()
-                }) {
-                    HStack {
-                        Image(systemName: "checkmark.circle.fill")
-                        Text("Complete")
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(.green)
-            } else {
-                Text("Workout Complete!")
-                    .font(.headline)
+                Spacer()
                 
-                Button("Finish") {
-                    workoutManager.endWorkout()
+                // Complete Button
+                if workoutManager.currentExercise != nil {
+                    Button(action: {
+                        withAnimation(.smoothSpring) {
+                            workoutManager.completeSet()
+                        }
+                    }) {
+                        HStack {
+                            Image(systemName: "checkmark")
+                                .fontWeight(.bold)
+                            Text("COMPLETE SET")
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle(color: .white.opacity(0.2)))
+                } else {
+                    // Workout Complete State
+                    VStack(spacing: Spacing.md) {
+                        Image(systemName: "trophy.fill")
+                            .font(.displayLarge)
+                            .foregroundColor(.yellow)
+                            .symbolEffect(.bounce, options: .repeating)
+                        
+                        Text("Workout Complete!")
+                            .font(.titlePrimary)
+                            .foregroundColor(.white)
+                        
+                        Button("Finish") {
+                            workoutManager.endWorkout()
+                        }
+                        .buttonStyle(PrimaryButtonStyle(color: .white))
+                    }
                 }
-                .buttonStyle(.borderedProminent)
             }
+            .padding(.horizontal)
+            .padding(.bottom, Spacing.md)
         }
-        .padding(.horizontal)
     }
     
     // MARK: - Overview Tab
     
     private var overviewTab: some View {
-        VStack(spacing: 12) {
-            // Workout name
-            Text(workoutManager.workoutDayName)
-                .font(.headline)
-                .foregroundColor(Color(hex: workoutManager.workoutColorHex))
+        ZStack {
+            Color.black.ignoresSafeArea()
             
-            // Progress
-            HStack {
-                VStack {
-                    Text("\(workoutManager.completedSets)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text("Sets")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+            VStack(spacing: Spacing.lg) {
+                // Header
+                Text(workoutManager.workoutDayName)
+                    .font(.titleSecondary)
+                    .foregroundColor(Color(hex: workoutManager.workoutColorHex))
+                
+                // Stats Grid
+                HStack(spacing: Spacing.md) {
+                    StatCard(
+                        value: "\(workoutManager.completedSets)",
+                        label: "SETS"
+                    )
+                    
+                    StatCard(
+                        value: "\(workoutManager.currentExerciseIndex + 1)/\(workoutManager.totalExercises)",
+                        label: "EXERCISE"
+                    )
                 }
                 
-                Spacer()
+                StatCard(
+                    value: workoutManager.elapsedTimeString,
+                    label: "TIME",
+                    isWide: true
+                )
                 
-                VStack {
-                    Text("\(workoutManager.currentExerciseIndex + 1)/\(workoutManager.totalExercises)")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text("Exercise")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
-                }
-                
-                Spacer()
-                
-                VStack {
-                    Text(workoutManager.elapsedTimeString)
-                        .font(.title2)
-                        .fontWeight(.bold)
-                    Text("Time")
-                        .font(.caption2)
-                        .foregroundColor(.gray)
+                // Heart Rate
+                if let heartRate = workoutManager.currentHeartRate {
+                    HStack {
+                        Image(systemName: "heart.fill")
+                            .foregroundColor(.red)
+                            .symbolEffect(.pulse)
+                        Text("\(Int(heartRate)) BPM")
+                            .font(.titlePrimary)
+                            .fontWeight(.bold)
+                            .foregroundColor(.white)
+                    }
+                    .padding(.vertical, Spacing.md)
+                    .padding(.horizontal, Spacing.xl)
+                    .glassCard(cornerRadius: CornerRadius.xl)
                 }
             }
-            .padding(.horizontal)
-            
-            // Heart rate if available
-            if let heartRate = workoutManager.currentHeartRate {
-                HStack {
-                    Image(systemName: "heart.fill")
-                        .foregroundColor(.red)
-                    Text("\(Int(heartRate)) BPM")
-                        .font(.headline)
-                }
-            }
+            .padding()
         }
-        .padding()
     }
     
     // MARK: - Controls Tab
     
     private var controlsTab: some View {
-        VStack(spacing: 16) {
-            // Skip exercise
-            Button(action: {
-                workoutManager.skipExercise()
-            }) {
-                HStack {
-                    Image(systemName: "forward.fill")
-                    Text("Skip Exercise")
-                }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
+        ZStack {
+            Color.black.ignoresSafeArea()
             
-            // Previous exercise
-            Button(action: {
-                workoutManager.previousExercise()
-            }) {
-                HStack {
-                    Image(systemName: "backward.fill")
-                    Text("Previous")
+            VStack(spacing: Spacing.lg) {
+                Text("CONTROLS")
+                    .font(.captionPrimary)
+                    .foregroundColor(.gray)
+                    .tracking(2)
+                
+                // Pause / Resume
+                Button(action: {
+                    withAnimation {
+                        if workoutManager.isPaused {
+                            workoutManager.resumeWorkout()
+                        } else {
+                            workoutManager.pauseWorkout()
+                        }
+                    }
+                }) {
+                    Label(
+                        workoutManager.isPaused ? "Resume" : "Pause",
+                        systemImage: workoutManager.isPaused ? "play.fill" : "pause.fill"
+                    )
                 }
-                .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(.bordered)
-            .disabled(workoutManager.currentExerciseIndex == 0)
-            
-            // End workout
-            Button(action: {
-                showingEndConfirmation = true
-            }) {
-                HStack {
-                    Image(systemName: "xmark.circle.fill")
-                    Text("End Workout")
+                .buttonStyle(SecondaryButtonStyle())
+                
+                // End Workout
+                Button(action: {
+                    showingEndConfirmation = true
+                }) {
+                    Label("End Workout", systemImage: "xmark.circle.fill")
                 }
-                .frame(maxWidth: .infinity)
+                .buttonStyle(SecondaryButtonStyle())
+                .tint(.red)
+                
+                Divider()
+                    .overlay(Color.white.opacity(0.2))
+                    .padding(.vertical, Spacing.sm)
+                
+                // Navigation Controls
+                HStack(spacing: Spacing.md) {
+                    Button(action: {
+                        withAnimation { workoutManager.previousExercise() }
+                    }) {
+                        Image(systemName: "backward.fill")
+                            .font(.titleSecondary)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                    .disabled(workoutManager.currentExerciseIndex == 0)
+                    
+                    Button(action: {
+                        withAnimation { workoutManager.skipExercise() }
+                    }) {
+                        Image(systemName: "forward.fill")
+                            .font(.titleSecondary)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+                }
             }
-            .buttonStyle(.bordered)
-            .tint(.red)
+            .padding()
         }
-        .padding()
+    }
+}
+
+// MARK: - Stat Card Component
+
+struct StatCard: View {
+    let value: String
+    let label: String
+    var isWide: Bool = false
+    
+    var body: some View {
+        VStack(spacing: Spacing.xs) {
+            Text(value)
+                .font(.displayMedium)
+                .foregroundColor(.white)
+            
+            Text(label)
+                .font(.captionSecondary)
+                .foregroundColor(.white.opacity(0.6))
+                .tracking(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, Spacing.lg)
+        .glassCard()
     }
 }
 

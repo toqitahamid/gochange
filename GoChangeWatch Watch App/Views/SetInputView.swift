@@ -10,114 +10,116 @@ struct SetInputView: View {
     @FocusState private var repsFocused: Bool
     
     var body: some View {
-        VStack(spacing: 12) {
+        HStack(spacing: Spacing.md) {
             // Weight Input
-            VStack(spacing: 4) {
-                Text("Weight")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                
-                HStack(alignment: .lastTextBaseline, spacing: 2) {
-                    Text(String(format: "%.1f", weight))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(isEditingWeight ? .green : .white)
-                    Text(weightUnit)
-                        .font(.caption)
-                        .foregroundColor(.gray)
-                }
-                .focusable(true)
-                .focused($weightFocused)
-                .digitalCrownRotation(
-                    $weight,
-                    from: 0,
-                    through: 500,
-                    by: 2.5,
-                    sensitivity: .medium,
-                    isContinuous: false,
-                    isHapticFeedbackEnabled: true
-                )
-                .onTapGesture {
+            inputCard(
+                title: "WEIGHT",
+                value: String(format: "%.1f", weight),
+                unit: weightUnit,
+                isFocused: isEditingWeight
+            )
+            .id("weightInput")
+            .focusable(true)
+            .focused($weightFocused)
+            .digitalCrownRotation(
+                $weight,
+                from: 0,
+                through: 500,
+                by: 2.5,
+                sensitivity: .medium,
+                isContinuous: false,
+                isHapticFeedbackEnabled: true
+            )
+            .onTapGesture {
+                withAnimation(.smoothSpring) {
                     isEditingWeight = true
                     weightFocused = true
                 }
             }
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(isEditingWeight ? Color.green.opacity(0.2) : Color.clear)
-            )
             
             // Reps Input
-            VStack(spacing: 4) {
-                Text("Reps")
-                    .font(.caption2)
-                    .foregroundColor(.gray)
-                
-                Text("\(reps)")
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .foregroundColor(!isEditingWeight ? .green : .white)
-                    .focusable(true)
-                    .focused($repsFocused)
-                    .digitalCrownRotation(
-                        Binding(
-                            get: { Double(reps) },
-                            set: { reps = max(0, Int($0)) }
-                        ),
-                        from: 0,
-                        through: 100,
-                        by: 1,
-                        sensitivity: .low,
-                        isContinuous: false,
-                        isHapticFeedbackEnabled: true
-                    )
-                    .onTapGesture {
-                        isEditingWeight = false
-                        repsFocused = true
-                    }
-            }
-            .padding(.vertical, 4)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(!isEditingWeight ? Color.green.opacity(0.2) : Color.clear)
+            inputCard(
+                title: "REPS",
+                value: "\(reps)",
+                unit: "",
+                isFocused: !isEditingWeight
             )
+            .id("repsInput")
+            .focusable(true)
+            .focused($repsFocused)
+            .digitalCrownRotation(
+                Binding(
+                    get: { Double(reps) },
+                    set: { reps = max(0, Int($0)) }
+                ),
+                from: 0,
+                through: 100,
+                by: 1,
+                sensitivity: .low,
+                isContinuous: false,
+                isHapticFeedbackEnabled: true
+            )
+            .onTapGesture {
+                withAnimation(.smoothSpring) {
+                    isEditingWeight = false
+                    repsFocused = true
+                }
+            }
         }
     }
-}
-
-// MARK: - Quick Weight Adjustments
-
-struct WeightAdjustmentButtons: View {
-    @Binding var weight: Double
-    let unit: String
     
-    private var increment: Double {
-        unit == "kg" ? 2.5 : 5
-    }
-    
-    var body: some View {
-        HStack(spacing: 8) {
-            Button(action: { weight = max(0, weight - increment) }) {
-                Image(systemName: "minus")
-                    .font(.caption)
-            }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
+    private func inputCard(title: String, value: String, unit: String, isFocused: Bool) -> some View {
+        VStack(spacing: Spacing.xs) {
+            Text(title)
+                .font(.captionSecondary)
+                .foregroundColor(.white.opacity(0.6))
+                .tracking(1)
             
-            Button(action: { weight += increment }) {
-                Image(systemName: "plus")
-                    .font(.caption)
+            VStack(spacing: 0) {
+                Text(value)
+                    .font(.displayMedium)
+                    .fontWeight(.bold)
+                    .foregroundColor(.white)
+                    .minimumScaleFactor(0.8)
+                    .lineLimit(1)
+                
+                if !unit.isEmpty {
+                    Text(unit)
+                        .font(.captionPrimary)
+                        .foregroundColor(.white.opacity(0.7))
+                }
             }
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
         }
+        .frame(maxWidth: .infinity)
+        .frame(height: 80)
+        .background(
+            RoundedRectangle(cornerRadius: CornerRadius.lg)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: CornerRadius.lg)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white, .white.opacity(0.3)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: isFocused ? 2 : 0
+                        )
+                )
+                .shadow(color: isFocused ? .white.opacity(0.2) : .clear, radius: 8)
+        )
+        .scaleEffect(isFocused ? 1.05 : 1.0)
     }
 }
 
 #Preview {
-    SetInputView(
-        weight: .constant(135),
-        reps: .constant(8),
-        weightUnit: "lbs"
-    )
+    ZStack {
+        Color.black.ignoresSafeArea()
+        SetInputView(
+            weight: .constant(135),
+            reps: .constant(8),
+            weightUnit: "lbs"
+        )
+    }
 }
 
