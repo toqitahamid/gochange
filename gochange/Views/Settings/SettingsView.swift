@@ -142,6 +142,51 @@ struct SettingsView: View {
                         }
                     }
                     
+                    // Apple Watch Section
+                    SettingsSection(title: "APPLE WATCH") {
+                        VStack(spacing: 0) {
+                            // Watch Status
+                            SettingsRow(icon: "applewatch", iconColor: Color(hex: "#00D4AA")) {
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text("Watch App")
+                                        .foregroundColor(.white)
+                                    if WatchConnectivityService.shared.isPaired {
+                                        if WatchConnectivityService.shared.isWatchAppInstalled {
+                                            Text("Installed & Connected")
+                                                .font(.caption)
+                                                .foregroundColor(Color(hex: "#00D4AA"))
+                                        } else {
+                                            Text("Not Installed")
+                                                .font(.caption)
+                                                .foregroundColor(.orange)
+                                        }
+                                    } else {
+                                        Text("No Watch Paired")
+                                            .font(.caption)
+                                            .foregroundColor(.gray)
+                                    }
+                                }
+                                Spacer()
+                                if WatchConnectivityService.shared.isPaired && WatchConnectivityService.shared.isWatchAppInstalled {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundColor(Color(hex: "#00D4AA"))
+                                }
+                            }
+                            
+                            // Install/Open Watch App Button
+                            if WatchConnectivityService.shared.isPaired && !WatchConnectivityService.shared.isWatchAppInstalled {
+                                Rectangle().fill(Color.white.opacity(0.1)).frame(height: 1).padding(.leading, 52)
+                                
+                                SettingsButton(icon: "arrow.down.circle", iconColor: Color(hex: "#64B5F6"), title: "Install Watch App") {
+                                    // Open Watch app to install
+                                    if let url = URL(string: "itms-watch://") {
+                                        UIApplication.shared.open(url)
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    
                     // Notifications Section
                     SettingsSection(title: "NOTIFICATIONS") {
                         VStack(spacing: 0) {

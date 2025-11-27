@@ -382,7 +382,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GoChangeWatch-Watch-App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_CFBundleDisplayName = GoChangeWatch;
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your workout data to Apple Health.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.toqitahamid.gochange;
@@ -419,7 +419,7 @@
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "GoChangeWatch-Watch-App-Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = GoChange;
+				INFOPLIST_KEY_CFBundleDisplayName = GoChangeWatch;
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "GoChange needs permission to save your workout data to Apple Health.";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = com.toqitahamid.gochange;
