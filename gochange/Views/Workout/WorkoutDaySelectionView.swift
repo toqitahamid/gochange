@@ -26,7 +26,7 @@ struct WorkoutDaySelectionView: View {
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
-                        
+
                         NavigationLink(destination: FitnessAnalyticsView()) {
                             Image(systemName: "chart.bar.xaxis")
                                 .font(.system(size: 20, weight: .medium))
@@ -98,90 +98,128 @@ struct WorkoutDaySelectionView: View {
     private var weeklyProgressHeader: some View {
         VStack(spacing: 20) {
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: 8) {
                     Text("WEEKLY GOAL")
-                        .font(.system(size: 11, weight: .bold))
-                        .tracking(1.5)
-                        .foregroundColor(.secondary)
-                    
-                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        .font(.system(size: 12, weight: .heavy))
+                        .tracking(1.8)
+                        .foregroundColor(.secondary.opacity(0.7))
+
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("\(completedThisWeekCount)")
-                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .font(.system(size: 40, weight: .black, design: .rounded))
                             .foregroundColor(.primary)
-                        
-                        Text("/ \(workoutDays.count) Workouts")
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundColor(.secondary)
+
+                        Text("/ \(workoutDays.count)")
+                            .font(.system(size: 20, weight: .semibold, design: .rounded))
+                            .foregroundColor(.secondary.opacity(0.6))
                     }
-                    
-                    Text(progressMessage)
-                        .font(.caption)
-                        .foregroundColor(.blue)
-                        .padding(.top, 2)
+
+                    HStack(spacing: 6) {
+                        Text(progressMessage)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(progressColor)
+
+                        if weeklyProgress >= 1.0 {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(progressColor)
+                        }
+                    }
+                    .padding(.top, 2)
                 }
-                
+
                 Spacer()
-                
-                // Circular progress
+
+                // Enhanced Circular progress
                 ZStack {
+                    // Background circle
                     Circle()
-                        .stroke(Color.gray.opacity(0.1), lineWidth: 8)
-                        .frame(width: 64, height: 64)
-                    
+                        .stroke(Color.gray.opacity(0.08), lineWidth: 10)
+                        .frame(width: 76, height: 76)
+
+                    // Progress circle with gradient
                     Circle()
                         .trim(from: 0, to: weeklyProgress)
                         .stroke(
-                            Color.blue,
-                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                            LinearGradient(
+                                colors: [progressColor, progressColor.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            style: StrokeStyle(lineWidth: 10, lineCap: .round)
                         )
-                        .frame(width: 64, height: 64)
+                        .frame(width: 76, height: 76)
                         .rotationEffect(.degrees(-90))
-                    
+                        .shadow(color: progressColor.opacity(0.3), radius: 4, x: 0, y: 2)
+
                     VStack(spacing: 0) {
                         Text("\(Int(weeklyProgress * 100))")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .font(.system(size: 18, weight: .black, design: .rounded))
                             .foregroundColor(.primary)
                         Text("%")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(.secondary)
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.secondary.opacity(0.6))
                     }
                 }
             }
             
-            // Day indicators
+            // Enhanced Day indicators
             HStack(spacing: 0) {
                 ForEach(Array(workoutDays.enumerated()), id: \.element.id) { index, day in
                     let completed = isCompletedThisWeek(day)
-                    
-                    VStack(spacing: 8) {
+
+                    VStack(spacing: 10) {
                         ZStack {
                             if completed {
                                 Circle()
-                                    .fill(Color.blue)
-                                    .frame(width: 24, height: 24)
-                                    .overlay(
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [progressColor, progressColor.opacity(0.8)],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
                                     )
+                                    .frame(width: 28, height: 28)
+                                    .shadow(color: progressColor.opacity(0.3), radius: 4, x: 0, y: 2)
+
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 11, weight: .heavy))
+                                    .foregroundColor(.white)
                             } else {
                                 Circle()
-                                    .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
-                                    .frame(width: 24, height: 24)
+                                    .fill(Color.gray.opacity(0.06))
+                                    .frame(width: 28, height: 28)
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.gray.opacity(0.15), lineWidth: 2)
+                                    )
                             }
                         }
-                        
+
                         Text("D\(day.dayNumber)")
-                            .font(.system(size: 10, weight: .medium))
-                            .foregroundColor(completed ? .blue : .secondary)
+                            .font(.system(size: 11, weight: completed ? .bold : .semibold))
+                            .foregroundColor(completed ? progressColor : .secondary.opacity(0.6))
                     }
                     .frame(maxWidth: .infinity)
-                    
+
                     if index < workoutDays.count - 1 {
                         Rectangle()
-                            .fill(completed && isCompletedThisWeek(workoutDays[index + 1]) ? Color.blue.opacity(0.3) : Color.gray.opacity(0.1))
-                            .frame(height: 2)
-                            .padding(.top, -18) // Align with circles center
+                            .fill(
+                                completed && isCompletedThisWeek(workoutDays[index + 1]) ?
+                                LinearGradient(
+                                    colors: [progressColor.opacity(0.4), progressColor.opacity(0.2)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                ) :
+                                LinearGradient(
+                                    colors: [Color.gray.opacity(0.1), Color.gray.opacity(0.1)],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(height: 3)
+                            .cornerRadius(1.5)
+                            .padding(.top, -22)
                     }
                 }
             }
@@ -199,17 +237,24 @@ struct WorkoutDaySelectionView: View {
     }
     
     private var progressMessage: String {
-        if weeklyProgress >= 1.0 { return "Goal crushed! 🔥" }
-        if weeklyProgress >= 0.7 { return "Almost there! 🚀" }
-        if weeklyProgress >= 0.4 { return "Keep pushing! 💪" }
-        return "Let's get started! ⚡️"
+        if weeklyProgress >= 1.0 { return "Goal Complete!" }
+        if weeklyProgress >= 0.7 { return "Almost there!" }
+        if weeklyProgress >= 0.4 { return "Keep pushing!" }
+        return "Let's get started!"
     }
-    
+
+    private var progressColor: Color {
+        if weeklyProgress >= 1.0 { return Color(hex: "#00D4AA") }
+        if weeklyProgress >= 0.7 { return Color(hex: "#007AFF") }
+        if weeklyProgress >= 0.4 { return Color(hex: "#FF9500") }
+        return Color(hex: "#8E8E93")
+    }
+
     // MARK: - Computed Properties
     private var completedThisWeekCount: Int {
         workoutDays.filter { isCompletedThisWeek($0) }.count
     }
-    
+
     private var weeklyProgress: CGFloat {
         guard !workoutDays.isEmpty else { return 0 }
         return CGFloat(completedThisWeekCount) / CGFloat(workoutDays.count)
@@ -241,7 +286,7 @@ struct WorkoutDayCardContent: View {
     let workoutDay: WorkoutDay
     let lastCompleted: Date?
     let isCompletedThisWeek: Bool
-    
+
     var body: some View {
         HStack(spacing: 16) {
             // Left: Workout Icon
@@ -254,7 +299,7 @@ struct WorkoutDayCardContent: View {
                         RoundedRectangle(cornerRadius: 16)
                             .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                     )
-                
+
                 if isCompletedThisWeek {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 24))
@@ -265,7 +310,7 @@ struct WorkoutDayCardContent: View {
                         .foregroundColor(Color.blue)
                 }
             }
-            
+
             // Center: Info
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 8) {
@@ -273,7 +318,7 @@ struct WorkoutDayCardContent: View {
                         .font(.system(size: 11, weight: .bold))
                         .tracking(1.2)
                         .foregroundColor(Color.blue)
-                    
+
                     if isCompletedThisWeek {
                         Text("DONE")
                             .font(.system(size: 9, weight: .bold))
@@ -285,20 +330,20 @@ struct WorkoutDayCardContent: View {
                             .cornerRadius(4)
                     }
                 }
-                
+
                 Text(workoutDay.name)
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.primary)
-                
+
                 HStack(spacing: 12) {
                     Label("\(workoutDay.exercises.count) Exercises", systemImage: "dumbbell.fill")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
             }
-            
+
             Spacer()
-            
+
             // Right: Chevron (indicates navigation)
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
@@ -351,25 +396,25 @@ struct ExerciseLibraryCard: View {
                 RoundedRectangle(cornerRadius: 16)
                     .fill(Color(hex: "#7CB9A8").opacity(0.1))
                     .frame(width: 60, height: 60)
-                
+
                 Image(systemName: "figure.strengthtraining.traditional")
                     .font(.system(size: 24))
                     .foregroundColor(Color(hex: "#7CB9A8"))
             }
-            
+
             // Text
             VStack(alignment: .leading, spacing: 4) {
                 Text("Exercise Library")
                     .font(.headline)
                     .foregroundColor(.primary)
-                
+
                 Text("Browse and manage exercises")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
-            
+
             Spacer()
-            
+
             Image(systemName: "chevron.right")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundColor(.gray.opacity(0.5))
@@ -391,7 +436,7 @@ struct ExerciseLibraryCard: View {
 // MARK: - Add Workout Card
 struct AddWorkoutCard: View {
     let onTap: () -> Void
-    
+
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: 16) {
@@ -407,25 +452,25 @@ struct AddWorkoutCard: View {
                                 )
                                 .foregroundColor(Color.gray.opacity(0.3))
                         )
-                    
+
                     Image(systemName: "plus")
                         .font(.system(size: 24, weight: .medium))
                         .foregroundColor(Color.blue)
                 }
-                
+
                 // Text
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Add Workout")
                         .font(.headline)
                         .foregroundColor(.primary)
-                    
+
                     Text("Create a new workout day")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
-                
+
                 Spacer()
-                
+
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.gray.opacity(0.5))
