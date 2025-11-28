@@ -17,6 +17,8 @@ class AnalyticsViewModel: ObservableObject {
     // Advanced Analytics
     @Published var oneRepMaxData: [OneRepMaxDataPoint] = []
     @Published var volumeIntensityData: [VolumeIntensityPoint] = []
+    @Published var acwrData: [ACWRDataPoint] = []
+    @Published var systemicLoadData: [SystemicLoadDataPoint] = []
     @Published var availableExercisesForTrend: [String] = []
     @Published var selectedExerciseForTrend: String = "Bench Press" {
         didSet {
@@ -86,6 +88,8 @@ class AnalyticsViewModel: ObservableObject {
         
         // Advanced Analytics
         volumeIntensityData = AnalyticsService.calculateVolumeVsIntensity(sessions: sessions)
+        acwrData = AnalyticsService.calculateACWRTrend(sessions: sessions)
+        systemicLoadData = AnalyticsService.calculateSystemicLoadBreakdown(sessions: sessions)
         
         // Populate available exercises for trend (from top exercises or all logs)
         let allExercises = Set(sessions.flatMap { $0.exerciseLogs.map { $0.exerciseName } }).sorted()

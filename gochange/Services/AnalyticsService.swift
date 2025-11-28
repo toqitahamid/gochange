@@ -174,8 +174,16 @@ struct AnalyticsService {
             for log in session.exerciseLogs where log.exerciseName == exerciseName {
                 for set in log.sets where set.isCompleted {
                     if let weight = set.weight, let reps = set.actualReps {
-                        // Epley Formula: 1RM = Weight * (1 + Reps/30)
-                        let oneRepMax = weight * (1.0 + Double(reps) / 30.0)
+                        var oneRepMax: Double = 0
+                        
+                        if reps < 10 {
+                            // Brzycki Formula: w * 36 / (37 - r)
+                            oneRepMax = weight * 36.0 / (37.0 - Double(reps))
+                        } else {
+                            // Epley Formula: w * (1 + 0.0333 * r)
+                            oneRepMax = weight * (1.0 + 0.0333 * Double(reps))
+                        }
+                        
                         if oneRepMax > max1RM {
                             max1RM = oneRepMax
                         }
@@ -218,6 +226,106 @@ struct AnalyticsService {
         }
         
         return points
+    }
+
+    /// Calculate Acute:Chronic Workload Ratio (ACWR) Trend using EWMA
+    static func calculateACWRTrend(sessions: [WorkoutSession]) -> [ACWRDataPoint] {
+        let filteredSessions = sessions.filter { $0.isCompleted }.sorted { $0.date < $1.date }
+        guard !filteredSessions.isEmpty else { return [] }
+        
+        // We need a continuous timeline of daily loads
+        let calendar = Calendar.current
+        let startDate = filteredSessions.first!.date
+        let endDate = Date()
+        
+        var dailyLoads: [Date: Double] = [:]
+        
+        // Calculate daily load (Volume / 100 as proxy for arbitrary units)
+        for session in filteredSessions {
+            let day = calendar.startOfDay(for: session.date)
+            let volume = calculateSessionVolume(session)
+            dailyLoads[day, default: 0] += (volume / 100.0)
+        }
+        
+        var trendData: [ACWRDataPoint] = []
+        var currentDate = calendar.startOfDay(for: startDate)
+        
+        // EWMA Constants
+        let acuteDecay = 2.0 / (7.0 + 1.0)
+        let chronicDecay = 2.0 / (28.0 + 1.0)
+        
+        var currentAcuteLoad: Double = 0
+        var currentChronicLoad: Double = 0
+        
+        // Initialize with first day's load if available, or 0
+        // Ideally we'd have a warmup period, but we'll start accumulating from the first data point
+        
+        while currentDate <= endDate {
+            let dailyLoad = dailyLoads[currentDate] ?? 0
+            
+            // Update EWMA
+            // EWMA_today = Load * lambda + EWMA_yesterday * (1 - lambda)
+            if currentAcuteLoad == 0 {
+                currentAcuteLoad = dailyLoad
+                currentChronicLoad = dailyLoad
+            } else {
+                currentAcuteLoad = (dailyLoad * acuteDecay) + (currentAcuteLoad * (1 - acuteDecay))
+                currentChronicLoad = (dailyLoad * chronicDecay) + (currentChronicLoad * (1 - chronicDecay))
+            }
+            
+            // Avoid division by zero
+            let ratio = currentChronicLoad > 0 ? currentAcuteLoad / currentChronicLoad : 0
+            
+            // Only add point if we have some data (chronic load > 0)
+            if currentChronicLoad > 0 {
+                trendData.append(ACWRDataPoint(
+                    date: currentDate,
+                    ratio: ratio,
+                    acuteLoad: currentAcuteLoad,
+                    chronicLoad: currentChronicLoad
+                ))
+            }
+            
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate)!
+        }
+        
+        return trendData
+    }
+    
+    /// Calculate Systemic Load Breakdown (Cardio vs Strength)
+    static func calculateSystemicLoadBreakdown(sessions: [WorkoutSession]) -> [SystemicLoadDataPoint] {
+        let filteredSessions = sessions.filter { $0.isCompleted }.sorted { $0.date < $1.date }
+        let calendar = Calendar.current
+        
+        // Group by day
+        let grouped = Dictionary(grouping: filteredSessions) { calendar.startOfDay(for: $0.date) }
+        
+        var points: [SystemicLoadDataPoint] = []
+        
+        for (date, daySessions) in grouped {
+            var strengthLoad: Double = 0
+            var cardioLoad: Double = 0
+            
+            for session in daySessions {
+                // Strength Load Proxy: Volume / 500
+                let volume = calculateSessionVolume(session)
+                strengthLoad += (volume / 500.0)
+                
+                // Cardio Load Proxy: Duration (min) * RPE (assumed 4/10 if missing)
+                // In real app, use TRIMP from heart rate
+                let durationMin = (session.duration ?? 0) / 60.0
+                let rpe = session.rpe ?? 4.0 // Use stored RPE or default
+                cardioLoad += durationMin * rpe
+            }
+            
+            points.append(SystemicLoadDataPoint(
+                date: date,
+                cardioLoad: cardioLoad,
+                strengthLoad: strengthLoad
+            ))
+        }
+        
+        return points.sorted { $0.date < $1.date }
     }
 
     // MARK: - Progress Summaries
@@ -540,6 +648,23 @@ struct VolumeIntensityPoint: Identifiable {
     let date: Date
     let volume: Double
     let intensity: Double // Average weight
+}
+
+struct ACWRDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let ratio: Double
+    let acuteLoad: Double
+    let chronicLoad: Double
+}
+
+struct SystemicLoadDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let cardioLoad: Double
+    let strengthLoad: Double
+    
+    var totalLoad: Double { cardioLoad + strengthLoad }
 }
 
 // MARK: - Builder Helpers

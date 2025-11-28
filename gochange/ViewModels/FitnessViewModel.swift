@@ -40,6 +40,21 @@ class FitnessViewModel: ObservableObject {
     private var healthKitService = HealthKitService.shared
     private var modelContext: ModelContext?
     
+    // MARK: - Advanced Metrics
+    @Published var dailyReadinessScore: Double = 0
+    @Published var sleepDebt: Double = 0
+    @Published var acwr: Double = 0
+    @Published var systemicLoad: Double = 0
+    
+    // Status Messages
+    @Published var dailyReadinessStatus: String = "Recovering"
+    @Published var sleepDebtStatus: String = "Good"
+    @Published var acwrStatus: String = "Optimal"
+    
+    // Internal Data for Calculations
+    private var acuteLoad: Double = 0
+    private var chronicLoad: Double = 0
+    
     // MARK: - Setup
     func setModelContext(_ context: ModelContext) {
         self.modelContext = context
@@ -161,6 +176,115 @@ class FitnessViewModel: ObservableObject {
         }
     }
     
+    private func calculateAdvancedMetrics() async {
+        // 1. Daily Readiness Score
+        // Formula: (HRV_Z * 0.4) + (Sleep_Z * 0.4) - (RHR_Z * 0.2)
+        // We need historical data for Z-scores
+        
+        let hrvHistory = await healthKitService.getHistoricalHeartRateVariability(days: 30)
+        let rhrHistory = await healthKitService.getHistoricalRestingHeartRate(days: 30)
+        let sleepHistory = await healthKitService.getHistoricalSleepData(days: 30)
+        
+        // Get today's values
+        let today = Calendar.current.startOfDay(for: Date())
+        let todayHRV = await healthKitService.getHeartRateVariability(for: today) ?? 0
+        let todayRHR = await healthKitService.getRestingHeartRate(for: today) ?? 0
+        let todaySleep = (await healthKitService.getSleepData(for: today)?.totalDuration ?? 0)
+        
+        if !hrvHistory.isEmpty && !rhrHistory.isEmpty {
+            let hrvZ = zScore(value: todayHRV, values: Array(hrvHistory.values))
+            let rhrZ = zScore(value: todayRHR, values: Array(rhrHistory.values))
+            let sleepZ = zScore(value: todaySleep, values: Array(sleepHistory.values))
+            
+            // Invert RHR Z-score (lower is better)
+            let rawScore = (hrvZ * 0.4) + (sleepZ * 0.4) - (rhrZ * 0.2)
+            
+            // Normalize to 0-100 (assuming raw score range roughly -3 to +3)
+            // Map -3 -> 0, +3 -> 100
+            let normalized = max(0, min(100, (rawScore + 3.0) / 6.0 * 100.0))
+            self.dailyReadinessScore = normalized
+            
+            // Determine Status
+            if normalized >= 85 { dailyReadinessStatus = "Prime" }
+            else if normalized >= 70 { dailyReadinessStatus = "Ready" }
+            else if normalized >= 50 { dailyReadinessStatus = "Steady" }
+            else if normalized >= 30 { dailyReadinessStatus = "Recovering" }
+            else { dailyReadinessStatus = "Low" }
+        }
+        
+        // 2. Sleep Debt
+        // Rolling 14-day difference vs 8 hours (28800 seconds)
+        let sleepNeed: TimeInterval = 28800
+        var totalDebt: TimeInterval = 0
+        
+        // We need last 14 days of sleep
+        let recentSleep = await healthKitService.getHistoricalSleepData(days: 14)
+        for i in 0..<14 {
+            let date = Calendar.current.date(byAdding: .day, value: -i, to: today)!
+            let dayStart = Calendar.current.startOfDay(for: date)
+            let actualSleep = recentSleep[dayStart] ?? 0
+            // If no data, assume they met need? Or assume 0? Let's assume 0 for debt calculation if strictly tracking.
+            // But for user friendliness, maybe assume 0 debt if missing?
+            // Let's assume debt accumulates if data exists, otherwise ignore day.
+            if recentSleep[dayStart] != nil {
+                totalDebt += (sleepNeed - actualSleep)
+            }
+        }
+        
+        self.sleepDebt = max(0, totalDebt / 3600.0) // In hours
+        
+        if sleepDebt < 2 { sleepDebtStatus = "Well Rested" }
+        else if sleepDebt < 5 { sleepDebtStatus = "Minor Debt" }
+        else if sleepDebt < 10 { sleepDebtStatus = "Moderate Debt" }
+        else { sleepDebtStatus = "High Debt" }
+        
+        // 3. ACWR & Systemic Load
+        // We need daily loads for last 28 days
+        // Load = Strength Volume/100 + Cardio TRIMP (mocked)
+        
+        // Fetch sessions for last 28 days
+        // Note: We already fetched sessions for strength data, but we need to process them day by day
+        // For simplicity, let's re-use logic or just calculate from what we have if possible.
+        // But fetchStrengthData stores aggregates.
+        // Let's do a quick fetch for ACWR specifically or rely on AnalyticsService if we could.
+        // Since this is ViewModel, let's do a quick calculation.
+        
+        let acwrData = AnalyticsService.calculateACWRTrend(sessions: await fetchSessionsForACWR())
+        if let lastPoint = acwrData.last {
+            self.acwr = lastPoint.ratio
+            self.acuteLoad = lastPoint.acuteLoad
+            self.chronicLoad = lastPoint.chronicLoad
+            
+            if acwr >= 0.8 && acwr <= 1.3 { acwrStatus = "Sweet Spot" }
+            else if acwr > 1.5 { acwrStatus = "High Risk" }
+            else { acwrStatus = "Undertraining" }
+        }
+        
+        // Systemic Load (Today)
+        let systemicData = AnalyticsService.calculateSystemicLoadBreakdown(sessions: await fetchSessionsForACWR())
+        if let todayLoad = systemicData.first(where: { Calendar.current.isDate($0.date, inSameDayAs: today) }) {
+            self.systemicLoad = todayLoad.totalLoad
+        } else {
+            self.systemicLoad = 0
+        }
+    }
+    
+    private func fetchSessionsForACWR() async -> [WorkoutSession] {
+        guard let context = modelContext else { return [] }
+        let startDate = Calendar.current.date(byAdding: .day, value: -60, to: Date())!
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { $0.isCompleted && $0.date >= startDate }
+        )
+        return (try? context.fetch(descriptor)) ?? []
+    }
+    
+    private func zScore(value: Double, values: [Double]) -> Double {
+        guard !values.isEmpty else { return 0 }
+        let mean = values.reduce(0, +) / Double(values.count)
+        let stdDev = sqrt(values.map { pow($0 - mean, 2) }.reduce(0, +) / Double(values.count))
+        return stdDev > 0 ? (value - mean) / stdDev : 0
+    }
+
     private func normalizeMuscleGroup(_ group: String) -> String {
         // Map various inputs to our standard 6 categories
         // This depends on what strings are actually stored in Exercise.muscleGroup

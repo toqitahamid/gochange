@@ -12,6 +12,12 @@ struct AdvancedAnalyticsView: View {
             // 1RM Trend Chart
             oneRepMaxTrendCard
             
+            // ACWR Trend Chart
+            acwrTrendCard
+            
+            // Systemic Load Breakdown
+            systemicLoadCard
+            
             // Volume vs Intensity Scatter
             volumeIntensityScatterCard
             
@@ -228,6 +234,144 @@ struct AdvancedAnalyticsView: View {
         )
     }
     
+
+    
+    // MARK: - ACWR Trend Card
+    
+    private var acwrTrendCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("ACWR Trend")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Injury Risk Monitor")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                InfoButton {
+                    selectedInfoItem = .acwr
+                }
+            }
+            
+            if viewModel.acwrData.isEmpty {
+                emptyChartState(message: "Not enough data for ACWR")
+            } else {
+                Chart {
+                    ForEach(viewModel.acwrData) { point in
+                        // Sweet Spot Zone (0.8 - 1.3)
+                        RectangleMark(
+                            xStart: .value("Date", point.date),
+                            xEnd: .value("Date", point.date), // Width handled by bar width or implicit
+                            yStart: .value("Low", 0.8),
+                            yEnd: .value("High", 1.3)
+                        )
+                        .foregroundStyle(Color.green.opacity(0.1))
+                        
+                        LineMark(
+                            x: .value("Date", point.date),
+                            y: .value("Ratio", point.ratio)
+                        )
+                        .foregroundStyle(acwrColor(for: point.ratio))
+                        .interpolationMethod(.catmullRom)
+                        
+                        PointMark(
+                            x: .value("Date", point.date),
+                            y: .value("Ratio", point.ratio)
+                        )
+                        .foregroundStyle(acwrColor(for: point.ratio))
+                        .symbolSize(20)
+                    }
+                }
+                .frame(height: 200)
+                .chartYAxis {
+                    AxisMarks(position: .leading)
+                }
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
+    }
+    
+    private func acwrColor(for ratio: Double) -> Color {
+        if ratio >= 0.8 && ratio <= 1.3 { return .green }
+        if ratio > 1.5 { return .red }
+        return .orange
+    }
+    
+    // MARK: - Systemic Load Card
+    
+    private var systemicLoadCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Systemic Load")
+                        .font(.headline)
+                        .foregroundColor(.primary)
+                    
+                    Text("Cardio vs Strength")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                InfoButton {
+                    selectedInfoItem = .systemicLoad
+                }
+            }
+            
+            if viewModel.systemicLoadData.isEmpty {
+                emptyChartState(message: "No load data available")
+            } else {
+                Chart {
+                    ForEach(viewModel.systemicLoadData) { point in
+                        BarMark(
+                            x: .value("Date", point.date, unit: .day),
+                            y: .value("Load", point.strengthLoad)
+                        )
+                        .foregroundStyle(Color.blue)
+                        .annotation(position: .overlay) {
+                            Text("S")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                        
+                        BarMark(
+                            x: .value("Date", point.date, unit: .day),
+                            y: .value("Load", point.cardioLoad)
+                        )
+                        .foregroundStyle(Color.orange)
+                        .annotation(position: .overlay) {
+                            Text("C")
+                                .font(.caption2)
+                                .foregroundColor(.white.opacity(0.5))
+                        }
+                    }
+                }
+                .frame(height: 200)
+            }
+        }
+        .padding(20)
+        .background(Color.white)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+        )
+    }
+
     private func emptyChartState(message: String) -> some View {
         VStack(spacing: 12) {
             Image(systemName: "chart.bar.xaxis")
@@ -262,6 +406,8 @@ enum AnalyticsInfoItem: Identifiable {
     case oneRepMax
     case volumeIntensity
     case muscleSplit
+    case acwr
+    case systemicLoad
     
     var id: Self { self }
     
@@ -270,6 +416,8 @@ enum AnalyticsInfoItem: Identifiable {
         case .oneRepMax: return "Estimated 1RM"
         case .volumeIntensity: return "Volume vs. Intensity"
         case .muscleSplit: return "Muscle Group Split"
+        case .acwr: return "ACWR Trend"
+        case .systemicLoad: return "Systemic Load"
         }
     }
     
@@ -281,6 +429,10 @@ enum AnalyticsInfoItem: Identifiable {
             return "This scatter plot shows the relationship between your total workout volume (Total Weight Moved) and average intensity (Average Weight per Rep). High volume with high intensity indicates a very demanding workout, while low volume with low intensity suggests a recovery session."
         case .muscleSplit:
             return "This chart breaks down your total training volume by muscle group. A balanced distribution helps prevent muscle imbalances and ensures overall physique development. Use this to identify lagging body parts that may need more focus."
+        case .acwr:
+            return "Acute:Chronic Workload Ratio tracks your injury risk. The 'Sweet Spot' is 0.8-1.3. Spikes above 1.5 indicate you are increasing load too quickly ('Too Much, Too Soon')."
+        case .systemicLoad:
+            return "Total Systemic Load combines stress from Cardio (TRIMP) and Strength (Volume Load). This helps you manage your overall fatigue and recovery, especially for hybrid training."
         }
     }
     
@@ -289,6 +441,8 @@ enum AnalyticsInfoItem: Identifiable {
         case .oneRepMax: return "trophy.fill"
         case .volumeIntensity: return "chart.xyaxis.line"
         case .muscleSplit: return "figure.mixed.cardio"
+        case .acwr: return "shield.fill"
+        case .systemicLoad: return "chart.bar.fill"
         }
     }
 }

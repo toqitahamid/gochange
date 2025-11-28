@@ -629,59 +629,170 @@ class HealthKitService: ObservableObject {
     }
 
     // MARK: - Heart Rate Variability
-
-    /// Get heart rate variability (HRV) for a given date
+    
+    /// Get heart rate variability (SDNN) for a given date
     func getHeartRateVariability(for date: Date) async -> Double? {
         guard isHealthKitAvailable else { return nil }
-
-        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
         
-        // Note: HealthKit's authorizationStatus(for:) is unreliable for read permissions
-        // It can return .sharingDenied even when permission is granted in Settings
-        // We proceed with the query and let HealthKit handle authorization properly
-        // The query will fail with an authorization error if truly denied
-
+        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: date)
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
-
+        
         let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
         let sortDescriptor = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: false)
-
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: hrvType,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [sortDescriptor]
+            ) { _, samples, error in
+                if let error = error {
+                    print("❌ HRV query error: \(error.localizedDescription)")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                guard let sample = (samples as? [HKQuantitySample])?.first else {
+                    print("⚠️ No HRV data found for date: \(date.formatted(date: .abbreviated, time: .omitted))")
+                    continuation.resume(returning: nil)
+                    return
+                }
+                
+                let hrv = sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
+                print("💓 HRV: \(Int(hrv)) ms")
+                continuation.resume(returning: hrv)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
+    /// Get daily HRV samples for the last 30 days
+    func getHistoricalHeartRateVariability(days: Int = 30) async -> [Date: Double] {
+        guard isHealthKitAvailable else { return [:] }
+        
+        let hrvType = HKQuantityType(.heartRateVariabilitySDNN)
+        let calendar = Calendar.current
+        let endDate = Date()
+        let startDate = calendar.date(byAdding: .day, value: -days, to: endDate) ?? endDate
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: hrvType,
                 predicate: predicate,
                 limit: HKObjectQueryNoLimit,
-                sortDescriptors: [sortDescriptor]
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
             ) { _, samples, error in
-                if let error = error {
-                    // Check if it's an authorization error
-                    if let hkError = error as? HKError, hkError.code == .errorAuthorizationDenied {
-                        print("❌ HRV query error: Authorization denied")
-                    } else {
-                        print("❌ HRV query error: \(error.localizedDescription)")
-                    }
-                    continuation.resume(returning: nil)
+                guard let samples = samples as? [HKQuantitySample], error == nil else {
+                    continuation.resume(returning: [:])
                     return
                 }
-
-                guard let hrvSamples = samples as? [HKQuantitySample], !hrvSamples.isEmpty else {
-                    print("⚠️ No HRV data found for date: \(date.formatted(date: .abbreviated, time: .omitted))")
-                    continuation.resume(returning: nil)
-                    return
+                
+                var dailyHRV: [Date: [Double]] = [:]
+                
+                for sample in samples {
+                    let date = calendar.startOfDay(for: sample.startDate)
+                    let value = sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
+                    dailyHRV[date, default: []].append(value)
                 }
-
-                // Calculate average HRV for the day
-                let totalHRV = hrvSamples.reduce(0.0) { sum, sample in
-                    sum + sample.quantity.doubleValue(for: HKUnit.secondUnit(with: .milli))
+                
+                // Average per day
+                var result: [Date: Double] = [:]
+                for (date, values) in dailyHRV {
+                    let average = values.reduce(0, +) / Double(values.count)
+                    result[date] = average
                 }
-                let averageHRV = totalHRV / Double(hrvSamples.count)
-
-                print("📊 HRV: \(Int(averageHRV))ms (from \(hrvSamples.count) samples)")
-                continuation.resume(returning: averageHRV)
+                
+                continuation.resume(returning: result)
             }
-
+            healthStore.execute(query)
+        }
+    }
+    
+    /// Get daily Resting Heart Rate samples for the last 30 days
+    func getHistoricalRestingHeartRate(days: Int = 30) async -> [Date: Double] {
+        guard isHealthKitAvailable else { return [:] }
+        
+        let rhrType = HKQuantityType(.restingHeartRate)
+        let calendar = Calendar.current
+        let endDate = Date()
+        let startDate = calendar.date(byAdding: .day, value: -days, to: endDate) ?? endDate
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: rhrType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                guard let samples = samples as? [HKQuantitySample], error == nil else {
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                var result: [Date: Double] = [:]
+                
+                for sample in samples {
+                    let date = calendar.startOfDay(for: sample.startDate)
+                    let value = sample.quantity.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
+                    // If multiple samples per day, take the last one (or average, but RHR is usually one per day)
+                    result[date] = value
+                }
+                
+                continuation.resume(returning: result)
+            }
+            healthStore.execute(query)
+        }
+    }
+    
+    /// Get daily Sleep Duration for the last 30 days
+    func getHistoricalSleepData(days: Int = 30) async -> [Date: TimeInterval] {
+        guard isHealthKitAvailable else { return [:] }
+        
+        let sleepType = HKCategoryType(.sleepAnalysis)
+        let calendar = Calendar.current
+        let endDate = Date()
+        let startDate = calendar.date(byAdding: .day, value: -days, to: endDate) ?? endDate
+        
+        let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
+        
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: sleepType,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, error in
+                guard let samples = samples as? [HKCategorySample], error == nil else {
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                var dailySleep: [Date: TimeInterval] = [:]
+                
+                for sample in samples {
+                    // Filter for Asleep (Core, Deep, REM, Unspecified)
+                    let value = sample.value
+                    if [HKCategoryValueSleepAnalysis.asleepCore.rawValue,
+                        HKCategoryValueSleepAnalysis.asleepDeep.rawValue,
+                        HKCategoryValueSleepAnalysis.asleepREM.rawValue,
+                        HKCategoryValueSleepAnalysis.asleepUnspecified.rawValue].contains(value) {
+                        
+                        let date = calendar.startOfDay(for: sample.endDate) // Attribute sleep to the wake-up day
+                        let duration = sample.endDate.timeIntervalSince(sample.startDate)
+                        dailySleep[date, default: 0] += duration
+                    }
+                }
+                
+                continuation.resume(returning: dailySleep)
+            }
             healthStore.execute(query)
         }
     }

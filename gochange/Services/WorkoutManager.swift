@@ -192,7 +192,7 @@ class WorkoutManager: ObservableObject {
         resetState()
     }
     
-    func complete() {
+    func complete(rpe: Double? = nil) {
         guard let session = currentSession, let startTime = startTime, let context = modelContext else { return }
         
         // End Live Activity
@@ -204,6 +204,7 @@ class WorkoutManager: ObservableObject {
         session.duration = endTime.timeIntervalSince(startTime)
         session.isCompleted = true
         session.notes = sessionNotes.isEmpty ? nil : sessionNotes
+        session.rpe = rpe
         
         // Attach logs
         for log in exerciseLogs {

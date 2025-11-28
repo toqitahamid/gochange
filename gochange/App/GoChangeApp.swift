@@ -52,15 +52,27 @@ struct GoChangeApp: App {
     private func seedDefaultDataIfNeeded() {
         let context = modelContainer.mainContext
         
+        // 1. Fetch existing workouts
         let descriptor = FetchDescriptor<WorkoutDay>()
-        let existingCount = (try? context.fetchCount(descriptor)) ?? 0
+        let existingWorkouts = (try? context.fetch(descriptor)) ?? []
+        let existingNames = Set(existingWorkouts.map { $0.name })
         
-        if existingCount == 0 {
-            let defaultWorkouts = DefaultWorkoutData.createDefaultWorkouts()
-            for workout in defaultWorkouts {
+        // 2. Get all default workouts
+        let defaultWorkouts = DefaultWorkoutData.createDefaultWorkouts()
+        
+        // 3. Add missing ones
+        var addedCount = 0
+        for workout in defaultWorkouts {
+            if !existingNames.contains(workout.name) {
                 context.insert(workout)
+                addedCount += 1
             }
+        }
+        
+        // 4. Save if changes made
+        if addedCount > 0 {
             try? context.save()
+            print("Seeded \(addedCount) new default workouts.")
         }
     }
 }

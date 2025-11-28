@@ -12,6 +12,8 @@ struct ActiveWorkoutView: View {
     
     @State private var showingCompletionAlert = false
     @State private var showingCancelAlert = false
+    @State private var showingRPEInput = false
+    @State private var rpeValue: Double = 7.0
     @State private var expandedExercise: UUID?
     
     // Track completed sets for live activity
@@ -69,7 +71,7 @@ struct ActiveWorkoutView: View {
                 Spacer()
                 
                 Button {
-                    showingCompletionAlert = true
+                    showingRPEInput = true
                 } label: {
                     Text("Complete")
                         .font(.system(size: 16, weight: .semibold))
@@ -174,6 +176,14 @@ struct ActiveWorkoutView: View {
             SessionNotesSheet(notes: $workoutManager.sessionNotes)
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showingRPEInput) {
+            RPEInputSheet(rpe: $rpeValue) {
+                showingRPEInput = false
+                workoutManager.complete(rpe: rpeValue)
+            }
+            .presentationDetents([.medium])
+            .presentationDragIndicator(.visible)
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)

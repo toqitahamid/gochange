@@ -5,6 +5,7 @@ import SwiftData
 struct FitnessView: View {
     @StateObject private var viewModel = FitnessViewModel()
     @Environment(\.modelContext) private var modelContext
+    @State private var selectedMetricInfo: MetricExplanationSheet.MetricType?
 
     var body: some View {
         NavigationStack {
@@ -24,11 +25,22 @@ struct FitnessView: View {
                     }
                     // .padding(.horizontal) removed
 
-                    // Recovery Overview
-                    RecoveryOverviewCard()
-
-                    // Strain Card
-                    StrainCard(viewModel: viewModel)
+                    // Daily Readiness
+                    DailyReadinessCard(viewModel: viewModel) {
+                        selectedMetricInfo = .readiness
+                    }
+                    
+                    HStack(spacing: 16) {
+                        // Sleep Debt
+                        SleepDebtCard(viewModel: viewModel) {
+                            selectedMetricInfo = .sleepDebt
+                        }
+                        
+                        // ACWR
+                        ACWRCard(viewModel: viewModel) {
+                            selectedMetricInfo = .acwr
+                        }
+                    }
                     
                     // Heatmap Card
                     FitnessHeatmapCard()
@@ -69,6 +81,10 @@ struct FitnessView: View {
                 .padding(.bottom, 80)
             }
             .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+        }
+        .sheet(item: $selectedMetricInfo) { metric in
+            MetricExplanationSheet(metric: metric)
+                .presentationDetents([.medium, .large])
         }
         .task {
             viewModel.setModelContext(modelContext)
@@ -795,5 +811,215 @@ struct FitnessCardStyle: ViewModifier {
 extension View {
     func fitnessCardStyle() -> some View {
         modifier(FitnessCardStyle())
+    }
+}
+
+// MARK: - Daily Readiness Card
+struct DailyReadinessCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    var onInfoTap: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Image(systemName: "bolt.heart.fill")
+                    .foregroundColor(.blue)
+                Text("Daily Readiness")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button(action: onInfoTap) {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            HStack(alignment: .bottom, spacing: 4) {
+                Text("\(Int(viewModel.dailyReadinessScore))")
+                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                    .foregroundColor(scoreColor)
+                Text("%")
+                    .font(.title3)
+                    .fontWeight(.bold)
+                    .foregroundColor(.secondary)
+                    .padding(.bottom, 6)
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text(governorMessage)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(scoreColor)
+                        .multilineTextAlignment(.trailing)
+                    
+                    Text("Based on HRV, Sleep & RHR")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            // Progress Bar
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(height: 8)
+                    
+                    Capsule()
+                        .fill(scoreColor)
+                        .frame(width: geometry.size.width * (viewModel.dailyReadinessScore / 100), height: 8)
+                }
+            }
+            .frame(height: 8)
+        }
+        .fitnessCardStyle()
+    }
+    
+    private var scoreColor: Color {
+        if viewModel.dailyReadinessScore >= 80 { return .green }
+        if viewModel.dailyReadinessScore >= 40 { return .orange }
+        return .red
+    }
+    
+    private var governorMessage: String {
+        if viewModel.dailyReadinessScore >= 80 { return "Prime Time. Go for PRs." }
+        if viewModel.dailyReadinessScore >= 40 { return "Train as planned." }
+        return "CNS Fried. Reduce Volume."
+    }
+}
+
+// MARK: - Sleep Debt Card
+struct SleepDebtCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    var onInfoTap: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "bed.double.fill")
+                    .foregroundColor(.indigo)
+                Text("Sleep Debt")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button(action: onInfoTap) {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            HStack(alignment: .firstTextBaseline) {
+                Text(String(format: "%.1f", viewModel.sleepDebt))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(debtColor)
+                Text("hours")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+                
+                Text(realityCheckMessage)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(debtColor)
+            }
+        }
+        .fitnessCardStyle()
+    }
+    
+    private var debtColor: Color {
+        if viewModel.sleepDebt < 2 { return .green }
+        if viewModel.sleepDebt < 5 { return .orange }
+        return .red
+    }
+    
+    private var realityCheckMessage: String {
+        if viewModel.sleepDebt < 2 { return "Well Rested" }
+        if viewModel.sleepDebt < 5 { return "Minor Debt" }
+        return "Recovery Compromised"
+    }
+}
+
+// MARK: - ACWR Card
+struct ACWRCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    var onInfoTap: () -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Image(systemName: "shield.fill")
+                    .foregroundColor(.green)
+                Text("ACWR (Injury Risk)")
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button(action: onInfoTap) {
+                    Image(systemName: "info.circle")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            
+            HStack(alignment: .firstTextBaseline) {
+                Text(String(format: "%.2f", viewModel.acwr))
+                    .font(.system(size: 28, weight: .bold, design: .rounded))
+                    .foregroundColor(ratioColor)
+                
+                Spacer()
+                
+                Text(shieldMessage)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(ratioColor)
+            }
+            
+            // Range Indicator
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    // Background Track
+                    Capsule()
+                        .fill(Color.gray.opacity(0.1))
+                        .frame(height: 6)
+                    
+                    // Sweet Spot Zone (0.8 - 1.3)
+                    // Map 0.0 - 2.0 range to width
+                    let start = (0.8 / 2.0) * geometry.size.width
+                    let width = ((1.3 - 0.8) / 2.0) * geometry.size.width
+                    
+                    Capsule()
+                        .fill(Color.green.opacity(0.3))
+                        .frame(width: width, height: 6)
+                        .offset(x: start)
+                    
+                    // Current Value Indicator
+                    let currentPos = min(max(viewModel.acwr / 2.0, 0), 1.0) * geometry.size.width
+                    Circle()
+                        .fill(ratioColor)
+                        .frame(width: 10, height: 10)
+                        .offset(x: currentPos - 5)
+                }
+            }
+            .frame(height: 10)
+        }
+        .fitnessCardStyle()
+    }
+    
+    private var ratioColor: Color {
+        if viewModel.acwr >= 0.8 && viewModel.acwr <= 1.3 { return .green }
+        if viewModel.acwr > 1.5 { return .red }
+        return .orange
+    }
+    
+    private var shieldMessage: String {
+        if viewModel.acwr >= 0.8 && viewModel.acwr <= 1.3 { return "Sweet Spot" }
+        if viewModel.acwr > 1.5 { return "High Risk" }
+        return "Undertraining"
     }
 }

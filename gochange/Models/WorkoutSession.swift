@@ -12,6 +12,7 @@ final class WorkoutSession {
     var duration: TimeInterval?
     var notes: String?
     var isCompleted: Bool
+    var rpe: Double?
     @Relationship(deleteRule: .cascade) var exerciseLogs: [ExerciseLog]
     
     init(date: Date, workoutDayId: UUID, workoutDayName: String) {
