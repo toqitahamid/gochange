@@ -11,6 +11,7 @@ struct MetricExplanationSheet: View {
         case e1rm
         case systemicLoad
         case sleepDebt
+        case rpe
         
         var title: String {
             switch self {
@@ -19,6 +20,7 @@ struct MetricExplanationSheet: View {
             case .e1rm: return "Estimated 1RM"
             case .systemicLoad: return "Total Systemic Load"
             case .sleepDebt: return "Sleep Debt"
+            case .rpe: return "Rate of Perceived Exertion"
             }
         }
         
@@ -29,6 +31,7 @@ struct MetricExplanationSheet: View {
             case .e1rm: return "The Progress"
             case .systemicLoad: return "The Context"
             case .sleepDebt: return "Reality Check"
+            case .rpe: return "The Internal Load"
             }
         }
         
@@ -44,6 +47,8 @@ struct MetricExplanationSheet: View {
                 return "A combined measure of cardiovascular stress (TRIMP) and muscular stress (Volume × RPE). It quantifies the total toll a workout takes on your body."
             case .sleepDebt:
                 return "The cumulative difference between your sleep need (default 8h) and your actual sleep over the last 14 days."
+            case .rpe:
+                return "A subjective measure of how hard you felt your workout was, on a scale of 1-10. It captures the internal physiological and psychological stress of a session."
             }
         }
         
@@ -59,6 +64,8 @@ struct MetricExplanationSheet: View {
                 return "Use this to balance your training. If yesterday's load was very high, consider a lighter session today to manage fatigue."
             case .sleepDebt:
                 return "If debt > 5 hours, your recovery is compromised. Prioritize sleep or reduce training intensity until the debt is cleared."
+            case .rpe:
+                return "Be honest. Use it to track internal load over time. A high RPE with low external load (weight) can indicate fatigue or illness."
             }
         }
         
@@ -66,9 +73,10 @@ struct MetricExplanationSheet: View {
             switch self {
             case .readiness: return "(HRV_Z × 0.4) + (Sleep_Z × 0.4) - (RHR_Z × 0.2)"
             case .acwr: return "Acute Load (7-day EWMA) / Chronic Load (28-day EWMA)"
-            case .e1rm: return "Brzycki (<10 reps) or Epley (>10 reps)"
+            case .e1rm: return "Brzycki (<10 reps) or Epley (≥10 reps)"
             case .systemicLoad: return "Cardio Load + (Duration × RPE)"
             case .sleepDebt: return "Σ (Sleep Need - Actual Sleep) over 14 days"
+            case .rpe: return "User Input (1-10)"
             }
         }
         
@@ -79,6 +87,7 @@ struct MetricExplanationSheet: View {
             case .e1rm: return "dumbbell.fill"
             case .systemicLoad: return "chart.bar.fill"
             case .sleepDebt: return "bed.double.fill"
+            case .rpe: return "gauge.with.needle.fill"
             }
         }
         
@@ -89,94 +98,149 @@ struct MetricExplanationSheet: View {
             case .e1rm: return .orange
             case .systemicLoad: return .purple
             case .sleepDebt: return .indigo
+            case .rpe: return .yellow
             }
+        }
+        
+        var gradient: LinearGradient {
+            LinearGradient(
+                colors: [color.opacity(0.8), color],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
         }
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            HStack {
-                Spacer()
-                Capsule()
-                    .fill(Color.gray.opacity(0.3))
-                    .frame(width: 40, height: 4)
-                Spacer()
-            }
-            .padding(.top, 12)
-            .padding(.bottom, 20)
+        ZStack {
+            Color(UIColor.systemBackground).ignoresSafeArea()
             
-            ScrollView {
-                VStack(spacing: 24) {
-                    // Icon & Title
-                    VStack(spacing: 12) {
-                        Image(systemName: metric.icon)
-                            .font(.system(size: 48))
-                            .foregroundColor(metric.color)
-                            .padding()
-                            .background(metric.color.opacity(0.1))
-                            .clipShape(Circle())
-                        
-                        VStack(spacing: 4) {
-                            Text(metric.title)
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .multilineTextAlignment(.center)
+            VStack(spacing: 0) {
+                // Drag Indicator
+                Capsule()
+                    .fill(Color.secondary.opacity(0.2))
+                    .frame(width: 40, height: 4)
+                    .padding(.top, 12)
+                    .padding(.bottom, 20)
+                
+                ScrollView {
+                    VStack(spacing: 32) {
+                        // Header Section
+                        VStack(spacing: 16) {
+                            // Icon
+                            ZStack {
+                                Circle()
+                                    .fill(metric.gradient)
+                                    .frame(width: 88, height: 88)
+                                    .shadow(color: metric.color.opacity(0.3), radius: 15, x: 0, y: 8)
+                                
+                                Image(systemName: metric.icon)
+                                    .font(.system(size: 40))
+                                    .foregroundColor(.white)
+                            }
                             
-                            Text(metric.subtitle)
-                                .font(.headline)
-                                .foregroundColor(.secondary)
-                                .fontWeight(.medium)
+                            // Titles
+                            VStack(spacing: 6) {
+                                Text(metric.title)
+                                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                                    .multilineTextAlignment(.center)
+                                    .foregroundColor(.primary)
+                                
+                                Text(metric.subtitle)
+                                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                                    .foregroundColor(.secondary)
+                            }
                         }
+                        .padding(.top, 10)
+                        
+                        // Content Sections
+                        VStack(spacing: 24) {
+                            InfoSection(
+                                title: "What is it?",
+                                content: metric.description,
+                                icon: "info.circle.fill",
+                                color: .blue
+                            )
+                            
+                            InfoSection(
+                                title: "How to use it?",
+                                content: metric.howToUse,
+                                icon: "lightbulb.fill",
+                                color: .yellow
+                            )
+                            
+                            InfoSection(
+                                title: "The Math",
+                                content: metric.formula,
+                                icon: "function",
+                                color: .purple,
+                                isMonospaced: true
+                            )
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    
-                    Divider()
-                    
-                    // Sections
-                    VStack(alignment: .leading, spacing: 24) {
-                        InfoSection(title: "What is it?", content: metric.description)
-                        InfoSection(title: "How to use it?", content: metric.howToUse)
-                        InfoSection(title: "The Math", content: metric.formula, isMonospaced: true)
-                    }
-                    .padding(.horizontal)
+                    .padding(.bottom, 100) // Space for button
                 }
+            }
+            
+            // Floating Bottom Button
+            VStack {
+                Spacer()
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Got it")
+                        .font(.system(size: 17, weight: .semibold))
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 56)
+                        .background(metric.gradient)
+                        .cornerRadius(28)
+                        .shadow(color: metric.color.opacity(0.3), radius: 10, x: 0, y: 5)
+                }
+                .padding(.horizontal, 20)
                 .padding(.bottom, 30)
             }
-            
-            // Close Button
-            Button {
-                dismiss()
-            } label: {
-                Text("Got it")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(metric.color)
-                    .cornerRadius(16)
-            }
-            .padding(20)
         }
-        .background(Color.white)
     }
 }
 
 struct InfoSection: View {
     let title: String
     let content: String
+    let icon: String
+    let color: Color
     var isMonospaced: Bool = false
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(title)
-                .font(.headline)
-                .fontWeight(.bold)
-                .foregroundColor(.primary)
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+                    .frame(width: 24, height: 24)
+                    .background(color.opacity(0.1))
+                    .clipShape(Circle())
+                
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.primary)
+            }
             
             Text(content)
-                .font(isMonospaced ? .system(.body, design: .monospaced) : .body)
+                .font(isMonospaced ? .system(size: 14, design: .monospaced) : .system(size: 15))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
+                .lineSpacing(4)
+                .padding(.leading, 32) // Align with title text
         }
+        .padding(16)
+        .background(Color(UIColor.secondarySystemBackground))
+        .cornerRadius(16)
     }
 }
+
+#Preview {
+    MetricExplanationSheet(metric: .readiness)
+}
+

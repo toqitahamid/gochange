@@ -7,111 +7,126 @@ struct RPEInputSheet: View {
     
     // Internal state for drag gesture
     @State private var dragOffset: CGFloat = 0
+    @State private var showExplanation = false
     @State private var isDragging: Bool = false
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Header
-            VStack(spacing: 8) {
-                Text("Perceived Exertion")
-                    .font(.system(size: 22, weight: .bold))
-                    .foregroundColor(.white)
-                
-                Text("How did it feel?")
-                    .font(.system(size: 16))
-                    .foregroundColor(.gray)
-            }
-            .padding(.top, 30)
-            
-            Spacer()
-                .frame(height: 40)
-            
-            // Dynamic Feedback (Icon + Text)
-            VStack(spacing: 16) {
-                // Emoji/Icon
-                ZStack {
-                    Circle()
-                        .fill(rpeColor)
-                        .frame(width: 80, height: 80)
-                        .shadow(color: rpeColor.opacity(0.5), radius: 20, x: 0, y: 10)
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Header
+                VStack(spacing: 8) {
+                    HStack(spacing: 8) {
+                        Text("Perceived Exertion")
+                            .font(.system(size: 22, weight: .bold))
+                            .foregroundColor(.primary)
+                        
+                        Button {
+                            showExplanation = true
+                        } label: {
+                            Image(systemName: "info.circle")
+                                .font(.system(size: 20))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                     
-                    Text(rpeEmoji)
-                        .font(.system(size: 40))
+                    Text("How did it feel?")
+                        .font(.system(size: 16))
+                        .foregroundColor(.secondary)
                 }
-                .scaleEffect(isDragging ? 1.1 : 1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isDragging)
+                .padding(.top, 24)
+                .sheet(isPresented: $showExplanation) {
+                    MetricExplanationSheet(metric: .rpe)
+                }
                 
-                // Text Feedback
-                VStack(spacing: 6) {
-                    Text(rpeTitle)
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundColor(.white)
+                Spacer(minLength: 20)
+                
+                // Dynamic Feedback (Icon + Text)
+                VStack(spacing: 16) {
+                    // Emoji/Icon
+                    ZStack {
+                        Circle()
+                            .fill(rpeColor)
+                            .frame(width: 80, height: 80)
+                            .shadow(color: rpeColor.opacity(0.5), radius: 20, x: 0, y: 10)
+                        
+                        Text(rpeEmoji)
+                            .font(.system(size: 40))
+                    }
+                    .scaleEffect(isDragging ? 1.1 : 1.0)
+                    .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isDragging)
                     
-                    Text(rpeDescription)
-                        .font(.system(size: 15))
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true) // Prevent truncation
-                }
-            }
-            
-            Spacer()
-                .frame(height: 60)
-            
-            // Custom Slider
-            VStack(spacing: 8) {
-                HStack {
-                    Text("AVG STRENGTH TRAINING")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray)
-                        .tracking(0.5)
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                
-                CustomGradientSlider(value: $rpe, range: 1...10) { isDragging in
-                    self.isDragging = isDragging
-                }
-                .frame(height: 44)
-                .padding(.horizontal, 24)
-                
-                HStack {
-                    Text("YOUR USUAL RANGE")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.gray)
-                        .tracking(0.5)
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-            }
-            
-            Spacer()
-            
-            // Action Buttons
-            VStack(spacing: 16) {
-                Button(action: onFinish) {
-                    Text("Save")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.black)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(Color(hex: "#A5D6D9")) // Light blue/teal from screenshot
-                        .cornerRadius(28)
+                    // Text Feedback
+                    VStack(spacing: 6) {
+                        Text(rpeTitle)
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.primary)
+                        
+                        Text(rpeDescription)
+                            .font(.system(size: 15))
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 40)
+                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 
-                Button(action: { dismiss() }) {
-                    Text("Cancel")
-                        .font(.system(size: 17, weight: .medium))
-                        .foregroundColor(.white)
+                Spacer(minLength: 20)
+                
+                // Custom Slider
+                VStack(spacing: 8) {
+                    HStack {
+                        Text("AVG STRENGTH TRAINING")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.secondary)
+                            .tracking(0.5)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    
+                    CustomGradientSlider(value: $rpe, range: 1...10) { isDragging in
+                        self.isDragging = isDragging
+                    }
+                    .frame(height: 44)
+                    .padding(.horizontal, 24)
+                    
+                    HStack {
+                        Text("YOUR USUAL RANGE")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.secondary)
+                            .tracking(0.5)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
                 }
+                
+                Spacer(minLength: 20)
+                
+                // Action Buttons
+                VStack(spacing: 12) {
+                    Button(action: onFinish) {
+                        Text("Save")
+                            .font(.system(size: 17, weight: .semibold))
+                            .foregroundColor(.black)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color(hex: "#A5D6D9"))
+                            .cornerRadius(25)
+                    }
+                    
+                    Button(action: { dismiss() }) {
+                        Text("Cancel")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundColor(.primary)
+                            .frame(height: 44)
+                    }
+                }
+                .padding(.horizontal, 24)
+                .padding(.bottom, 20)
             }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 30)
+            .frame(minHeight: geometry.size.height)
         }
-        .background(Color(hex: "#1C1C1E").ignoresSafeArea()) // Dark background
-        .preferredColorScheme(.dark)
+        .background(Color(UIColor.systemBackground).ignoresSafeArea())
     }
     
     // MARK: - Dynamic Content
@@ -169,19 +184,15 @@ struct CustomGradientSlider: View {
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
-            let trackHeight: CGFloat = 24 // Tapered height logic could be added here
+            let trackHeight: CGFloat = 24
             
             ZStack(alignment: .leading) {
-                // Track Background (Hatched pattern for "Usual Range")
-                // Simplified as a dark track for now, can add hatching if needed
+                // Track Background
                 Capsule()
-                    .fill(Color.white.opacity(0.1))
+                    .fill(Color.secondary.opacity(0.2))
                     .frame(height: trackHeight)
                 
                 // Gradient Track
-                // We want a tapered look: thinner at start, thicker at end?
-                // Or just a gradient bar. Screenshot shows a wedge shape.
-                // Let's stick to a uniform height for simplicity first, or use a path for wedge.
                 LinearGradient(
                     stops: [
                         .init(color: Color(hex: "#64D2FF"), location: 0.0), // Blue
@@ -192,9 +203,6 @@ struct CustomGradientSlider: View {
                     endPoint: .trailing
                 )
                 .mask(
-                    // Mask to show only up to the thumb? No, screenshot shows full gradient but dimmed?
-                    // Actually screenshot shows the gradient IS the track.
-                    // Let's just fill the whole track with gradient.
                     Capsule()
                 )
                 .frame(height: trackHeight)
@@ -205,7 +213,7 @@ struct CustomGradientSlider: View {
                     ForEach(0..<10) { i in
                         Spacer()
                         Rectangle()
-                            .fill(Color.black.opacity(0.3))
+                            .fill(Color.primary.opacity(0.1))
                             .frame(width: 1, height: 12)
                         if i == 9 { Spacer() }
                     }
@@ -215,13 +223,13 @@ struct CustomGradientSlider: View {
                 Circle()
                     .fill(Color.white)
                     .frame(width: 32, height: 32)
-                    .shadow(color: .black.opacity(0.2), radius: 4, x: 0, y: 2)
+                    .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
                     .overlay(
                         Circle()
                             .fill(thumbColor)
                             .padding(6)
                     )
-                    .offset(x: thumbOffset(in: width) - 16) // Center thumb
+                    .offset(x: thumbOffset(in: width) - 16)
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
@@ -234,7 +242,6 @@ struct CustomGradientSlider: View {
                     )
             }
             .frame(height: trackHeight)
-            // Center vertically in the 44pt frame
             .frame(maxHeight: .infinity, alignment: .center)
         }
     }
