@@ -5,7 +5,7 @@ protocol MetricDefinition {
     var title: String { get }
     var subtitle: String { get }
     var description: String { get }
-    var howToUse: String { get }
+    var howToUse: [MetricPoint] { get } // Changed from String
     var math: String { get } // Renamed from 'formula' for broader context
     var unit: String { get }
     var icon: String { get }
@@ -36,6 +36,12 @@ struct MetricRange: Identifiable {
     var isUnboundedMax: Bool { max > 1000 }
 }
 
+struct MetricPoint: Identifiable {
+    let id = UUID()
+    let title: String
+    let body: String
+}
+
 // MARK: - Concrete Implementations
 
 struct ReadinessMetric: MetricDefinition {
@@ -51,11 +57,11 @@ struct ReadinessMetric: MetricDefinition {
     A high score indicates your autonomic nervous system is balanced and you are primed for high-intensity training. A low score suggests your body is fighting stress, illness, or fatigue, and you should prioritize recovery.
     """
     
-    let howToUse = """
-    • **80-100% (Prime)**: Your body is fully recovered. This is the best time to attempt a PR or a high-intensity workout.
-    • **40-80% (Ready)**: You are in a normal training state. Stick to your planned workout volume and intensity.
-    • **<40% (Low)**: Your Central Nervous System (CNS) is fatigued. Consider reducing your training volume by 15-30%, doing an active recovery session, or taking a complete rest day.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "80-100% (Prime)", body: "Your body is fully recovered. This is the best time to attempt a PR or a high-intensity workout."),
+        MetricPoint(title: "40-80% (Ready)", body: "You are in a normal training state. Stick to your planned workout volume and intensity."),
+        MetricPoint(title: "<40% (Low)", body: "Your Central Nervous System (CNS) is fatigued. Consider reducing your training volume by 15-30%, doing an active recovery session, or taking a complete rest day.")
+    ]
     
     let math = """
     (HRV_Z × 0.4) + (Sleep_Z × 0.4) - (RHR_Z × 0.2)
@@ -84,11 +90,11 @@ struct ACWRMetric: MetricDefinition {
     It answers the question: "Am I doing too much, too soon?" keeping you in the sweet spot where you gain fitness without breaking down.
     """
     
-    let howToUse = """
-    • **0.8 – 1.3 (Optimal)**: The "Sweet Spot". Your training load is increasing at a safe, sustainable rate. This is where fitness gains happen with minimal injury risk.
-    • **> 1.5 (Danger Zone)**: You have spiked your volume too quickly. Injury risk increases significantly (up to 2-4x). Deload immediately.
-    • **< 0.8 (Undertraining)**: You are doing significantly less than you are used to. You may be losing fitness (detraining).
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "0.8 – 1.3 (Optimal)", body: "The \"Sweet Spot\". Your training load is increasing at a safe, sustainable rate. This is where fitness gains happen with minimal injury risk."),
+        MetricPoint(title: "> 1.5 (Danger Zone)", body: "You have spiked your volume too quickly. Injury risk increases significantly (up to 2-4x). Deload immediately."),
+        MetricPoint(title: "< 0.8 (Undertraining)", body: "You are doing significantly less than you are used to. You may be losing fitness (detraining).")
+    ]
     
     let math = """
     Acute Load (7-day EWMA) / Chronic Load (28-day EWMA)
@@ -117,14 +123,14 @@ struct SleepDebtMetric: MetricDefinition {
     Sleep is the most potent recovery tool you have. Accumulating debt impairs cognitive function, reaction time, insulin sensitivity, and testosterone production.
     """
     
-    let howToUse = """
-    • **0-2h (Well Rested)**: You are meeting your sleep needs. Recovery is optimal.
-    • **2-5h (Minor Debt)**: You missed a few hours. Try to go to bed 30 mins earlier for a few nights to clear it.
-    • **> 5h (High Debt)**: Your recovery is significantly compromised. Prioritize sleep over high-intensity training until this number comes down.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "0-2h (Well Rested)", body: "You are meeting your sleep needs. Recovery is optimal."),
+        MetricPoint(title: "2-5h (Minor Debt)", body: "You missed a few hours. Try to go to bed 30 mins earlier for a few nights to clear it."),
+        MetricPoint(title: "> 5h (High Debt)", body: "Your recovery is significantly compromised. Prioritize sleep over high-intensity training until this number comes down.")
+    ]
     
     let math = """
-    Σ (Sleep Need - Actual Sleep) over 14 days
+    ∑ (Sleep Need - Actual Sleep) over 14 days
     
     We look at a 14-day rolling window because the effects of sleep deprivation are cumulative. One good night's sleep does not erase a week of deprivation.
     """
@@ -144,16 +150,16 @@ struct RPEMetric: MetricDefinition {
     let color = Color.yellow
     
     let description = """
-    RPE (Rate of Perceived Exertion) is a subjective measure of how hard a workout felt, on a scale of 1 to 10. It captures the *internal* load—the physiological and psychological stress your body experienced.
+    RPE (Rate of Perceived Exertion) is a subjective measure of how hard a workout felt, on a scale of 1 to 10. It captures the internal load—the physiological and psychological stress your body experienced.
     
     Two workouts can have the same weight and reps (external load), but if you are tired or stressed, one will feel harder (higher RPE). This makes RPE a crucial context for your training data.
     """
     
-    let howToUse = """
-    • **Be Honest**: Don't let your ego dictate the score. If a warm-up weight felt heavy, log it.
-    • **Track Trends**: A rising RPE for the same workout indicates fatigue or overtraining. A falling RPE indicates you are getting stronger and fitter.
-    • **Auto-Regulation**: Use RPE to adjust your weights. If the plan says "Heavy" but RPE 8 feels like RPE 10, drop the weight.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "Be Honest", body: "Don't let your ego dictate the score. If a warm-up weight felt heavy, log it."),
+        MetricPoint(title: "Track Trends", body: "A rising RPE for the same workout indicates fatigue or overtraining. A falling RPE indicates you are getting stronger and fitter."),
+        MetricPoint(title: "Auto-Regulation", body: "Use RPE to adjust your weights. If the plan says \"Heavy\" but RPE 8 feels like RPE 10, drop the weight.")
+    ]
     
     let math = """
     User Input (1-10) based on the Modified Borg Scale.
@@ -183,15 +189,15 @@ struct SystemicLoadMetric: MetricDefinition {
     Not all stress is created equal. A heavy squat session taxes your CNS differently than a long run taxes your metabolic system. Systemic Load unifies these into a single number to track your total capacity.
     """
     
-    let howToUse = """
-    • **Balance**: Use this to ensure you aren't overloading yourself. If yesterday's load was very high, consider a lighter session today.
-    • **Periodization**: Your load should wave up and down over the week. High days should be followed by lower days to allow for supercompensation.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "Balance", body: "Use this to ensure you aren't overloading yourself. If yesterday's load was very high, consider a lighter session today."),
+        MetricPoint(title: "Periodization", body: "Your load should wave up and down over the week. High days should be followed by lower days to allow for supercompensation.")
+    ]
     
     let math = """
     Cardio Load (TRIMP) + Muscular Load
     
-    Muscular Load = Volume × (RPE / 10)
+    Muscular Load = Volume × (RPE ÷ 10)
     TRIMP = Duration × (HR_reserve) × e^(b × HR_reserve)
     """
     
@@ -211,16 +217,16 @@ struct E1RMMetric: MetricDefinition {
     This allows you to track your strength gains safely without the injury risk and CNS fatigue associated with testing a true 1RM regularly.
     """
     
-    let howToUse = """
-    • **Progress Tracking**: If your e1RM is trending up, your program is working.
-    • **Programming**: Use your e1RM to calculate percentages for your working sets (e.g., "Do 3 sets at 70% of 1RM").
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "Progress Tracking", body: "If your e1RM is trending up, your program is working."),
+        MetricPoint(title: "Programming", body: "Use your e1RM to calculate percentages for your working sets (e.g., \"Do 3 sets at 70% of 1RM\").")
+    ]
     
     let math = """
     We use two different formulas depending on the rep range for better accuracy:
     
-    • **< 10 reps (Brzycki)**: Weight × (36 / (37 - Reps))
-    • **≥ 10 reps (Epley)**: Weight × (1 + (0.0333 × Reps))
+    • < 10 reps (Brzycki): Weight × (36 ÷ (37 - Reps))
+    • ≥ 10 reps (Epley): Weight × (1 + (0.0333 × Reps))
     """
     
     let ranges: [MetricRange] = [] // No fixed ranges for strength
@@ -237,20 +243,20 @@ struct VolumeIntensityMetric: MetricDefinition {
     This scatter plot visualizes the relationship between your total workout volume (Total Weight Moved) and your average intensity (Average Weight per Rep).
     
     It helps you categorize your sessions:
-    • **High Volume, High Intensity**: Peak performance days.
-    • **Low Volume, Low Intensity**: Recovery or deload sessions.
-    • **High Volume, Low Intensity**: Hypertrophy/Endurance focus.
-    • **Low Volume, High Intensity**: Strength/Power focus.
+    • High Volume, High Intensity: Peak performance days.
+    • Low Volume, Low Intensity: Recovery or deload sessions.
+    • High Volume, Low Intensity: Hypertrophy/Endurance focus.
+    • Low Volume, High Intensity: Strength/Power focus.
     """
     
-    let howToUse = """
-    • **Identify Trends**: Are you consistently training in one quadrant? Try to vary your stimulus.
-    • **Monitor Recovery**: If you can't hit high intensity on high volume days, you might need more rest.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "Identify Trends", body: "Are you consistently training in one quadrant? Try to vary your stimulus."),
+        MetricPoint(title: "Monitor Recovery", body: "If you can't hit high intensity on high volume days, you might need more rest.")
+    ]
     
     let math = """
-    • **Volume**: Σ (Weight × Reps) for all sets.
-    • **Intensity**: Volume / Total Reps.
+    • Volume: ∑ (Weight × Reps) for all sets.
+    • Intensity: Volume ÷ Total Reps.
     """
     
     let ranges: [MetricRange] = []
@@ -269,13 +275,13 @@ struct MuscleSplitMetric: MetricDefinition {
     A balanced physique requires balanced training. Neglecting certain groups can lead to posture issues, strength imbalances, and increased injury risk.
     """
     
-    let howToUse = """
-    • **Spot Imbalances**: Is 50% of your volume Chest? Time to do some Pull-ups.
-    • **Specialization**: If you are prioritizing a body part (e.g., Legs), expect its slice to be larger, but don't let others disappear.
-    """
+    let howToUse: [MetricPoint] = [
+        MetricPoint(title: "Spot Imbalances", body: "Is 50% of your volume Chest? Time to do some Pull-ups."),
+        MetricPoint(title: "Specialization", body: "If you are prioritizing a body part (e.g., Legs), expect its slice to be larger, but don't let others disappear.")
+    ]
     
     let math = """
-    (Volume for Muscle Group / Total Volume) × 100
+    (Volume for Muscle Group ÷ Total Volume) × 100
     """
     
     let ranges: [MetricRange] = []

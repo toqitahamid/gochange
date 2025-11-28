@@ -26,7 +26,7 @@ struct AdvancedAnalyticsView: View {
         }
         .sheet(item: $selectedMetric) { metric in
             MetricExplanationSheet(metric: metric)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
         }
     }
     
@@ -60,7 +60,7 @@ struct AdvancedAnalyticsView: View {
                 
                 Spacer()
                 
-                InfoButton {
+                infoButton {
                     selectedMetric = .e1rm
                 }
             }
@@ -125,7 +125,7 @@ struct AdvancedAnalyticsView: View {
                 
                 Spacer()
                 
-                InfoButton {
+                infoButton {
                     selectedMetric = .volumeIntensity
                 }
             }
@@ -175,7 +175,7 @@ struct AdvancedAnalyticsView: View {
                 
                 Spacer()
                 
-                InfoButton {
+                infoButton {
                     selectedMetric = .muscleSplit
                 }
             }
@@ -251,7 +251,7 @@ struct AdvancedAnalyticsView: View {
                 
                 Spacer()
                 
-                InfoButton {
+                infoButton {
                     selectedMetric = .acwr
                 }
             }
@@ -324,7 +324,7 @@ struct AdvancedAnalyticsView: View {
                 
                 Spacer()
                 
-                InfoButton {
+                infoButton {
                     selectedMetric = .systemicLoad
                 }
             }
@@ -384,14 +384,10 @@ struct AdvancedAnalyticsView: View {
         .background(Color.gray.opacity(0.05))
         .cornerRadius(12)
     }
-}
 
-// MARK: - Info Button
+    // MARK: - Info Button
 
-struct InfoButton: View {
-    let action: () -> Void
-    
-    var body: some View {
+    private func infoButton(action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: "info.circle")
                 .font(.system(size: 20))

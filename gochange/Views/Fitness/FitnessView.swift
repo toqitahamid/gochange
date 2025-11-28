@@ -94,7 +94,7 @@ struct FitnessView: View {
             }()
             
             MetricExplanationSheet(metric: metric, currentValue: value)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
         }
         .task {
             viewModel.setModelContext(modelContext)

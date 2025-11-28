@@ -141,7 +141,7 @@ struct HeatmapMonthGrid: View {
                 // Days Grid
                 let daysInMonth = self.daysInMonth
                 let firstWeekday = self.firstWeekday
-                let totalSlots = 35 // 5 rows * 7 columns (approx) or 42 for 6 rows
+
                 
                 LazyVGrid(columns: Array(repeating: GridItem(.fixed(20), spacing: 4), count: 7), spacing: 4) {
                     ForEach(0..<42, id: \.self) { index in

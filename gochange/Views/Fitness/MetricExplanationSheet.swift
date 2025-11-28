@@ -26,7 +26,7 @@ struct MetricExplanationSheet: View {
     
     var body: some View {
         ZStack {
-            Color(UIColor.systemBackground).ignoresSafeArea()
+            Color(hex: "#F5F5F7").ignoresSafeArea()
             
             VStack(spacing: 0) {
                 // Drag Indicator
@@ -39,35 +39,53 @@ struct MetricExplanationSheet: View {
                 ScrollView {
                     VStack(spacing: 32) {
                         // Header Section
-                        VStack(spacing: 4) {
-                            Text(metric.title)
-                                .font(.system(size: 17, weight: .semibold))
-                                .foregroundColor(.primary)
+                        VStack(spacing: 16) {
+                            // Icon & Title Group
+                            VStack(spacing: 12) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.white)
+                                        .frame(width: 80, height: 80)
+                                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
+                                    
+                                    Image(systemName: metric.icon)
+                                        .font(.system(size: 36))
+                                        .foregroundColor(metric.color)
+                                }
+                                
+                                VStack(spacing: 4) {
+                                    Text(metric.title)
+                                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                                        .foregroundColor(.primary)
+                                        .multilineTextAlignment(.center)
+                                    
+                                    Text(metric.subtitle)
+                                        .font(.system(size: 17, weight: .medium, design: .rounded))
+                                        .foregroundColor(.secondary)
+                                        .multilineTextAlignment(.center)
+                                }
+                            }
                             
                             if let value = currentValue {
-                                Text("\(formatValue(value))\(metric.unit)")
-                                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                                    .foregroundColor(.primary)
-                                    .padding(.top, 8)
-                                
-                                Text(formattedDate)
-                                    .font(.system(size: 15))
-                                    .foregroundColor(.secondary)
-                                
-                                if let status = getStatus(for: value) {
-                                    Text(status.label)
-                                        .font(.system(size: 17, weight: .semibold))
-                                        .foregroundColor(status.color)
-                                        .padding(.top, 4)
+                                VStack(spacing: 6) {
+                                    Text("\(formatValue(value))\(metric.unit)")
+                                        .font(.system(size: 56, weight: .bold, design: .rounded))
+                                        .foregroundColor(.primary)
+                                    
+                                    if let status = getStatus(for: value) {
+                                        Text(status.label)
+                                            .font(.system(size: 18, weight: .semibold))
+                                            .foregroundColor(status.color)
+                                            .padding(.horizontal, 16)
+                                            .padding(.vertical, 6)
+                                            .background(status.color.opacity(0.1))
+                                            .clipShape(Capsule())
+                                    }
                                 }
-                            } else {
-                                // Fallback icon if no value
-                                Image(systemName: metric.icon)
-                                    .font(.system(size: 40))
-                                    .foregroundColor(metric.color.opacity(0.5))
-                                    .padding(.top, 20)
+                                .padding(.top, 8)
                             }
                         }
+                        .padding(.top, 20)
                         
                         // Chart & Ranges Section
                         if !metric.ranges.isEmpty {
@@ -97,8 +115,9 @@ struct MetricExplanationSheet: View {
                                 .padding(.horizontal, 20)
                             }
                             .padding(.vertical, 24)
-                            .background(Color(UIColor.secondarySystemBackground))
+                            .background(Color.white)
                             .cornerRadius(24)
+                            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 5)
                             .padding(.horizontal, 20)
                         }
                         
@@ -111,9 +130,9 @@ struct MetricExplanationSheet: View {
                                 color: .blue
                             )
                             
-                            InfoSection(
+                            StructuredInfoSection(
                                 title: "How to use it?",
-                                content: metric.howToUse,
+                                points: metric.howToUse,
                                 icon: "lightbulb.fill",
                                 color: .yellow
                             )
@@ -123,7 +142,7 @@ struct MetricExplanationSheet: View {
                                 content: metric.math,
                                 icon: "function",
                                 color: .purple,
-                                isMonospaced: false // Changed to false for better readability of text mixed with math
+                                isMonospaced: false
                             )
                         }
                         .padding(.horizontal, 20)
@@ -132,26 +151,7 @@ struct MetricExplanationSheet: View {
                 }
             }
             
-            // Close Button (Top Left)
-            VStack {
-                HStack {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.secondary)
-                            .padding(8)
-                            .background(Color.gray.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    Spacer()
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
-                
-                Spacer()
-            }
+
         }
     }
     
@@ -219,12 +219,14 @@ struct MetricRangeChart: View {
                 
                 // Current Range Label (Below)
                 if let value = currentValue, let range = ranges.first(where: { value >= $0.min && value <= $0.max }) {
-                    Text("Your range is ")
-                        .font(.system(size: 14))
-                        .foregroundColor(.primary) +
-                    Text(range.label)
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(range.color)
+                    HStack(spacing: 0) {
+                        Text("Your range is ")
+                            .font(.system(size: 14))
+                            .foregroundColor(.primary)
+                        Text(range.label)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(range.color)
+                    }
                 }
             }
             .frame(maxHeight: .infinity, alignment: .center)
@@ -284,6 +286,56 @@ struct RangeRow: View {
     }
 }
 
+struct StructuredInfoSection: View {
+    let title: String
+    let points: [MetricPoint]
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                    .foregroundColor(color)
+                    .frame(width: 24, height: 24)
+                    .background(color.opacity(0.1))
+                    .clipShape(Circle())
+                
+                Text(title)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundColor(.primary)
+            }
+            
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(points) { point in
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text("•")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(color)
+                        
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(point.title)
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundColor(.primary)
+                            
+                            Text(point.body)
+                                .font(.system(size: 15))
+                                .foregroundColor(.secondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                }
+            }
+            .padding(.leading, 8)
+        }
+        .padding(16)
+        .background(Color.white)
+        .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
+    }
+}
+
 struct InfoSection: View {
     let title: String
     let content: String
@@ -314,8 +366,9 @@ struct InfoSection: View {
                 .padding(.leading, 32) // Align with title text
         }
         .padding(16)
-        .background(Color(UIColor.secondarySystemBackground))
+        .background(Color.white)
         .cornerRadius(16)
+        .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 4)
     }
 }
 
