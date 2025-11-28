@@ -1,8 +1,16 @@
 import SwiftUI
 
 struct MetricExplanationSheet: View {
-    let metric: MetricType
+    let metricType: MetricType
+    let metric: MetricDefinition
+    var currentValue: Double? = nil
     @Environment(\.dismiss) var dismiss
+    
+    init(metric: MetricType, currentValue: Double? = nil) {
+        self.metricType = metric
+        self.metric = MetricFactory.make(for: metric)
+        self.currentValue = currentValue
+    }
     
     enum MetricType: Identifiable {
         var id: Self { self }
@@ -12,103 +20,8 @@ struct MetricExplanationSheet: View {
         case systemicLoad
         case sleepDebt
         case rpe
-        
-        var title: String {
-            switch self {
-            case .readiness: return "Daily Readiness Score"
-            case .acwr: return "Acute:Chronic Workload Ratio"
-            case .e1rm: return "Estimated 1RM"
-            case .systemicLoad: return "Total Systemic Load"
-            case .sleepDebt: return "Sleep Debt"
-            case .rpe: return "Rate of Perceived Exertion"
-            }
-        }
-        
-        var subtitle: String {
-            switch self {
-            case .readiness: return "The Governor"
-            case .acwr: return "The Shield"
-            case .e1rm: return "The Progress"
-            case .systemicLoad: return "The Context"
-            case .sleepDebt: return "Reality Check"
-            case .rpe: return "The Internal Load"
-            }
-        }
-        
-        var description: String {
-            switch self {
-            case .readiness:
-                return "A composite score (0-100%) based on your Heart Rate Variability (HRV), Resting Heart Rate (RHR), and Sleep Quality relative to your 30-day baseline."
-            case .acwr:
-                return "The ratio of your recent training load (last 7 days) to your chronic training load (last 28 days). It helps prevent injury by flagging if you are doing 'too much, too soon'."
-            case .e1rm:
-                return "A theoretical calculation of the maximum weight you could lift for one repetition, based on your submaximal lifts (weight × reps)."
-            case .systemicLoad:
-                return "A combined measure of cardiovascular stress (TRIMP) and muscular stress (Volume × RPE). It quantifies the total toll a workout takes on your body."
-            case .sleepDebt:
-                return "The cumulative difference between your sleep need (default 8h) and your actual sleep over the last 14 days."
-            case .rpe:
-                return "A subjective measure of how hard you felt your workout was, on a scale of 1-10. It captures the internal physiological and psychological stress of a session."
-            }
-        }
-        
-        var howToUse: String {
-            switch self {
-            case .readiness:
-                return "• 80-100%: Prime time. Go for a PR.\n• 40-80%: Train as planned.\n• <40%: Your CNS is fried. Reduce volume by 15-30% or take a rest day."
-            case .acwr:
-                return "• 0.8 – 1.3: The 'Sweet Spot'. Optimal for progress.\n• > 1.5: Danger Zone. High injury risk.\n• < 0.8: Undertraining."
-            case .e1rm:
-                return "Use this to track strength gains without the risk of testing a true 1RM. If your e1RM goes up, you are getting stronger."
-            case .systemicLoad:
-                return "Use this to balance your training. If yesterday's load was very high, consider a lighter session today to manage fatigue."
-            case .sleepDebt:
-                return "If debt > 5 hours, your recovery is compromised. Prioritize sleep or reduce training intensity until the debt is cleared."
-            case .rpe:
-                return "Be honest. Use it to track internal load over time. A high RPE with low external load (weight) can indicate fatigue or illness."
-            }
-        }
-        
-        var formula: String {
-            switch self {
-            case .readiness: return "(HRV_Z × 0.4) + (Sleep_Z × 0.4) - (RHR_Z × 0.2)"
-            case .acwr: return "Acute Load (7-day EWMA) / Chronic Load (28-day EWMA)"
-            case .e1rm: return "Brzycki (<10 reps) or Epley (≥10 reps)"
-            case .systemicLoad: return "Cardio Load + (Duration × RPE)"
-            case .sleepDebt: return "Σ (Sleep Need - Actual Sleep) over 14 days"
-            case .rpe: return "User Input (1-10)"
-            }
-        }
-        
-        var icon: String {
-            switch self {
-            case .readiness: return "bolt.heart.fill"
-            case .acwr: return "shield.fill"
-            case .e1rm: return "dumbbell.fill"
-            case .systemicLoad: return "chart.bar.fill"
-            case .sleepDebt: return "bed.double.fill"
-            case .rpe: return "gauge.with.needle.fill"
-            }
-        }
-        
-        var color: Color {
-            switch self {
-            case .readiness: return .blue
-            case .acwr: return .green
-            case .e1rm: return .orange
-            case .systemicLoad: return .purple
-            case .sleepDebt: return .indigo
-            case .rpe: return .yellow
-            }
-        }
-        
-        var gradient: LinearGradient {
-            LinearGradient(
-                colors: [color.opacity(0.8), color],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        }
+        case volumeIntensity
+        case muscleSplit
     }
     
     var body: some View {
@@ -126,34 +39,70 @@ struct MetricExplanationSheet: View {
                 ScrollView {
                     VStack(spacing: 32) {
                         // Header Section
-                        VStack(spacing: 16) {
-                            // Icon
-                            ZStack {
-                                Circle()
-                                    .fill(metric.gradient)
-                                    .frame(width: 88, height: 88)
-                                    .shadow(color: metric.color.opacity(0.3), radius: 15, x: 0, y: 8)
+                        VStack(spacing: 4) {
+                            Text(metric.title)
+                                .font(.system(size: 17, weight: .semibold))
+                                .foregroundColor(.primary)
+                            
+                            if let value = currentValue {
+                                Text("\(formatValue(value))\(metric.unit)")
+                                    .font(.system(size: 48, weight: .bold, design: .rounded))
+                                    .foregroundColor(.primary)
+                                    .padding(.top, 8)
                                 
+                                Text(formattedDate)
+                                    .font(.system(size: 15))
+                                    .foregroundColor(.secondary)
+                                
+                                if let status = getStatus(for: value) {
+                                    Text(status.label)
+                                        .font(.system(size: 17, weight: .semibold))
+                                        .foregroundColor(status.color)
+                                        .padding(.top, 4)
+                                }
+                            } else {
+                                // Fallback icon if no value
                                 Image(systemName: metric.icon)
                                     .font(.system(size: 40))
-                                    .foregroundColor(.white)
-                            }
-                            
-                            // Titles
-                            VStack(spacing: 6) {
-                                Text(metric.title)
-                                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                                    .multilineTextAlignment(.center)
-                                    .foregroundColor(.primary)
-                                
-                                Text(metric.subtitle)
-                                    .font(.system(size: 16, weight: .medium, design: .rounded))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(metric.color.opacity(0.5))
+                                    .padding(.top, 20)
                             }
                         }
-                        .padding(.top, 10)
                         
-                        // Content Sections
+                        // Chart & Ranges Section
+                        if !metric.ranges.isEmpty {
+                            VStack(spacing: 24) {
+                                VStack(spacing: 8) {
+                                    Text("\(metric.title) ranges")
+                                        .font(.system(size: 17, weight: .semibold))
+                                    
+                                    Text("Standardized ranges based on general fitness benchmarks.")
+                                        .font(.system(size: 14))
+                                        .foregroundColor(.secondary)
+                                        .multilineTextAlignment(.center)
+                                        .padding(.horizontal)
+                                }
+                                
+                                // Chart
+                                MetricRangeChart(ranges: metric.ranges, currentValue: currentValue)
+                                    .frame(height: 60)
+                                    .padding(.horizontal, 20)
+                                
+                                // Range List
+                                VStack(spacing: 12) {
+                                    ForEach(metric.ranges) { range in
+                                        RangeRow(range: range, unit: metric.unit)
+                                    }
+                                }
+                                .padding(.horizontal, 20)
+                            }
+                            .padding(.vertical, 24)
+                            .background(Color(UIColor.secondarySystemBackground))
+                            .cornerRadius(24)
+                            .padding(.horizontal, 20)
+                        }
+                        
+                        // Detailed Info Sections
                         VStack(spacing: 24) {
                             InfoSection(
                                 title: "What is it?",
@@ -171,36 +120,166 @@ struct MetricExplanationSheet: View {
                             
                             InfoSection(
                                 title: "The Math",
-                                content: metric.formula,
+                                content: metric.math,
                                 icon: "function",
                                 color: .purple,
-                                isMonospaced: true
+                                isMonospaced: false // Changed to false for better readability of text mixed with math
                             )
                         }
                         .padding(.horizontal, 20)
+                        .padding(.bottom, 40)
                     }
-                    .padding(.bottom, 100) // Space for button
                 }
             }
             
-            // Floating Bottom Button
+            // Close Button (Top Left)
             VStack {
-                Spacer()
-                Button {
-                    dismiss()
-                } label: {
-                    Text("Got it")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 56)
-                        .background(metric.gradient)
-                        .cornerRadius(28)
-                        .shadow(color: metric.color.opacity(0.3), radius: 10, x: 0, y: 5)
+                HStack {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(.secondary)
+                            .padding(8)
+                            .background(Color.gray.opacity(0.1))
+                            .clipShape(Circle())
+                    }
+                    Spacer()
                 }
                 .padding(.horizontal, 20)
-                .padding(.bottom, 30)
+                .padding(.top, 16)
+                
+                Spacer()
             }
+        }
+    }
+    
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d, yyyy"
+        return formatter.string(from: Date())
+    }
+    
+    private func formatValue(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f", value)
+        } else {
+            return String(format: "%.1f", value)
+        }
+    }
+    
+    private func getStatus(for value: Double) -> MetricRange? {
+        return metric.ranges.first { value >= $0.min && value <= $0.max }
+    }
+}
+
+// MARK: - Range Chart
+struct MetricRangeChart: View {
+    let ranges: [MetricRange]
+    let currentValue: Double?
+    
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 8) {
+                // Value Indicator
+                if let value = currentValue {
+                    ZStack {
+                        // Position calculation
+                        let xPosition = calculatePosition(for: value, in: geometry.size.width)
+                        
+                        Text(String(format: "%.1f", value))
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(indicatorColor(for: value))
+                            .cornerRadius(4)
+                            .offset(x: xPosition - geometry.size.width / 2)
+                            .offset(y: -20) // Above the bar
+                        
+                        // Dotted Line
+                        Rectangle()
+                            .fill(indicatorColor(for: value))
+                            .frame(width: 1, height: 24) // Connects label to bar
+                            .offset(x: xPosition - geometry.size.width / 2)
+                            .offset(y: -4)
+                    }
+                }
+                
+                // Bar Segments
+                HStack(spacing: 2) {
+                    ForEach(ranges) { range in
+                        Rectangle()
+                            .fill(range.color.opacity(0.3))
+                            .frame(height: 12)
+                            .cornerRadius(4)
+                    }
+                }
+                
+                // Current Range Label (Below)
+                if let value = currentValue, let range = ranges.first(where: { value >= $0.min && value <= $0.max }) {
+                    Text("Your range is ")
+                        .font(.system(size: 14))
+                        .foregroundColor(.primary) +
+                    Text(range.label)
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(range.color)
+                }
+            }
+            .frame(maxHeight: .infinity, alignment: .center)
+        }
+    }
+    
+    private func calculatePosition(for value: Double, in width: CGFloat) -> CGFloat {
+        guard let min = ranges.first?.min, let max = ranges.last?.max else { return 0 }
+        let totalRange = max - min
+        let percentage = (value - min) / totalRange
+        return width * CGFloat(percentage)
+    }
+    
+    private func indicatorColor(for value: Double) -> Color {
+        ranges.first { value >= $0.min && value <= $0.max }?.color ?? .gray
+    }
+}
+
+// MARK: - Range Row
+struct RangeRow: View {
+    let range: MetricRange
+    let unit: String
+    
+    var body: some View {
+        HStack {
+            Text(range.label)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(range.color)
+            
+            Spacer()
+            
+            Text(rangeText)
+                .font(.system(size: 15, weight: .medium))
+                .foregroundColor(range.color)
+        }
+        .padding(16)
+        .background(range.color.opacity(0.1))
+        .cornerRadius(12)
+    }
+    
+    private var rangeText: String {
+        if range.max > 1000 {
+            return "> \(format(range.min))"
+        } else if range.min == 0 {
+            return "< \(format(range.max))"
+        } else {
+            return "\(format(range.min)) - \(format(range.max))"
+        }
+    }
+    
+    private func format(_ value: Double) -> String {
+        if value.truncatingRemainder(dividingBy: 1) == 0 {
+            return String(format: "%.0f", value)
+        } else {
+            return String(format: "%.1f", value)
         }
     }
 }
@@ -241,6 +320,6 @@ struct InfoSection: View {
 }
 
 #Preview {
-    MetricExplanationSheet(metric: .readiness)
+    MetricExplanationSheet(metric: .acwr, currentValue: 1.1)
 }
 

@@ -182,8 +182,7 @@ struct ActiveWorkoutView: View {
                 showingRPEInput = false
                 workoutManager.complete(rpe: rpeValue)
             }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
+            .presentationDetents([.large])
         }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)

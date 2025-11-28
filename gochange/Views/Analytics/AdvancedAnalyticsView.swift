@@ -5,7 +5,7 @@ import SwiftData
 struct AdvancedAnalyticsView: View {
     @ObservedObject var viewModel: AnalyticsViewModel
     
-    @State private var selectedInfoItem: AnalyticsInfoItem?
+    @State private var selectedMetric: MetricExplanationSheet.MetricType?
     
     var body: some View {
         VStack(spacing: 24) {
@@ -24,9 +24,9 @@ struct AdvancedAnalyticsView: View {
             // Muscle Group Split
             muscleGroupSplitCard
         }
-        .sheet(item: $selectedInfoItem) { item in
-            AnalyticsInfoSheet(item: item)
-                .presentationDetents([.medium])
+        .sheet(item: $selectedMetric) { metric in
+            MetricExplanationSheet(metric: metric)
+                .presentationDetents([.medium, .large])
         }
     }
     
@@ -61,7 +61,7 @@ struct AdvancedAnalyticsView: View {
                 Spacer()
                 
                 InfoButton {
-                    selectedInfoItem = .oneRepMax
+                    selectedMetric = .e1rm
                 }
             }
             
@@ -126,7 +126,7 @@ struct AdvancedAnalyticsView: View {
                 Spacer()
                 
                 InfoButton {
-                    selectedInfoItem = .volumeIntensity
+                    selectedMetric = .volumeIntensity
                 }
             }
             
@@ -176,7 +176,7 @@ struct AdvancedAnalyticsView: View {
                 Spacer()
                 
                 InfoButton {
-                    selectedInfoItem = .muscleSplit
+                    selectedMetric = .muscleSplit
                 }
             }
             
@@ -234,8 +234,6 @@ struct AdvancedAnalyticsView: View {
         )
     }
     
-
-    
     // MARK: - ACWR Trend Card
     
     private var acwrTrendCard: some View {
@@ -254,7 +252,7 @@ struct AdvancedAnalyticsView: View {
                 Spacer()
                 
                 InfoButton {
-                    selectedInfoItem = .acwr
+                    selectedMetric = .acwr
                 }
             }
             
@@ -327,7 +325,7 @@ struct AdvancedAnalyticsView: View {
                 Spacer()
                 
                 InfoButton {
-                    selectedInfoItem = .systemicLoad
+                    selectedMetric = .systemicLoad
                 }
             }
             
@@ -388,7 +386,7 @@ struct AdvancedAnalyticsView: View {
     }
 }
 
-// MARK: - Info Button & Sheet
+// MARK: - Info Button
 
 struct InfoButton: View {
     let action: () -> Void
@@ -398,98 +396,6 @@ struct InfoButton: View {
             Image(systemName: "info.circle")
                 .font(.system(size: 20))
                 .foregroundColor(.gray.opacity(0.6))
-        }
-    }
-}
-
-enum AnalyticsInfoItem: Identifiable {
-    case oneRepMax
-    case volumeIntensity
-    case muscleSplit
-    case acwr
-    case systemicLoad
-    
-    var id: Self { self }
-    
-    var title: String {
-        switch self {
-        case .oneRepMax: return "Estimated 1RM"
-        case .volumeIntensity: return "Volume vs. Intensity"
-        case .muscleSplit: return "Muscle Group Split"
-        case .acwr: return "ACWR Trend"
-        case .systemicLoad: return "Systemic Load"
-        }
-    }
-    
-    var description: String {
-        switch self {
-        case .oneRepMax:
-            return "Your Estimated One Rep Max (1RM) is calculated using the Epley formula based on your best sets. It represents the theoretical maximum weight you could lift for one repetition. Tracking this helps you gauge strength gains over time without testing your true max frequently."
-        case .volumeIntensity:
-            return "This scatter plot shows the relationship between your total workout volume (Total Weight Moved) and average intensity (Average Weight per Rep). High volume with high intensity indicates a very demanding workout, while low volume with low intensity suggests a recovery session."
-        case .muscleSplit:
-            return "This chart breaks down your total training volume by muscle group. A balanced distribution helps prevent muscle imbalances and ensures overall physique development. Use this to identify lagging body parts that may need more focus."
-        case .acwr:
-            return "Acute:Chronic Workload Ratio tracks your injury risk. The 'Sweet Spot' is 0.8-1.3. Spikes above 1.5 indicate you are increasing load too quickly ('Too Much, Too Soon')."
-        case .systemicLoad:
-            return "Total Systemic Load combines stress from Cardio (TRIMP) and Strength (Volume Load). This helps you manage your overall fatigue and recovery, especially for hybrid training."
-        }
-    }
-    
-    var icon: String {
-        switch self {
-        case .oneRepMax: return "trophy.fill"
-        case .volumeIntensity: return "chart.xyaxis.line"
-        case .muscleSplit: return "figure.mixed.cardio"
-        case .acwr: return "shield.fill"
-        case .systemicLoad: return "chart.bar.fill"
-        }
-    }
-}
-
-struct AnalyticsInfoSheet: View {
-    let item: AnalyticsInfoItem
-    @Environment(\.dismiss) var dismiss
-    
-    var body: some View {
-        VStack(spacing: 24) {
-            Capsule()
-                .fill(Color.gray.opacity(0.2))
-                .frame(width: 40, height: 4)
-                .padding(.top, 10)
-            
-            Image(systemName: item.icon)
-                .font(.system(size: 48))
-                .foregroundColor(Color(hex: "#00D4AA"))
-                .padding(.top, 20)
-            
-            VStack(spacing: 8) {
-                Text(item.title)
-                    .font(.title2)
-                    .fontWeight(.bold)
-                
-                Text(item.description)
-                    .font(.body)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
-            }
-            
-            Spacer()
-            
-            Button {
-                dismiss()
-            } label: {
-                Text("Got it")
-                    .font(.headline)
-                    .foregroundColor(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color(hex: "#00D4AA"))
-                    .cornerRadius(16)
-            }
-            .padding(.horizontal, 24)
-            .padding(.bottom, 24)
         }
     }
 }

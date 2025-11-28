@@ -83,7 +83,17 @@ struct FitnessView: View {
             .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         }
         .sheet(item: $selectedMetricInfo) { metric in
-            MetricExplanationSheet(metric: metric)
+            let value: Double? = {
+                switch metric {
+                case .readiness: return viewModel.dailyReadinessScore
+                case .sleepDebt: return viewModel.sleepDebt
+                case .acwr: return viewModel.acwr
+                case .systemicLoad: return viewModel.systemicLoad
+                default: return nil
+                }
+            }()
+            
+            MetricExplanationSheet(metric: metric, currentValue: value)
                 .presentationDetents([.medium, .large])
         }
         .task {
