@@ -17,52 +17,59 @@ struct RPEInputSheet: View {
                 VStack(spacing: 8) {
                     HStack(spacing: 8) {
                         Text("Perceived Exertion")
-                            .font(.system(size: 22, weight: .bold))
+                            .font(.system(size: 28, weight: .bold, design: .rounded)) // Larger, rounded font
                             .foregroundColor(.primary)
                         
                         Button {
                             showExplanation = true
                         } label: {
-                            Image(systemName: "info.circle")
-                                .font(.system(size: 20))
-                                .foregroundColor(.secondary)
+                            Image(systemName: "info.circle.fill") // Fill icon
+                                .font(.system(size: 22))
+                                .foregroundColor(.secondary.opacity(0.8))
                         }
                     }
                     
                     Text("How did it feel?")
-                        .font(.system(size: 16))
+                        .font(.system(size: 17, weight: .medium, design: .rounded))
                         .foregroundColor(.secondary)
                 }
-                .padding(.top, 24)
+                .padding(.top, 40)
                 .sheet(isPresented: $showExplanation) {
-                    MetricExplanationSheet(metric: .rpe)
+                    MetricExplanationSheet(metric: .rpe, currentValue: rpe)
                 }
                 
-                Spacer(minLength: 20)
+                Spacer()
                 
                 // Dynamic Feedback (Icon + Text)
-                VStack(spacing: 16) {
+                VStack(spacing: 24) {
                     // Emoji/Icon
                     ZStack {
+                        // Outer Glow
+                        Circle()
+                            .fill(rpeColor.opacity(0.2))
+                            .frame(width: 120, height: 120)
+                            .blur(radius: 20)
+                        
+                        // Inner Circle
                         Circle()
                             .fill(rpeColor)
-                            .frame(width: 80, height: 80)
-                            .shadow(color: rpeColor.opacity(0.5), radius: 20, x: 0, y: 10)
+                            .frame(width: 100, height: 100)
+                            .shadow(color: rpeColor.opacity(0.4), radius: 10, x: 0, y: 5)
                         
                         Text(rpeEmoji)
-                            .font(.system(size: 40))
+                            .font(.system(size: 50))
                     }
                     .scaleEffect(isDragging ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isDragging)
                     
                     // Text Feedback
-                    VStack(spacing: 6) {
+                    VStack(spacing: 8) {
                         Text(rpeTitle)
-                            .font(.system(size: 20, weight: .bold))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
                             .foregroundColor(.primary)
                         
                         Text(rpeDescription)
-                            .font(.system(size: 15))
+                            .font(.system(size: 16))
                             .foregroundColor(.secondary)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 40)
@@ -71,58 +78,58 @@ struct RPEInputSheet: View {
                     }
                 }
                 
-                Spacer(minLength: 20)
+                Spacer()
                 
                 // Custom Slider
-                VStack(spacing: 8) {
+                VStack(spacing: 12) {
                     HStack {
                         Text("AVG STRENGTH TRAINING")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
                             .tracking(0.5)
                         Spacer()
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 32)
                     
                     CustomGradientSlider(value: $rpe, range: 1...10) { isDragging in
                         self.isDragging = isDragging
                     }
-                    .frame(height: 44)
+                    .frame(height: 50)
                     .padding(.horizontal, 24)
                     
                     HStack {
                         Text("YOUR USUAL RANGE")
-                            .font(.system(size: 10, weight: .bold))
+                            .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
                             .tracking(0.5)
                         Spacer()
                     }
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 32)
                 }
                 
-                Spacer(minLength: 20)
+                Spacer()
                 
                 // Action Buttons
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Button(action: onFinish) {
                         Text("Save")
-                            .font(.system(size: 17, weight: .semibold))
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
                             .foregroundColor(.black)
                             .frame(maxWidth: .infinity)
-                            .frame(height: 50)
+                            .frame(height: 56)
                             .background(Color(hex: "#A5D6D9"))
-                            .cornerRadius(25)
+                            .cornerRadius(28)
+                            .shadow(color: Color(hex: "#A5D6D9").opacity(0.3), radius: 10, x: 0, y: 5)
                     }
                     
                     Button(action: { dismiss() }) {
                         Text("Cancel")
-                            .font(.system(size: 17, weight: .medium))
+                            .font(.system(size: 17, weight: .medium, design: .rounded))
                             .foregroundColor(.primary)
-                            .frame(height: 44)
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.bottom, 20)
+                .padding(.bottom, 40)
             }
             .frame(minHeight: geometry.size.height)
         }
