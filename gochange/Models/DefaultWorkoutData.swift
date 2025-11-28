@@ -58,6 +58,40 @@ struct DefaultWorkoutData {
                     Exercise(name: "Tricep Overhead Extensions", defaultSets: 3, defaultReps: "12", muscleGroup: "Triceps"),
                     Exercise(name: "Hammer Curl", defaultSets: 3, defaultReps: "12", muscleGroup: "Biceps")
                 ]
+            ),
+            
+            // Cardio - Running
+            WorkoutDay(
+                name: "Running",
+                dayNumber: 5,
+                colorHex: "#FF6B6B",  // Red/Coral
+                exercises: [
+                    Exercise(name: "Warm Up Walk", defaultSets: 1, defaultReps: "5 min", muscleGroup: "Cardio"),
+                    Exercise(name: "Jogging", defaultSets: 1, defaultReps: "20 min", muscleGroup: "Cardio"),
+                    Exercise(name: "Sprints", defaultSets: 5, defaultReps: "30 sec", muscleGroup: "Cardio"),
+                    Exercise(name: "Cool Down Walk", defaultSets: 1, defaultReps: "5 min", muscleGroup: "Cardio")
+                ]
+            ),
+            
+            // Cardio - Cycling
+            WorkoutDay(
+                name: "Cycling",
+                dayNumber: 6,
+                colorHex: "#4ECDC4",  // Teal
+                exercises: [
+                    Exercise(name: "Steady State Cycling", defaultSets: 1, defaultReps: "30 min", muscleGroup: "Cardio"),
+                    Exercise(name: "Hill Climbs", defaultSets: 3, defaultReps: "5 min", muscleGroup: "Cardio")
+                ]
+            ),
+            
+            // Cardio - Walking
+            WorkoutDay(
+                name: "Walking",
+                dayNumber: 7,
+                colorHex: "#FFD93D",  // Yellow
+                exercises: [
+                    Exercise(name: "Brisk Walk", defaultSets: 1, defaultReps: "30 min", muscleGroup: "Cardio")
+                ]
             )
         ]
     }

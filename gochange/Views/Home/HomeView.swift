@@ -5,7 +5,7 @@ struct HomeView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = DashboardViewModel()
     @StateObject private var userProfile = UserProfileService.shared
-    @StateObject private var healthKit = HealthKitService.shared
+    @EnvironmentObject var workoutManager: WorkoutManager
 
     var body: some View {
         NavigationStack {
@@ -13,6 +13,13 @@ struct HomeView: View {
                 VStack(spacing: 24) {
                     // Header
                     header
+                    
+                    // Pills Row
+                    HStack(spacing: 12) {
+                        NextWorkoutPill()
+                        Spacer()
+                    }
+                    .padding(.bottom, 4)
 
                     // Summary Rings
                     SummaryRingsView(
@@ -80,7 +87,7 @@ struct HomeView: View {
                     )
             }
         }
-        .padding(.bottom, 10)
+        // Removed padding bottom to fit pills closer
     }
     
     private var userInitials: String {
@@ -142,5 +149,47 @@ struct HomeView: View {
 #Preview {
     HomeView()
         .modelContainer(for: [WorkoutSession.self, WorkoutDay.self])
+}
+
+
+
+// MARK: - Next Workout Pill
+struct NextWorkoutPill: View {
+    // This would ideally come from a ViewModel, but mocking logic for now based on typical usage
+    // In a real app, you'd query the WorkoutManager or SwiftData for the next scheduled workout.
+    
+    var body: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color(hex: "#00D4AA")) // Teal
+                    .frame(width: 32, height: 32)
+                
+                Image(systemName: "figure.run")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundColor(.white)
+            }
+            
+            VStack(alignment: .leading, spacing: 0) {
+                Text("Next Workout")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundColor(.secondary)
+                
+                Text("Leg Day • Tomorrow") // Placeholder
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(.primary)
+            }
+            
+            Image(systemName: "chevron.down")
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.gray.opacity(0.5))
+        }
+        .padding(.leading, 6)
+        .padding(.trailing, 16)
+        .padding(.vertical, 6)
+        .background(Color.white)
+        .cornerRadius(22)
+        .shadow(color: Color.black.opacity(0.05), radius: 5, x: 0, y: 2)
+    }
 }
 

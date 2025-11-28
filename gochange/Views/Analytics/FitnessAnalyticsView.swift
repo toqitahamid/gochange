@@ -1,63 +1,60 @@
 import SwiftUI
 import SwiftData
 
-/// Advanced analytics dashboard with comprehensive workout insights
-struct AnalyticsDashboardView: View {
+struct FitnessAnalyticsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
-
+    
     @StateObject private var viewModel = AnalyticsViewModel()
     @State private var showingPersonalRecords = false
-
+    
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
-                // Background
                 Color(hex: "#F5F5F7").ignoresSafeArea()
-
+                
                 if viewModel.isLoading {
                     loadingView
                 } else {
                     ScrollView {
-                        VStack(spacing: 20) {
-                            // Hero stats
-                            heroStatsSection
-
-                            // Volume trends
-                            VolumeTrendsChart(
-                                data: viewModel.volumeData,
-                                selectedPeriod: $viewModel.selectedTimePeriod
-                            )
-                            .onChange(of: viewModel.selectedTimePeriod) { _, newPeriod in
-                                viewModel.updateTimePeriod(newPeriod)
-                            }
-
-                            // Reps trends
-                            RepsTrendsChart(
-                                data: viewModel.repsData,
-                                selectedPeriod: $viewModel.selectedTimePeriod
-                            )
-
-                            // Top Exercises
-                            TopExercisesView(exercises: viewModel.topExercises)
-
-                            // Workout frequency heatmap
+                        VStack(spacing: 24) {
+                            // 1. Heatmap (Top)
                             WorkoutFrequencyHeatmap(data: viewModel.frequencyData)
-
-                            // Muscle group balance
-                            MuscleGroupBalanceView(data: viewModel.muscleGroupData)
-
-                            // Progress summaries
-                            ProgressSummariesView(
-                                monthlyProgress: viewModel.monthlyProgress,
-                                yearlyProgress: viewModel.yearlyProgress
-                            )
-
-                            // Personal Records button
+                                .padding(.horizontal, 20)
+                            
+                            // 2. Hero Stats
+                            heroStatsSection
+                                .padding(.horizontal, 20)
+                            
+                            // 3. Advanced Analytics (New Charts)
+                            AdvancedAnalyticsView(viewModel: viewModel)
+                                .padding(.horizontal, 20)
+                            
+                            // 4. Volume & Reps Trends (Existing)
+                            VStack(spacing: 20) {
+                                VolumeTrendsChart(
+                                    data: viewModel.volumeData,
+                                    selectedPeriod: $viewModel.selectedTimePeriod
+                                )
+                                .onChange(of: viewModel.selectedTimePeriod) { _, newPeriod in
+                                    viewModel.updateTimePeriod(newPeriod)
+                                }
+                                
+                                RepsTrendsChart(
+                                    data: viewModel.repsData,
+                                    selectedPeriod: $viewModel.selectedTimePeriod
+                                )
+                            }
+                            .padding(.horizontal, 20)
+                            
+                            // 5. Top Exercises
+                            TopExercisesView(exercises: viewModel.topExercises)
+                                .padding(.horizontal, 20)
+                            
+                            // 6. Personal Records Button
                             personalRecordsButton
+                                .padding(.horizontal, 20)
                         }
-                        .padding(.horizontal, 20)
                         .padding(.top, 20)
                         .padding(.bottom, 100)
                     }
@@ -88,12 +85,11 @@ struct AnalyticsDashboardView: View {
             }
         }
     }
-
-    // MARK: - Hero Stats Section
-
+    
+    // MARK: - Components
+    
     private var heroStatsSection: some View {
         VStack(spacing: 12) {
-            // Top row
             HStack(spacing: 12) {
                 AnalyticsStatCard(
                     icon: "calendar.badge.clock",
@@ -101,7 +97,7 @@ struct AnalyticsDashboardView: View {
                     label: "Active Days",
                     color: Color(hex: "#00D4AA")
                 )
-
+                
                 AnalyticsStatCard(
                     icon: "figure.strengthtraining.traditional",
                     value: "\(viewModel.totalExercises)",
@@ -109,8 +105,7 @@ struct AnalyticsDashboardView: View {
                     color: Color(hex: "#FF6B35")
                 )
             }
-
-            // Bottom row
+            
             HStack(spacing: 12) {
                 AnalyticsStatCard(
                     icon: "number",
@@ -118,7 +113,7 @@ struct AnalyticsDashboardView: View {
                     label: "Total Reps",
                     color: Color(hex: "#FFD700")
                 )
-
+                
                 AnalyticsStatCard(
                     icon: "flame.fill",
                     value: formatVolume(viewModel.volumeData.reduce(0) { $0 + $1.volume }),
@@ -128,19 +123,7 @@ struct AnalyticsDashboardView: View {
             }
         }
     }
-
-    private func formatReps(_ reps: Double) -> String {
-        if reps >= 1_000_000 {
-            return String(format: "%.1fM", reps / 1_000_000)
-        } else if reps >= 1_000 {
-            return String(format: "%.1fK", reps / 1_000)
-        } else {
-            return String(format: "%.0f", reps)
-        }
-    }
-
-    // MARK: - Personal Records Button
-
+    
     private var personalRecordsButton: some View {
         Button {
             showingPersonalRecords = true
@@ -149,13 +132,13 @@ struct AnalyticsDashboardView: View {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 18))
                     .foregroundColor(Color(hex: "#FFD700"))
-
+                
                 Text("View Personal Records")
                     .font(.system(size: 16, weight: .semibold))
                     .foregroundColor(.primary)
-
+                
                 Spacer()
-
+                
                 Image(systemName: "chevron.right")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(.gray)
@@ -175,26 +158,23 @@ struct AnalyticsDashboardView: View {
                                 lineWidth: 1
                             )
                     )
+                    .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             )
         }
         .buttonStyle(ScaleButtonStyle())
     }
-
-    // MARK: - Loading View
-
+    
     private var loadingView: some View {
         VStack(spacing: 16) {
             ProgressView()
                 .tint(Color(hex: "#00D4AA"))
-
+            
             Text("Analyzing your workouts...")
                 .font(.subheadline)
                 .foregroundColor(.gray)
         }
     }
-
-    // MARK: - Formatters
-
+    
     private func formatVolume(_ volume: Double) -> String {
         if volume >= 1_000_000 {
             return String(format: "%.1fM", volume / 1_000_000)
@@ -204,14 +184,19 @@ struct AnalyticsDashboardView: View {
             return String(format: "%.0f", volume)
         }
     }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let minutes = Int(duration / 60)
-        return "\(minutes) min"
+    
+    private func formatReps(_ reps: Double) -> String {
+        if reps >= 1_000_000 {
+            return String(format: "%.1fM", reps / 1_000_000)
+        } else if reps >= 1_000 {
+            return String(format: "%.1fK", reps / 1_000)
+        } else {
+            return String(format: "%.0f", reps)
+        }
     }
 }
 
-// MARK: - Analytics Stat Card
+// Helper Components (kept in same file for simplicity if not shared)
 
 struct AnalyticsStatCard: View {
     let icon: String
@@ -255,8 +240,6 @@ struct AnalyticsStatCard: View {
         )
     }
 }
-
-// MARK: - Personal Records Sheet
 
 struct PersonalRecordsSheet: View {
     @Environment(\.dismiss) var dismiss
@@ -306,8 +289,6 @@ struct PersonalRecordsSheet: View {
         }
     }
 }
-
-// MARK: - Personal Record Row
 
 struct PersonalRecordRow: View {
     let record: PersonalRecord
@@ -359,8 +340,6 @@ struct PersonalRecordRow: View {
     }
 }
 
-// MARK: - Record Item
-
 struct RecordItem: View {
     let icon: String
     let label: String
@@ -402,6 +381,6 @@ struct RecordItem: View {
 }
 
 #Preview {
-    AnalyticsDashboardView()
+    FitnessAnalyticsView()
         .modelContainer(for: [WorkoutSession.self, WorkoutDay.self])
 }

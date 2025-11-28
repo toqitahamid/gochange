@@ -15,6 +15,29 @@ struct WorkoutDaySelectionView: View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 24) {
+                    // Header
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Workout")
+                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .foregroundColor(.primary)
+                            Text("Your Training Plan")
+                                .font(.system(size: 15, design: .rounded))
+                                .foregroundColor(.secondary)
+                        }
+                        Spacer()
+                        
+                        NavigationLink(destination: FitnessAnalyticsView()) {
+                            Image(systemName: "chart.bar.xaxis")
+                                .font(.system(size: 20, weight: .medium))
+                                .foregroundColor(.primary)
+                                .frame(width: 40, height: 40)
+                                .background(Color.white)
+                                .clipShape(Circle())
+                                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
+                        }
+                    }
+                    
                     // Weekly Progress Header
                     weeklyProgressHeader
                     

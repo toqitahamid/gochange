@@ -21,29 +21,20 @@ struct FitnessView: View {
                                 .foregroundColor(.secondary)
                         }
                         Spacer()
-
-                        Button {
-                            // Add action
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.system(size: 20, weight: .medium))
-                                .foregroundColor(.primary)
-                                .frame(width: 40, height: 40)
-                                .background(Color.white)
-                                .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.05), radius: 4, x: 0, y: 2)
-                        }
                     }
                     // .padding(.horizontal) removed
 
+                    // Recovery Overview
+                    RecoveryOverviewCard()
+
+                    // Strain Card
+                    StrainCard(viewModel: viewModel)
+                    
                     // Heatmap Card
                     FitnessHeatmapCard()
 
                     // Activity Summary Card
                     ActivitySummaryCard()
-
-                    // Strain Performance Card
-                    StrainPerformanceCard()
 
                     // Cardio Section
                     VStack(alignment: .leading, spacing: 16) {
@@ -114,10 +105,11 @@ struct FitnessHeatmapCard: View {
             }
             
             // Legend
-            HStack(spacing: 16) {
-                LegendItem(color: Color.green.opacity(0.4), label: "1 activity")
-                LegendItem(color: Color.green, label: "2 activities")
-                LegendItem(color: Color.blue, label: "3+ activities")
+            HStack(spacing: 12) {
+                FitnessLegendItem(color: Color.gray.opacity(0.2), label: "0")
+                FitnessLegendItem(color: Color.green.opacity(0.4), label: "1")
+                FitnessLegendItem(color: Color.green, label: "2")
+                FitnessLegendItem(color: Color.blue, label: "3+")
             }
         }
 
@@ -226,7 +218,7 @@ struct MonthGrid: View {
     }
 }
 
-struct LegendItem: View {
+struct FitnessLegendItem: View {
     let color: Color
     let label: String
     
@@ -345,66 +337,7 @@ struct ActivitySummaryCard: View {
     }
 }
 
-// MARK: - Strain Performance Card
-struct StrainPerformanceCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Image(systemName: "waveform.path.ecg")
-                    .foregroundColor(.gray)
-                Text("Strain Performance")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.secondary)
-                Spacer()
-                Image(systemName: "arrow.right")
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text("-30%")
-                    .font(.system(size: 32, weight: .bold))
-                    .foregroundColor(.primary)
-                Text("Below target")
-                    .font(.subheadline)
-                    .fontWeight(.medium)
-                    .foregroundColor(.blue)
-            }
-            
-            // Mock Chart
-            Chart {
-                ForEach(0..<30, id: \.self) { index in
-                    LineMark(
-                        x: .value("Day", index),
-                        y: .value("Strain", Double.random(in: 0...100))
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [.blue, .green, .orange],
-                            startPoint: .bottom,
-                            endPoint: .top
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
-                }
-            }
-            .frame(height: 100)
-            .chartXAxis(.hidden)
-            .chartYAxis(.hidden)
-        }
 
-        .padding(.vertical, 24)
-        .padding(.horizontal, 16)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
-    }
-}
 
 // MARK: - Cardio Load Card
 struct CardioLoadCard: View {

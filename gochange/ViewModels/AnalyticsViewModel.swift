@@ -13,6 +13,16 @@ class AnalyticsViewModel: ObservableObject {
     @Published var yearlyProgress: [YearlyProgress] = []
     @Published var personalRecords: [PersonalRecord] = []
     @Published var topExercises: [ExerciseStats] = []
+    
+    // Advanced Analytics
+    @Published var oneRepMaxData: [OneRepMaxDataPoint] = []
+    @Published var volumeIntensityData: [VolumeIntensityPoint] = []
+    @Published var availableExercisesForTrend: [String] = []
+    @Published var selectedExerciseForTrend: String = "Bench Press" {
+        didSet {
+            updateOneRepMaxTrend()
+        }
+    }
 
     @Published var activeDays: Int = 0
     @Published var totalExercises: Int = 0
@@ -73,6 +83,23 @@ class AnalyticsViewModel: ObservableObject {
 
         // Personal records
         personalRecords = AnalyticsService.calculatePersonalRecords(sessions: sessions)
+        
+        // Advanced Analytics
+        volumeIntensityData = AnalyticsService.calculateVolumeVsIntensity(sessions: sessions)
+        
+        // Populate available exercises for trend (from top exercises or all logs)
+        let allExercises = Set(sessions.flatMap { $0.exerciseLogs.map { $0.exerciseName } }).sorted()
+        availableExercisesForTrend = allExercises
+        
+        if !availableExercisesForTrend.isEmpty && !availableExercisesForTrend.contains(selectedExerciseForTrend) {
+            selectedExerciseForTrend = availableExercisesForTrend.first ?? ""
+        }
+        
+        updateOneRepMaxTrend()
+    }
+    
+    private func updateOneRepMaxTrend() {
+        oneRepMaxData = AnalyticsService.calculateOneRepMaxTrend(sessions: sessions, exerciseName: selectedExerciseForTrend)
     }
 
     func updateTimePeriod(_ period: TimePeriod) {

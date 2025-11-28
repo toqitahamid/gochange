@@ -31,6 +31,12 @@ class FitnessViewModel: ObservableObject {
     @Published var cardioFocusStatus: String = "Low Aerobic"
     @Published var cardioFocusPercentage: Double = 0.94
     
+    // Strain Data
+    @Published var strainScore: Double = 0
+    @Published var targetStrainLow: Double = 0
+    @Published var targetStrainHigh: Double = 0
+    @Published var strainStatus: String = "Optimal" // Optimal, Overreaching, Restoring, Undertraining
+    
     private var healthKitService = HealthKitService.shared
     private var modelContext: ModelContext?
     
@@ -113,6 +119,46 @@ class FitnessViewModel: ObservableObject {
             load[group] = total > 0 ? (vol / total) : 0
         }
         self.muscleGroupLoad = load
+        
+        calculateStrain(totalVolume: total)
+    }
+    
+    private func calculateStrain(totalVolume: Double) {
+        // Simplified Strain Calculation
+        // In a real app, this would combine Heart Rate data (Cardio Load) + Muscular Load
+        
+        // 1. Calculate Strength Strain (Logarithmic scale based on volume)
+        // Assuming 10,000 lbs volume is a "moderate" workout (~10 strain)
+        let strengthStrain = totalVolume > 0 ? 5.0 * log10(totalVolume / 100 + 1) : 0
+        
+        // 2. Calculate Cardio Strain (Mocked for now, or use HealthKit active energy)
+        // Let's assume some base cardio strain from daily activity
+        let cardioStrain = 4.0 // Placeholder
+        
+        // 3. Combine (Weighted average or max?)
+        // Strain is usually cumulative. Let's add them but dampen the sum.
+        let totalRawStrain = strengthStrain + cardioStrain
+        
+        // Cap at 21 for Whoop-like scale, or just let it ride.
+        // Let's use a 0-21 scale.
+        self.strainScore = min(21.0, totalRawStrain)
+        
+        // Calculate Target Strain based on Recovery (Mocked for now)
+        // If recovery is high, target is high.
+        let recoveryScore = 0.8 // 80%
+        let baseTarget = 10.0 + (recoveryScore * 5.0) // 14.0
+        
+        self.targetStrainLow = baseTarget - 2.0
+        self.targetStrainHigh = baseTarget + 2.0
+        
+        // Determine Status
+        if strainScore < targetStrainLow {
+            strainStatus = "Restoring"
+        } else if strainScore > targetStrainHigh {
+            strainStatus = "Overreaching"
+        } else {
+            strainStatus = "Optimal"
+        }
     }
     
     private func normalizeMuscleGroup(_ group: String) -> String {

@@ -161,6 +161,65 @@ struct AnalyticsService {
         return dataPoints
     }
 
+    // MARK: - Advanced Analytics
+
+    /// Calculate 1RM trend for a specific exercise
+    static func calculateOneRepMaxTrend(sessions: [WorkoutSession], exerciseName: String) -> [OneRepMaxDataPoint] {
+        let filteredSessions = sessions.filter { $0.isCompleted }.sorted { $0.date < $1.date }
+        var trendData: [OneRepMaxDataPoint] = []
+
+        for session in filteredSessions {
+            var max1RM: Double = 0
+            
+            for log in session.exerciseLogs where log.exerciseName == exerciseName {
+                for set in log.sets where set.isCompleted {
+                    if let weight = set.weight, let reps = set.actualReps {
+                        // Epley Formula: 1RM = Weight * (1 + Reps/30)
+                        let oneRepMax = weight * (1.0 + Double(reps) / 30.0)
+                        if oneRepMax > max1RM {
+                            max1RM = oneRepMax
+                        }
+                    }
+                }
+            }
+            
+            if max1RM > 0 {
+                trendData.append(OneRepMaxDataPoint(date: session.date, oneRepMax: max1RM))
+            }
+        }
+        
+        return trendData
+    }
+
+    /// Calculate Volume vs Intensity (Average Weight) for scatter plot
+    static func calculateVolumeVsIntensity(sessions: [WorkoutSession]) -> [VolumeIntensityPoint] {
+        let filteredSessions = sessions.filter { $0.isCompleted }
+        var points: [VolumeIntensityPoint] = []
+
+        for session in filteredSessions {
+            var totalVolume: Double = 0
+            var totalWeight: Double = 0
+            var totalReps: Int = 0
+            
+            for log in session.exerciseLogs {
+                for set in log.sets where set.isCompleted {
+                    if let weight = set.weight, let reps = set.actualReps {
+                        totalVolume += weight * Double(reps)
+                        totalWeight += weight * Double(reps) // Weighted sum for average
+                        totalReps += reps
+                    }
+                }
+            }
+            
+            if totalReps > 0 {
+                let averageIntensity = totalWeight / Double(totalReps) // Average weight per rep
+                points.append(VolumeIntensityPoint(date: session.date, volume: totalVolume, intensity: averageIntensity))
+            }
+        }
+        
+        return points
+    }
+
     // MARK: - Progress Summaries
 
     /// Generate monthly progress summaries
@@ -468,6 +527,19 @@ struct RepsDataPoint: Identifiable {
     let id = UUID()
     let date: Date
     let reps: Int
+}
+
+struct OneRepMaxDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let oneRepMax: Double
+}
+
+struct VolumeIntensityPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let volume: Double
+    let intensity: Double // Average weight
 }
 
 // MARK: - Builder Helpers

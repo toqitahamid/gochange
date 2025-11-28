@@ -127,56 +127,7 @@ struct SettingsView: View {
                         )
                     }
                     
-                    // Resources Section
-                    VStack(alignment: .leading, spacing: 16) {
-                        Text("RESOURCES")
-                            .font(.caption)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.secondary)
-                            .padding(.horizontal, 20)
-                        
-                        VStack(spacing: 0) {
-                            NavigationLink(destination: RecoveryDashboardView()) {
-                                HStack {
-                                    Image(systemName: "heart.text.square.fill")
-                                        .foregroundColor(Color(hex: "#FF6B6B"))
-                                    Text("Recovery Dashboard")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(20)
-                            }
-                            
-                            Divider()
-                                .background(Color.gray.opacity(0.1))
-                                .padding(.leading, 20)
-                            
-                            NavigationLink(destination: AnalyticsDashboardView()) {
-                                HStack {
-                                    Image(systemName: "chart.bar.xaxis")
-                                        .foregroundColor(Color(hex: "#4DB6AC"))
-                                    Text("Advanced Analytics")
-                                        .foregroundColor(.primary)
-                                    Spacer()
-                                    Image(systemName: "chevron.right")
-                                        .font(.system(size: 12, weight: .semibold))
-                                        .foregroundColor(.secondary)
-                                }
-                                .padding(20)
-                            }
-                            
-                        }
-                        .background(Color.white)
-                        .cornerRadius(24)
-                        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 24)
-                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                        )
-                    }
+
                     
                     // About Section
                     VStack(alignment: .leading, spacing: 16) {
