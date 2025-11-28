@@ -222,6 +222,48 @@ When starting a workout via WorkoutManager:
 - Watch can request workout data: `requestWorkoutDays()`
 - Completed Watch workouts can be synced back to iPhone (planned feature)
 
+## Design System
+
+### Card Styling Standards
+All cards throughout the app should use consistent styling for visual cohesion. These standards are applied in HomeView, WorkoutPreviewView, and should be used for any new card components.
+
+**Standard Card Style:**
+```swift
+.background(Color.white)
+.clipShape(RoundedRectangle(cornerRadius: 24))
+.shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+.overlay(
+    RoundedRectangle(cornerRadius: 24)
+        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+)
+```
+
+**Key Properties:**
+- Corner radius: `24`
+- Shadow: `color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4`
+- Border: `Color.gray.opacity(0.1), lineWidth: 1`
+- Background: `Color.white`
+
+### Color Scheme
+**Background:**
+- Main background: `Color(hex: "#F5F5F7")` - Light gray background used across HomeView, WorkoutPreviewView, and other main screens
+
+**Accent Colors:**
+- Primary accent: `Color(hex: "#5B7FFF")` - Blue used for primary actions and highlights
+- Secondary accent: `Color(hex: "#7B92FF")` - Lighter blue for gradients
+- Note: Individual workout days may have custom colors stored in `colorHex` property, but primary UI elements should use the unified blue scheme
+
+### Layout Patterns
+**Sticky Bottom Buttons:**
+- Important action buttons (e.g., "Start Workout") should be fixed at the bottom of the screen using a ZStack layout
+- Include a gradient fade effect behind the button for smooth visual transition
+- Add extra bottom padding (120pt) to ScrollView content to prevent overlap
+
+**Spacing:**
+- Card spacing: `20pt` between cards
+- Horizontal padding: `20pt` from screen edges
+- Top padding: `16pt` for main content areas
+
 ## Widget Extension
 
 The `GoChangeWidget` target is a Widget Extension containing:

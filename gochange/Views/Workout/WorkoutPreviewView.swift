@@ -4,32 +4,53 @@ import SwiftData
 struct WorkoutPreviewView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var workoutManager: WorkoutManager
-    
+
     let workoutDay: WorkoutDay
-    
+
     @State private var showingEditSheet = false
-    
-    private var accentColor: Color {
-        Color(hex: workoutDay.colorHex)
-    }
-    
+
+    // Unified color scheme
+    private let primaryAccent = Color(hex: "#5B7FFF")
+    private let secondaryAccent = Color(hex: "#7B92FF")
+
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                // Workout Header Card
-                workoutHeaderCard
-                
-                // Exercise List
-                exerciseListSection
-                
-                // Start Button
-                startButton
+        ZStack {
+            // Main Content
+            ScrollView {
+                VStack(spacing: 20) {
+                    // Workout Header Card
+                    workoutHeaderCard
+
+                    // Exercise List
+                    exerciseListSection
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 16)
+                .padding(.bottom, 120) // Extra padding to account for sticky button
             }
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .padding(.bottom, 100)
+            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+
+            // Sticky Bottom Button
+            VStack {
+                Spacer()
+
+                stickyStartButton
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 16)
+                    .background(
+                        LinearGradient(
+                            colors: [
+                                Color(hex: "#F5F5F7").opacity(0),
+                                Color(hex: "#F5F5F7").opacity(0.95),
+                                Color(hex: "#F5F5F7")
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea(edges: .bottom)
+                    )
+            }
         }
-        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .navigationTitle(workoutDay.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -37,9 +58,10 @@ struct WorkoutPreviewView: View {
                 Button {
                     showingEditSheet = true
                 } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(.primary)
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 20))
+                        .foregroundStyle(primaryAccent.gradient)
+                        .symbolRenderingMode(.hierarchical)
                 }
             }
         }
@@ -51,153 +73,193 @@ struct WorkoutPreviewView: View {
     
     // MARK: - Header Card
     private var workoutHeaderCard: some View {
-        VStack(spacing: 20) {
-            // Workout Icon
-            ZStack {
-                RoundedRectangle(cornerRadius: 24)
-                    .fill(
-                        LinearGradient(
-                            colors: [accentColor, accentColor.opacity(0.7)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+        VStack(spacing: 0) {
+            // Compact Top Section with Icon and Title
+            HStack(spacing: 16) {
+                // Workout Icon
+                ZStack {
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(
+                            LinearGradient(
+                                colors: [primaryAccent, secondaryAccent],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
                         )
+                        .frame(width: 64, height: 64)
+
+                    Image(systemName: workoutIcon)
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .symbolRenderingMode(.hierarchical)
+                }
+                .shadow(color: primaryAccent.opacity(0.3), radius: 12, x: 0, y: 6)
+
+                // Workout Info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("DAY \(workoutDay.dayNumber)")
+                        .font(.system(size: 10, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundStyle(primaryAccent.opacity(0.7))
+
+                    Text(workoutDay.name)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                }
+
+                Spacer()
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 20)
+            .padding(.bottom, 18)
+            .background(
+                LinearGradient(
+                    colors: [Color.white, Color.white.opacity(0.98)],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+
+            // Divider
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [Color.clear, Color.gray.opacity(0.12), Color.clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
                     )
-                    .frame(width: 100, height: 100)
-                
-                Image(systemName: workoutIcon)
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundColor(.white)
-            }
-            .shadow(color: accentColor.opacity(0.3), radius: 15, y: 8)
-            
-            // Workout Info
-            VStack(spacing: 8) {
-                Text("DAY \(workoutDay.dayNumber)")
-                    .font(.system(size: 12, weight: .bold))
-                    .tracking(1.5)
-                    .foregroundColor(accentColor)
-                
-                Text(workoutDay.name)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.primary)
-            }
-            
+                )
+                .frame(height: 1)
+                .padding(.horizontal, 20)
+
             // Stats Row
-            HStack(spacing: 32) {
-                VStack(spacing: 4) {
-                    Text("\(workoutDay.exercises.count)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Exercises")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
-                
+            HStack(spacing: 0) {
+                StatBadge(
+                    value: "\(workoutDay.exercises.count)",
+                    label: "Exercises"
+                )
+
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 1, height: 40)
-                
-                VStack(spacing: 4) {
-                    Text("\(totalSets)")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Sets")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
-                
+                    .fill(Color.gray.opacity(0.12))
+                    .frame(width: 1, height: 28)
+
+                StatBadge(
+                    value: "\(totalSets)",
+                    label: "Sets"
+                )
+
                 Rectangle()
-                    .fill(Color.gray.opacity(0.2))
-                    .frame(width: 1, height: 40)
-                
-                VStack(spacing: 4) {
-                    Text(estimatedDuration)
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    Text("Est. min")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                }
+                    .fill(Color.gray.opacity(0.12))
+                    .frame(width: 1, height: 28)
+
+                StatBadge(
+                    value: estimatedDuration,
+                    label: "Est. min"
+                )
             }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 16)
+            .background(Color.white.opacity(0.5))
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 24)
-        .padding(.horizontal, 16)
         .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .clipShape(RoundedRectangle(cornerRadius: 24))
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         .overlay(
             RoundedRectangle(cornerRadius: 24)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
     }
     
     // MARK: - Exercise List Section
     private var exerciseListSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Text("EXERCISES")
-                .font(.system(size: 12, weight: .bold))
-                .tracking(1.5)
-                .foregroundColor(.secondary)
-                .padding(.horizontal, 4)
-            
+        VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text("EXERCISES")
+                    .font(.system(size: 11, weight: .bold))
+                    .tracking(1.8)
+                    .foregroundStyle(.secondary.opacity(0.8))
+
+                Spacer()
+
+                Text("\(workoutDay.exercises.count)")
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundStyle(primaryAccent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 4)
+                    .background(primaryAccent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+            .padding(.horizontal, 4)
+
             VStack(spacing: 0) {
                 ForEach(Array(workoutDay.exercises.enumerated()), id: \.element.id) { index, exercise in
                     NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
                         ExercisePreviewRow(
                             exercise: exercise,
                             index: index + 1,
-                            accentColor: accentColor
+                            primaryColor: primaryAccent
                         )
                     }
                     .buttonStyle(.plain)
-                    
+
                     if index < workoutDay.exercises.count - 1 {
                         Rectangle()
-                            .fill(Color.gray.opacity(0.1))
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color.clear, Color.gray.opacity(0.12), Color.clear],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .frame(height: 1)
-                            .padding(.leading, 60)
+                            .padding(.leading, 64)
                     }
                 }
             }
             .background(Color.white)
-            .cornerRadius(20)
+            .clipShape(RoundedRectangle(cornerRadius: 24))
             .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
             )
-            .clipShape(RoundedRectangle(cornerRadius: 20))
         }
     }
     
-    // MARK: - Start Button
-    private var startButton: some View {
+    // MARK: - Sticky Start Button
+    private var stickyStartButton: some View {
         Button {
             workoutManager.start(workoutDay: workoutDay)
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 18))
-                
+                Image(systemName: "play.circle.fill")
+                    .font(.system(size: 22))
+                    .symbolRenderingMode(.hierarchical)
+
                 Text("Start Workout")
-                    .font(.system(size: 18, weight: .bold))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
             }
-            .foregroundColor(.white)
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .padding(.vertical, 18)
             .background(
                 LinearGradient(
-                    colors: [accentColor, accentColor.opacity(0.8)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    colors: [primaryAccent, secondaryAccent],
+                    startPoint: .leading,
+                    endPoint: .trailing
                 )
             )
-            .cornerRadius(16)
-            .shadow(color: accentColor.opacity(0.5), radius: 16, y: 8)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .shadow(color: primaryAccent.opacity(0.35), radius: 20, x: 0, y: 8)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .strokeBorder(
+                        Color.white.opacity(0.25),
+                        lineWidth: 1.5
+                    )
+            )
         }
         .buttonStyle(ScaleButtonStyle())
-        .padding(.top, 8)
     }
     
     // MARK: - Computed Properties
@@ -229,51 +291,90 @@ struct WorkoutPreviewView: View {
 struct ExercisePreviewRow: View {
     let exercise: Exercise
     let index: Int
-    let accentColor: Color
-    
+    let primaryColor: Color
+
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             // Number Badge
             ZStack {
-                Circle()
-                    .fill(accentColor.opacity(0.15))
-                    .frame(width: 36, height: 36)
-                
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [primaryColor.opacity(0.15), primaryColor.opacity(0.08)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 44, height: 44)
+
                 Text("\(index)")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(accentColor)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .foregroundStyle(primaryColor)
             }
-            
+
             // Exercise Info
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 6) {
                 Text(exercise.name)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                HStack(spacing: 8) {
-                    Text(exercise.muscleGroup)
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+
+                HStack(spacing: 6) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "figure.strengthtraining.traditional")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(.secondary.opacity(0.8))
+
+                        Text(exercise.muscleGroup)
+                            .font(.system(size: 13))
+                            .foregroundStyle(.secondary)
+                    }
+
                     Text("•")
-                        .font(.system(size: 12))
-                        .foregroundColor(.secondary)
-                    
-                    Text("\(exercise.defaultSets) × \(exercise.defaultReps)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(accentColor.opacity(0.8))
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary.opacity(0.5))
+
+                    HStack(spacing: 4) {
+                        Image(systemName: "repeat")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundStyle(primaryColor.opacity(0.7))
+
+                        Text("\(exercise.defaultSets) × \(exercise.defaultReps)")
+                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .foregroundStyle(primaryColor)
+                    }
                 }
             }
-            
-            Spacer()
-            
+
+            Spacer(minLength: 8)
+
             // Chevron to indicate tappable
             Image(systemName: "chevron.right")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundColor(.gray.opacity(0.5))
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.quaternary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .contentShape(Rectangle())
+    }
+}
+
+// MARK: - Stat Badge
+struct StatBadge: View {
+    let value: String
+    let label: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Text(value)
+                .font(.system(size: 22, weight: .bold, design: .rounded))
+                .foregroundStyle(.primary)
+
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary.opacity(0.9))
+        }
+        .frame(maxWidth: .infinity)
     }
 }
 
