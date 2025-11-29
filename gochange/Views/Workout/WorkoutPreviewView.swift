@@ -10,8 +10,8 @@ struct WorkoutPreviewView: View {
     @State private var showingEditSheet = false
 
     // Unified color scheme
-    private let primaryAccent = Color(hex: "#5B7FFF")
-    private let secondaryAccent = Color(hex: "#7B92FF")
+    private let primaryAccent = Color(hex: "#6B7280")
+    private let secondaryAccent = Color(hex: "#4B5563")
 
     var body: some View {
         ZStack {
