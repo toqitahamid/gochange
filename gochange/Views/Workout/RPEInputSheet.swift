@@ -23,9 +23,10 @@ struct RPEInputSheet: View {
                         Button {
                             showExplanation = true
                         } label: {
-                            Image(systemName: "info.circle.fill") // Fill icon
+                            Image(systemName: "info.circle.fill")
                                 .font(.system(size: 22))
-                                .foregroundColor(.secondary.opacity(0.8))
+                                .foregroundColor(Color(hex: "#6B7280"))
+                                .symbolRenderingMode(.hierarchical)
                         }
                     }
                     
@@ -86,7 +87,7 @@ struct RPEInputSheet: View {
                         Text("AVG STRENGTH TRAINING")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
-                            .tracking(0.5)
+                            .tracking(1.5)
                         Spacer()
                     }
                     .padding(.horizontal, 32)
@@ -101,7 +102,7 @@ struct RPEInputSheet: View {
                         Text("YOUR USUAL RANGE")
                             .font(.system(size: 11, weight: .bold))
                             .foregroundColor(.secondary)
-                            .tracking(0.5)
+                            .tracking(1.5)
                         Spacer()
                     }
                     .padding(.horizontal, 32)
@@ -114,13 +115,20 @@ struct RPEInputSheet: View {
                     Button(action: onFinish) {
                         Text("Save")
                             .font(.system(size: 18, weight: .bold, design: .rounded))
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
                             .frame(height: 56)
-                            .background(Color(hex: "#A5D6D9"))
+                            .background(
+                                LinearGradient(
+                                    colors: [Color(hex: "#6B7280"), Color(hex: "#4B5563")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
                             .cornerRadius(28)
-                            .shadow(color: Color(hex: "#A5D6D9").opacity(0.3), radius: 10, x: 0, y: 5)
+                            .shadow(color: Color(hex: "#6B7280").opacity(0.35), radius: 12, x: 0, y: 6)
                     }
+                    .buttonStyle(ScaleButtonStyle())
                     
                     Button(action: { dismiss() }) {
                         Text("Cancel")
@@ -140,11 +148,11 @@ struct RPEInputSheet: View {
     
     private var rpeColor: Color {
         switch rpe {
-        case 0..<3: return Color(hex: "#64D2FF") // Blue
-        case 3..<5: return Color(hex: "#64D2FF").opacity(0.8) // Blue-Green
-        case 5..<7: return Color(hex: "#FFD60A") // Yellow/Orange
-        case 7..<9: return Color(hex: "#FF9F0A") // Orange
-        default: return Color(hex: "#BF5AF2") // Purple
+        case 0..<3: return Color(hex: "#9CA3AF") // Light gray (low effort)
+        case 3..<5: return Color(hex: "#6B7280") // Primary gray (moderate)
+        case 5..<7: return Color(hex: "#4B5563") // Dark gray (getting hard)
+        case 7..<9: return Color(hex: "#FF9F0A") // Orange (very hard)
+        default: return Color(hex: "#FF5E3A") // Red-orange (max effort)
         }
     }
     
@@ -187,7 +195,9 @@ struct CustomGradientSlider: View {
     @Binding var value: Double
     let range: ClosedRange<Double>
     let onEditingChanged: (Bool) -> Void
-    
+
+    @State private var isDragging: Bool = false
+
     var body: some View {
         GeometryReader { geometry in
             let width = geometry.size.width
@@ -202,9 +212,10 @@ struct CustomGradientSlider: View {
                 // Gradient Track
                 LinearGradient(
                     stops: [
-                        .init(color: Color(hex: "#64D2FF"), location: 0.0), // Blue
-                        .init(color: Color(hex: "#FFD60A"), location: 0.5), // Yellow
-                        .init(color: Color(hex: "#BF5AF2"), location: 1.0)  // Purple
+                        .init(color: Color(hex: "#9CA3AF"), location: 0.0), // Light gray
+                        .init(color: Color(hex: "#6B7280"), location: 0.4), // Primary gray
+                        .init(color: Color(hex: "#FF9F0A"), location: 0.7), // Orange
+                        .init(color: Color(hex: "#FF5E3A"), location: 1.0)  // Red-orange
                     ],
                     startPoint: .leading,
                     endPoint: .trailing
@@ -231,19 +242,23 @@ struct CustomGradientSlider: View {
                     .fill(Color.white)
                     .frame(width: 32, height: 32)
                     .shadow(color: .black.opacity(0.15), radius: 4, x: 0, y: 2)
+                    .shadow(color: thumbColor.opacity(0.4), radius: 8, x: 0, y: 0)
                     .overlay(
                         Circle()
                             .fill(thumbColor)
                             .padding(6)
                     )
+                    .scaleEffect(isDragging ? 1.15 : 1.0)
                     .offset(x: thumbOffset(in: width) - 16)
                     .gesture(
                         DragGesture(minimumDistance: 0)
                             .onChanged { value in
+                                isDragging = true
                                 onEditingChanged(true)
                                 updateValue(with: value.location.x, in: width)
                             }
                             .onEnded { _ in
+                                isDragging = false
                                 onEditingChanged(false)
                             }
                     )
@@ -256,9 +271,10 @@ struct CustomGradientSlider: View {
     private var thumbColor: Color {
         // Map value to gradient color roughly
         let progress = (value - range.lowerBound) / (range.upperBound - range.lowerBound)
-        if progress < 0.33 { return Color(hex: "#64D2FF") }
-        if progress < 0.66 { return Color(hex: "#FFD60A") }
-        return Color(hex: "#BF5AF2")
+        if progress < 0.25 { return Color(hex: "#9CA3AF") }
+        if progress < 0.5 { return Color(hex: "#6B7280") }
+        if progress < 0.75 { return Color(hex: "#FF9F0A") }
+        return Color(hex: "#FF5E3A")
     }
     
     private func thumbOffset(in width: CGFloat) -> CGFloat {
