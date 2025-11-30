@@ -14,7 +14,7 @@ struct ActiveWorkoutView: View {
     @State private var showingCancelAlert = false
     @State private var showingRPEInput = false
     @State private var rpeValue: Double = 7.0
-    @State private var expandedExercise: UUID?
+    @State private var currentExerciseIndex: Int = 0
     
     // Track completed sets for live activity
     private var completedSetsCount: Int {
@@ -36,110 +36,32 @@ struct ActiveWorkoutView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Custom Navigation Bar
-            HStack {
-                HStack(spacing: 12) {
-                    // Minimize button - allows browsing the app
-                    Button {
-                        withAnimation {
-                            workoutManager.minimize()
+            workoutHeaderBar
+
+            // Swipe-based Exercise Navigation
+            TabView(selection: $currentExerciseIndex) {
+                ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
+                    ExerciseWorkoutCard(
+                        exerciseLog: $workoutManager.exerciseLogs[index],
+                        exercise: getExercise(for: exerciseLog),
+                        accentColor: accentColor,
+                        exerciseNumber: index + 1,
+                        totalExercises: workoutManager.exerciseLogs.count,
+                        previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
+                        onAddSet: {
+                            addSet(to: index)
+                        },
+                        onRemoveSet: { setIndex in
+                            removeSet(at: setIndex, from: index)
+                        },
+                        onToggleSetCompletion: { setIndex in
+                            workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
                         }
-                    } label: {
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .frame(width: 36, height: 36)
-                            .background(Color.gray.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                    
-                    // Cancel button - discards workout
-                    Button {
-                        showingCancelAlert = true
-                    } label: {
-                        Text("Cancel")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color(hex: "#FF6B6B"))
-                    }
+                    )
+                    .tag(index)
                 }
-                
-                Spacer()
-                
-                Text(workoutDay.name)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.primary)
-                
-                Spacer()
-                
-                Button {
-                    showingRPEInput = true
-                } label: {
-                    Text("Complete")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
-                }
-                .disabled(!workoutManager.canComplete)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
-            .background(Color.white)
-            .overlay(
-                Rectangle()
-                    .fill(Color.gray.opacity(0.15))
-                    .frame(height: 1)
-                    .frame(maxHeight: .infinity, alignment: .bottom)
-            )
-            
-            ScrollView {
-                VStack(spacing: 16) {
-                    // Timer Card with Rest Button and Notes
-                    if let startTime = workoutManager.startTime {
-                        WorkoutTimerCard(
-                            startTime: startTime,
-                            accentColor: accentColor,
-                            currentHeartRate: workoutManager.currentHeartRate,
-                            onRestTap: {
-                                workoutManager.showingRestTimer = true
-                            },
-                            onNotesTap: {
-                                workoutManager.showingSessionNotes = true
-                            },
-                            hasNotes: !workoutManager.sessionNotes.isEmpty
-                        )
-                    }
-                    
-                    // Exercise List
-                    ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
-                        ExerciseLogCard(
-                            exerciseLog: $workoutManager.exerciseLogs[index],
-                            exercise: getExercise(for: exerciseLog),
-                            accentColor: accentColor,
-                            isExpanded: expandedExercise == exerciseLog.id,
-                            previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
-                            onToggleExpand: {
-                                withAnimation(.easeInOut(duration: 0.25)) {
-                                    if expandedExercise == exerciseLog.id {
-                                        expandedExercise = nil
-                                    } else {
-                                        expandedExercise = exerciseLog.id
-                                    }
-                                }
-                            },
-                            onAddSet: {
-                                addSet(to: index)
-                            },
-                            onRemoveSet: { setIndex in
-                                removeSet(at: setIndex, from: index)
-                            },
-                            onToggleSetCompletion: { setIndex in
-                                workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
-                            }
-                        )
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 120) // Extra padding for tab bar
-            }
+            .tabViewStyle(.page(indexDisplayMode: .never))
         }
         .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .toolbar(.visible, for: .tabBar)
@@ -160,9 +82,7 @@ struct ActiveWorkoutView: View {
             Text("Great job! This workout will be saved to your history.")
         }
         .onAppear {
-            if expandedExercise == nil {
-                expandedExercise = workoutManager.exerciseLogs.first?.id
-            }
+            currentExerciseIndex = 0
         }
         .onChange(of: completedSetsCount) { oldValue, newValue in
             // Live activity update is handled in WorkoutManager
@@ -189,14 +109,72 @@ struct ActiveWorkoutView: View {
         }
     }
     
-    // MARK: - Live Activity
-    // Moved to WorkoutManager
-    
     // MARK: - Computed Properties
-    // Moved to WorkoutManager
-    
+
+    private var workoutHeaderBar: some View {
+        HStack {
+            HStack(spacing: 12) {
+                // Minimize button
+                Button {
+                    withAnimation {
+                        workoutManager.minimize()
+                    }
+                } label: {
+                    Image(systemName: "chevron.down")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.primary)
+                        .frame(width: 36, height: 36)
+                        .background(Color.gray.opacity(0.1))
+                        .clipShape(Circle())
+                }
+
+                // Cancel button
+                Button {
+                    showingCancelAlert = true
+                } label: {
+                    Text("Cancel")
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundColor(Color(hex: "#FF6B6B"))
+                }
+            }
+
+            Spacer()
+
+            // Workout name with timer
+            VStack(spacing: 2) {
+                Text(workoutDay.name)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundColor(.primary)
+
+                if let startTime = workoutManager.startTime {
+                    WorkoutElapsedTime(startTime: startTime)
+                }
+            }
+
+            Spacer()
+
+            // Complete button
+            Button {
+                showingRPEInput = true
+            } label: {
+                Text("Complete")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
+            }
+            .disabled(!workoutManager.canComplete)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.white)
+        .overlay(
+            Rectangle()
+                .fill(Color.gray.opacity(0.15))
+                .frame(height: 1)
+                .frame(maxHeight: .infinity, alignment: .bottom)
+        )
+    }
+
     // MARK: - Methods
-    // setupExerciseLogs moved to WorkoutManager
     
     private func getExercise(for log: ExerciseLog) -> Exercise? {
         workoutDay.exercises.first { $0.id == log.exerciseId }
@@ -213,6 +191,23 @@ struct ActiveWorkoutView: View {
     
     private func completeWorkout() {
         // Moved to WorkoutManager
+    }
+}
+
+// MARK: - Workout Elapsed Time
+struct WorkoutElapsedTime: View {
+    let startTime: Date
+    @State private var elapsed: TimeInterval = 0
+
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Text(elapsed.formattedDuration)
+            .font(.system(size: 11, weight: .medium))
+            .foregroundColor(.secondary)
+            .onReceive(timer) { _ in
+                elapsed = Date().timeIntervalSince(startTime)
+            }
     }
 }
 
