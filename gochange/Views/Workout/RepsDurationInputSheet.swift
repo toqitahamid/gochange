@@ -78,44 +78,50 @@ struct RepsDurationInputSheet: View {
                 if selectedMode == .reps {
                     HStack(spacing: 4) {
                         Text(repsValue.isEmpty ? "0" : repsValue)
-                            .font(.system(size: 48, weight: .semibold, design: .rounded))
+                            .font(.system(size: 28, weight: .semibold, design: .rounded))
                             .foregroundColor(.primary)
                         
                         // Cursor
                         if true {
                             Rectangle()
                                 .fill(Color.blue)
-                                .frame(width: 3, height: 48)
-                                .cornerRadius(1.5)
+                                .frame(width: 2.5, height: 32)
+                                .cornerRadius(1.25)
                         }
                     }
-                    .frame(height: 80)
+                    .frame(height: 60)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(20)
+                    .padding(.horizontal, 24)
                 } else {
                     HStack(spacing: 4) {
                         // Minutes
                         Text(durationMinutes.isEmpty ? "0" : durationMinutes)
-                            .font(.system(size: 48, weight: .semibold, design: .rounded))
+                            .font(.system(size: 28, weight: .semibold, design: .rounded))
                             .foregroundColor(isEditingSeconds ? .secondary : .primary)
                         
                         Text(":")
-                            .font(.system(size: 48, weight: .semibold, design: .rounded))
+                            .font(.system(size: 28, weight: .semibold, design: .rounded))
                             .foregroundColor(.secondary)
                             .padding(.bottom, 4)
                         
                         // Seconds
                         Text(durationSeconds.isEmpty ? "00" : (durationSeconds.count == 1 ? "0\(durationSeconds)" : durationSeconds))
-                            .font(.system(size: 48, weight: .semibold, design: .rounded))
+                            .font(.system(size: 28, weight: .semibold, design: .rounded))
                             .foregroundColor(isEditingSeconds ? .primary : .secondary)
                         
                         // Cursor
                         if true {
                             Rectangle()
                                 .fill(Color.blue)
-                                .frame(width: 3, height: 48)
-                                .cornerRadius(1.5)
+                                .frame(width: 2.5, height: 32)
+                                .cornerRadius(1.25)
                         }
                     }
-                    .frame(height: 80)
+                    .frame(height: 60)
+                    .background(Color(UIColor.secondarySystemBackground))
+                    .cornerRadius(20)
+                    .padding(.horizontal, 24)
                     .onTapGesture {
                         isEditingSeconds.toggle()
                     }
@@ -147,7 +153,10 @@ struct RepsDurationInputSheet: View {
             .padding(4)
             .background(Color(UIColor.secondarySystemBackground))
             .clipShape(Capsule())
-            .padding(.bottom, 20)
+            .padding(4)
+            .background(Color(UIColor.secondarySystemBackground))
+            .clipShape(Capsule())
+            .padding(.bottom, 10)
             
             // RIR Selector Removed
             
@@ -178,7 +187,7 @@ struct RepsDurationInputSheet: View {
             }
             .padding(.horizontal, 40)
             
-            Spacer()
+            Spacer().frame(height: 20)
             
             // Apply to next sets
             Button {
@@ -197,7 +206,7 @@ struct RepsDurationInputSheet: View {
             .padding(.bottom, 20)
         }
         .background(Color(UIColor.systemBackground))
-        .presentationDetents([.fraction(0.75)])
+        .presentationDetents([.fraction(0.5)])
         .presentationDragIndicator(.hidden)
     }
     
