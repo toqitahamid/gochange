@@ -118,7 +118,7 @@ struct SetInputCard: View {
             .disabled(setLog.isCompleted)
             
             // Weight
-            TextField("14", text: $weightText)
+            TextField("0", text: $weightText)
                 .keyboardType(.decimalPad)
                 .multilineTextAlignment(.center)
                 .font(.system(size: 17))
@@ -130,7 +130,7 @@ struct SetInputCard: View {
                 }
             
             // REPS
-            TextField("x10", text: $repsText)
+            TextField("0", text: $repsText)
                 .keyboardType(.numberPad)
                 .multilineTextAlignment(.center)
                 .font(.system(size: 17))
