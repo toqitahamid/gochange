@@ -6,6 +6,7 @@ struct SetInputCard: View {
     let previousSet: PreviousSetInfo?
     let onRemove: (() -> Void)?
     let onToggleCompletion: () -> Void
+    let onPlaySet: () -> Void // New callback for starting set timer
 
     @State private var weightText: String = ""
     @State private var repsText: String = ""
@@ -23,284 +24,177 @@ struct SetInputCard: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Set Header
-            HStack {
-                // Set Number Badge
-                Text("SET \(setLog.setNumber)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.2)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(setLog.isCompleted ? Color(hex: "#00D4AA") : Color(hex: setLog.setType.color))
-                    )
-
-                // Set Type Selector
-                Menu {
-                    ForEach([SetLog.SetType.normal, .warmup, .cooldown, .failure, .dropset], id: \.self) { type in
-                        Button {
-                            withAnimation(.easeInOut(duration: 0.2)) {
-                                setLog.setType = type
-                            }
-                        } label: {
-                            Label(type.displayName, systemImage: type.icon)
-                        }
-                    }
-                } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: setLog.setType.icon)
-                            .font(.system(size: 10, weight: .semibold))
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: 8, weight: .bold))
-                    }
-                    .foregroundColor(Color(hex: setLog.setType.color))
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(Color(hex: setLog.setType.color).opacity(0.12))
-                    )
-                }
-                .disabled(setLog.isCompleted)
-
-                Spacer()
-
-                // Target Reps
-                Text("Target: \(setLog.targetReps) reps")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundColor(.secondary)
-
-                // Completion Checkbox
+        HStack(spacing: 0) {
+            // SET indicator with menu
+            Menu {
+                // Set type options
                 Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        onToggleCompletion()
-                    }
+                    setLog.setType = .normal
                 } label: {
-                    ZStack {
-                        Circle()
-                            .stroke(setLog.isCompleted ? Color(hex: "#00D4AA") : Color.gray.opacity(0.3), lineWidth: 2)
-                            .frame(width: 28, height: 28)
-
-                        if setLog.isCompleted {
-                            Circle()
-                                .fill(Color(hex: "#00D4AA"))
-                                .frame(width: 28, height: 28)
-
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 12, weight: .bold))
-                                .foregroundColor(.white)
-                        }
+                    Label("Normal", systemImage: "checkmark")
+                }
+                
+                Button {
+                    setLog.setType = .warmup
+                } label: {
+                    Label("Warm Up", systemImage: "flame.fill")
+                }
+                
+                Button {
+                    setLog.setType = .cooldown
+                } label: {
+                    Label("Cool Down", systemImage: "snowflake")
+                }
+                
+                Button {
+                    setLog.setType = .failure
+                } label: {
+                    Label("Failure", systemImage: "exclamationmark.triangle.fill")
+                }
+                
+                Button {
+                    setLog.setType = .dropset
+                } label: {
+                    Label("Dropset", systemImage: "arrow.down.right")
+                }
+                
+                // Remove set option
+                if let onRemove = onRemove {
+                    Divider()
+                    
+                    Button(role: .destructive) {
+                        onRemove()
+                    } label: {
+                        Label("Remove set", systemImage: "minus.circle")
                     }
                 }
-            }
-            .padding(.horizontal, 16)
-            .padding(.top, 14)
-            .padding(.bottom, 8)
-
-            // Previous Data (if available)
-            if let prevText = previousDataText {
-                HStack {
-                    Text("Previous: \(prevText)")
-                        .font(.system(size: 12, weight: .medium))
-                        .foregroundColor(Color(hex: "#00D4AA").opacity(0.8))
-
-                    Spacer()
-
-                    // Quick Copy Button
-                    Button {
-                        copyPreviousData()
-                    } label: {
-                        HStack(spacing: 4) {
-                            Image(systemName: "doc.on.doc.fill")
-                                .font(.system(size: 11))
-                            Text("Copy")
-                                .font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundColor(Color(hex: "#5B7FFF"))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule()
-                                .fill(Color(hex: "#5B7FFF").opacity(0.12))
-                        )
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.bottom, 12)
-            }
-
-            Divider()
-                .padding(.horizontal, 16)
-
-            // Input Fields
-            VStack(spacing: 16) {
-                // Weight Input
-                HStack(spacing: 12) {
-                    Text("Weight")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 60, alignment: .leading)
-
-                    // Decrement Button
-                    Button {
-                        adjustWeight(by: -5)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(accentColor.opacity(0.7))
-                    }
-                    .disabled(setLog.isCompleted)
-
-                    // Weight TextField
-                    TextField("0", text: $weightText)
-                        .keyboardType(.decimalPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .frame(width: 70)
-                        .padding(.vertical, 10)
-                        .background(Color.gray.opacity(0.08))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(focusedField == .weight ? accentColor : Color.clear, lineWidth: 2)
-                        )
-                        .focused($focusedField, equals: .weight)
-                        .disabled(setLog.isCompleted)
-                        .onChange(of: weightText) { _, newValue in
-                            setLog.weight = Double(newValue)
-                        }
-
-                    Text(setLog.weightUnit.rawValue)
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
-
-                    // Increment Button
-                    Button {
-                        adjustWeight(by: 5)
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(accentColor)
-                    }
-                    .disabled(setLog.isCompleted)
-                }
-
-                // Reps Input
-                HStack(spacing: 12) {
-                    Text("Reps")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 60, alignment: .leading)
-
-                    // Decrement Button
-                    Button {
-                        adjustReps(by: -1)
-                    } label: {
-                        Image(systemName: "minus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(accentColor.opacity(0.7))
-                    }
-                    .disabled(setLog.isCompleted)
-
-                    // Reps TextField
-                    TextField("0", text: $repsText)
-                        .keyboardType(.numberPad)
-                        .multilineTextAlignment(.center)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .frame(width: 70)
-                        .padding(.vertical, 10)
-                        .background(Color.gray.opacity(0.08))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(focusedField == .reps ? accentColor : Color.clear, lineWidth: 2)
-                        )
-                        .focused($focusedField, equals: .reps)
-                        .disabled(setLog.isCompleted)
-                        .onChange(of: repsText) { _, newValue in
-                            setLog.actualReps = Int(newValue)
-                        }
-
-                    Text("reps")
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
-
-                    // Increment Button
-                    Button {
-                        adjustReps(by: 1)
-                    } label: {
-                        Image(systemName: "plus.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(accentColor)
-                    }
-                    .disabled(setLog.isCompleted)
-                }
-
-                // RIR Picker
-                HStack(spacing: 12) {
-                    Text("RIR")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundColor(.secondary)
-                        .frame(width: 60, alignment: .leading)
-
-                    Menu {
-                        ForEach(0...5, id: \.self) { rir in
-                            Button {
-                                setLog.rir = rir
-                            } label: {
-                                Label(AppConstants.RIR.label(for: rir), systemImage: setLog.rir == rir ? "checkmark" : "")
+            } label: {
+                HStack(spacing: 0) {
+                    Group {
+                        switch setLog.setType {
+                        case .normal:
+                            // Normal set - show number
+                            Text("\(setLog.setNumber)")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundColor(.primary)
+                            
+                        case .warmup:
+                            // Warmup - flame icon in circle
+                            ZStack {
+                                Circle()
+                                    .stroke(Color.orange, lineWidth: 2)
+                                    .frame(width: 28, height: 28)
+                                
+                                Image(systemName: "flame.fill")
+                                    .font(.system(size: 12))
+                                    .foregroundColor(.orange)
                             }
+                            
+                        case .cooldown:
+                            // Cooldown - snowflake icon
+                            Image(systemName: "snowflake")
+                                .font(.system(size: 16))
+                                .foregroundColor(.blue)
+                            
+                        case .failure:
+                            // Failure - warning triangle icon
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 16))
+                                .foregroundColor(.red)
+                            
+                        case .dropset:
+                            // Dropset - down arrow icon
+                            Image(systemName: "arrow.down.right")
+                                .font(.system(size: 16))
+                                .foregroundColor(.purple)
                         }
-                    } label: {
-                        HStack {
-                            Text(setLog.rir != nil ? "\(setLog.rir!) - \(AppConstants.RIR.label(for: setLog.rir!))" : "Tap to set")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(setLog.rir != nil ? .primary : .secondary)
-
-                            Spacer()
-
-                            Image(systemName: "chevron.up.chevron.down")
-                                .font(.system(size: 11, weight: .semibold))
-                                .foregroundColor(.secondary)
-                        }
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.gray.opacity(0.08))
-                        .cornerRadius(10)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(setLog.rir != nil ? accentColor.opacity(0.3) : Color.clear, lineWidth: 1.5)
-                        )
                     }
-                    .disabled(setLog.isCompleted)
+                    Spacer()
                 }
+                .frame(width: 50)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 16)
+            .disabled(setLog.isCompleted)
+            
+            // Weight
+            TextField("14", text: $weightText)
+                .keyboardType(.decimalPad)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 17))
+                .foregroundColor(.primary)
+                .frame(width: 90)
+                .disabled(setLog.isCompleted)
+                .onChange(of: weightText) { _, newValue in
+                    setLog.weight = Double(newValue)
+                }
+            
+            // REPS
+            TextField("x10", text: $repsText)
+                .keyboardType(.numberPad)
+                .multilineTextAlignment(.center)
+                .font(.system(size: 17))
+                .foregroundColor(.primary)
+                .frame(width: 90)
+                .disabled(setLog.isCompleted)
+                .onChange(of: repsText) { _, newValue in
+                    // Remove 'x' prefix if user types it
+                    let cleaned = newValue.replacingOccurrences(of: "x", with: "")
+                    if let reps = Int(cleaned) {
+                        setLog.actualReps = reps
+                        // Update the text field to maintain 'x' prefix
+                        if !cleaned.isEmpty {
+                            repsText = "x\(cleaned)"
+                        }
+                    }
+                }
+            
+            // RIR (Reps in Reserve)
+            Menu {
+                Button {
+                    setLog.rir = nil
+                } label: {
+                    Label("Not set", systemImage: setLog.rir == nil ? "checkmark" : "")
+                }
+                
+                Divider()
+                
+                ForEach(0...5, id: \.self) { rir in
+                    Button {
+                        setLog.rir = rir
+                    } label: {
+                        Label("\(rir)", systemImage: setLog.rir == rir ? "checkmark" : "")
+                    }
+                }
+            } label: {
+                Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
+                    .font(.system(size: 17))
+                    .foregroundColor(setLog.rir != nil ? .primary : .secondary)
+                    .frame(width: 60, alignment: .center)
+            }
+            .disabled(setLog.isCompleted)
+            
+            Spacer()
+            
+            // Play/Complete button
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    if setLog.isCompleted {
+                        // If already completed, allow uncompleting
+                        onToggleCompletion()
+                    } else {
+                        // If not completed, start the set timer
+                        onPlaySet()
+                    }
+                }
+            } label: {
+                Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : "play.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(setLog.isCompleted ? Color(hex: "#00D4AA") : .primary)
+            }
+            .frame(width: 44, alignment: .trailing)
         }
-        .background(
-            setLog.isCompleted ?
-                LinearGradient(
-                    colors: [Color(hex: "#00D4AA").opacity(0.08), Color(hex: "#00D4AA").opacity(0.03)],
-                    startPoint: .top,
-                    endPoint: .bottom
-                ) :
-                LinearGradient(colors: [Color.white, Color.white], startPoint: .top, endPoint: .bottom)
-        )
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(setLog.isCompleted ? 0.08 : 0.04), radius: 8, x: 0, y: 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(
-                    setLog.isCompleted ? Color(hex: "#00D4AA").opacity(0.4) : Color.gray.opacity(0.12),
-                    lineWidth: 1.5
-                )
-        )
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .background(setLog.isCompleted ? Color(hex: "#00D4AA").opacity(0.05) : Color.white)
         .onAppear {
             // Pre-fill with previous data if available
             if weightText.isEmpty && repsText.isEmpty {
@@ -310,7 +204,7 @@ struct SetInputCard: View {
                         setLog.weight = weight
                     }
                     if let reps = prev.reps {
-                        repsText = String(reps)
+                        repsText = "x\(reps)"
                         setLog.actualReps = reps
                     }
                 }
@@ -321,42 +215,8 @@ struct SetInputCard: View {
                 weightText = String(format: "%.0f", weight)
             }
             if let reps = setLog.actualReps, repsText.isEmpty {
-                repsText = String(reps)
+                repsText = "x\(reps)"
             }
         }
-    }
-
-    // MARK: - Methods
-
-    private func adjustWeight(by amount: Double) {
-        let current = Double(weightText) ?? 0
-        let newValue = max(0, current + amount)
-        weightText = String(format: "%.0f", newValue)
-        setLog.weight = newValue
-    }
-
-    private func adjustReps(by amount: Int) {
-        let current = Int(repsText) ?? 0
-        let newValue = max(0, current + amount)
-        repsText = String(newValue)
-        setLog.actualReps = newValue
-    }
-
-    private func copyPreviousData() {
-        guard let prev = previousSet else { return }
-
-        if let weight = prev.weight {
-            weightText = String(format: "%.0f", weight)
-            setLog.weight = weight
-        }
-
-        if let reps = prev.reps {
-            repsText = String(reps)
-            setLog.actualReps = reps
-        }
-
-        // Add haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
     }
 }

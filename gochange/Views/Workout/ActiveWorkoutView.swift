@@ -35,55 +35,91 @@ struct ActiveWorkoutView: View {
     
     var body: some View {
         ZStack {
-            VStack(spacing: 0) {
-                // Custom Navigation Bar
-                workoutHeaderBar
+            if !workoutManager.isMinimized {
+                // Full Workout View
+                VStack(spacing: 0) {
+                    // Sheet-style Header
+                    workoutHeaderBar
 
-                // Swipe-based Exercise Navigation
-                TabView(selection: $currentExerciseIndex) {
-                    ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
-                        ExerciseWorkoutCard(
-                            exerciseLog: $workoutManager.exerciseLogs[index],
-                            exercise: getExercise(for: exerciseLog),
-                            accentColor: accentColor,
-                            exerciseNumber: index + 1,
-                            totalExercises: workoutManager.exerciseLogs.count,
-                            previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
-                            suggestion: workoutManager.suggestions[exerciseLog.exerciseId],
-                            onAddSet: {
-                                addSet(to: index)
-                            },
-                            onRemoveSet: { setIndex in
-                                removeSet(at: setIndex, from: index)
-                            },
-                            onToggleSetCompletion: { setIndex in
-                                workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
-                            }
-                        )
-                        .tag(index)
+                    // Swipe-based Exercise Navigation
+                    TabView(selection: $currentExerciseIndex) {
+                        ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
+                            ExerciseWorkoutCard(
+                                exerciseLog: $workoutManager.exerciseLogs[index],
+                                exercise: getExercise(for: exerciseLog),
+                                accentColor: accentColor,
+                                exerciseNumber: index + 1,
+                                totalExercises: workoutManager.exerciseLogs.count,
+                                previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
+                                suggestion: workoutManager.suggestions[exerciseLog.exerciseId],
+                                onAddSet: {
+                                    addSet(to: index)
+                                },
+                                onRemoveSet: { setIndex in
+                                    removeSet(at: setIndex, from: index)
+                                },
+                                onToggleSetCompletion: { setIndex in
+                                    workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
+                                },
+                                onPlaySet: { setIndex in
+                                    workoutManager.startSetTimer(exerciseIndex: index, setIndex: setIndex)
+                                }
+                            )
+                            .tag(index)
+                        }
                     }
+                    .tabViewStyle(.page(indexDisplayMode: .never))
                 }
-                .tabViewStyle(.page(indexDisplayMode: .never))
+                .background(Color.white.ignoresSafeArea())
+                .gesture(
+                    DragGesture()
+                        .onEnded { value in
+                            // Swipe down to minimize
+                            if value.translation.height > 100 {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                    workoutManager.minimize()
+                                }
+                            }
+                        }
+                )
             }
-
-            // Floating Rest Timer Banner
-            if let timerState = workoutManager.activeRestTimer {
+            
+            // Unified Miniplayer (shown when minimized OR when set/rest timer is active)
+            if workoutManager.isMinimized || workoutManager.activeSetTimer != nil || workoutManager.activeRestTimer != nil {
                 VStack {
                     Spacer()
-                    FloatingRestTimerBanner(
-                        timerState: timerState,
-                        onTap: {
-                            workoutManager.showingRestTimer = true
+                    UnifiedWorkoutMiniplayer(
+                        workoutDayName: workoutDay.name,
+                        exerciseName: getCurrentExerciseName(),
+                        workoutStartTime: workoutManager.startTime ?? Date(),
+                        workoutIsPaused: workoutManager.isPaused,
+                        setTimerState: workoutManager.activeSetTimer,
+                        restTimerState: workoutManager.activeRestTimer,
+                        currentHeartRate: workoutManager.currentHeartRate,
+                        accentColor: accentColor,
+                        onExpand: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                workoutManager.resume()
+                            }
                         },
-                        onDismiss: {
-                            workoutManager.stopRestTimer()
+                        onPauseSession: {
+                            workoutManager.pause()
+                        },
+                        onResumeSession: {
+                            workoutManager.resumeWorkout()
+                        },
+                        onStopSet: {
+                            workoutManager.stopSetTimer()
                         }
                     )
+                    .padding(.horizontal, 20)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
+                .zIndex(10)
             }
         }
-        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
-        .toolbar(.visible, for: .tabBar)
+        .background(Color.white.ignoresSafeArea())
+        .toolbar(.hidden, for: .tabBar)
         .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
             Button("Keep Going", role: .cancel) { }
             Button("Discard", role: .destructive) {
@@ -131,72 +167,85 @@ struct ActiveWorkoutView: View {
     // MARK: - Computed Properties
 
     private var workoutHeaderBar: some View {
-        HStack {
-            HStack(spacing: 12) {
-                // Minimize button
-                Button {
-                    withAnimation {
-                        workoutManager.minimize()
-                    }
-                } label: {
-                    Image(systemName: "chevron.down")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundColor(.primary)
-                        .frame(width: 36, height: 36)
-                        .background(Color.gray.opacity(0.1))
-                        .clipShape(Circle())
-                }
-
-                // Cancel button
-                Button {
-                    showingCancelAlert = true
-                } label: {
-                    Text("Cancel")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundColor(Color(hex: "#FF6B6B"))
-                }
-            }
-
-            Spacer()
-
-            // Workout name with timer
-            VStack(spacing: 2) {
-                Text(workoutDay.name)
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundColor(.primary)
-
+        VStack(spacing: 0) {
+            // Top controls row
+            HStack(alignment: .top) {
+                // Timer display - left aligned
                 if let startTime = workoutManager.startTime {
-                    WorkoutElapsedTime(startTime: startTime)
+                    WorkoutTimerDisplay(startTime: startTime, isPaused: workoutManager.isPaused)
+                }
+                
+                Spacer()
+                
+                // Pause and Close buttons
+                HStack(spacing: 12) {
+                    Button {
+                        workoutManager.togglePause()
+                    } label: {
+                        Image(systemName: workoutManager.isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.primary)
+                            .frame(width: 36, height: 36)
+                    }
+                    
+                    Button {
+                        showingCancelAlert = true
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(Color(hex: "#FF6B6B"))
+                            .frame(width: 36, height: 36)
+                    }
                 }
             }
-
-            Spacer()
-
-            // Complete button
-            Button {
-                showingRPEInput = true
-            } label: {
-                Text("Complete")
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(workoutManager.canComplete ? Color(hex: "#00D4AA") : .gray)
+            .padding(.horizontal, 20)
+            .padding(.top, 16)
+            .padding(.bottom, 8)
+            
+            // Complete button row
+            HStack {
+                Spacer()
+                
+                Button {
+                    showingRPEInput = true
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 14))
+                        Text("Complete")
+                            .font(.system(size: 15, weight: .semibold))
+                    }
+                    .foregroundColor(workoutManager.canComplete ? .primary : .secondary)
+                }
+                .disabled(!workoutManager.canComplete)
             }
-            .disabled(!workoutManager.canComplete)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(Color.white)
-        .overlay(
+            .padding(.horizontal, 20)
+            .padding(.bottom, 16)
+            
+            // Divider
             Rectangle()
                 .fill(Color.gray.opacity(0.15))
                 .frame(height: 1)
-                .frame(maxHeight: .infinity, alignment: .bottom)
-        )
+        }
+        .background(Color.white)
     }
 
     // MARK: - Methods
     
     private func getExercise(for log: ExerciseLog) -> Exercise? {
         workoutDay.exercises.first { $0.id == log.exerciseId }
+    }
+    
+    private func getCurrentExerciseName() -> String? {
+        // If there's an active set timer, use that exercise
+        if let setTimer = workoutManager.activeSetTimer {
+            return setTimer.exerciseName
+        }
+        // Otherwise use the current exercise from the tab view
+        if currentExerciseIndex < workoutManager.exerciseLogs.count {
+            return workoutManager.exerciseLogs[currentExerciseIndex].exerciseName
+        }
+        return nil
     }
     
     private func addSet(to exerciseIndex: Int) {
@@ -213,7 +262,28 @@ struct ActiveWorkoutView: View {
     }
 }
 
-// MARK: - Workout Elapsed Time
+// MARK: - Workout Timer Display (Large format for header)
+struct WorkoutTimerDisplay: View {
+    let startTime: Date
+    let isPaused: Bool
+    @State private var elapsed: TimeInterval = 0
+    
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    
+    var body: some View {
+        Text(elapsed.formattedDuration)
+            .font(.system(size: 40, weight: .bold, design: .rounded))
+            .foregroundColor(.primary)
+            .opacity(isPaused ? 0.5 : 1.0)
+            .onReceive(timer) { _ in
+                if !isPaused {
+                    elapsed = Date().timeIntervalSince(startTime)
+                }
+            }
+    }
+}
+
+// MARK: - Workout Elapsed Time (Small format)
 struct WorkoutElapsedTime: View {
     let startTime: Date
     @State private var elapsed: TimeInterval = 0

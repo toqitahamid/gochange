@@ -27,6 +27,23 @@ struct RestTimerState {
     }
 }
 
+// MARK: - Set Timer State
+struct SetTimerState {
+    let startTime: Date
+    let exerciseName: String
+    let exerciseIndex: Int
+    let setIndex: Int
+    let setNumber: Int
+    var isPaused: Bool = false
+    var pauseStartTime: Date? = nil
+    var totalPausedDuration: TimeInterval = 0
+    
+    var elapsedTime: TimeInterval {
+        let rawElapsed = Date().timeIntervalSince(startTime)
+        return isPaused ? (pauseStartTime?.timeIntervalSince(startTime) ?? rawElapsed) - totalPausedDuration : rawElapsed - totalPausedDuration
+    }
+}
+
 // MARK: - Widget Data Model (shared with widget)
 struct WidgetWorkoutData: Codable {
     let workoutsThisWeek: Int
@@ -75,17 +92,25 @@ class WorkoutManager: ObservableObject {
     @Published var startTime: Date?
     @Published var isWorkoutActive = false
     @Published var isMinimized = false
+    @Published var isPaused = false
     @Published var showingRestTimer = false
     @Published var currentWorkoutDay: WorkoutDay?
     @Published var sessionNotes: String = ""
     @Published var showingSessionNotes = false
     @Published var currentHeartRate: Double?
     
+    // Pause tracking
+    private var pausedTime: Date?
+    private var totalPausedDuration: TimeInterval = 0
+    
     // Previous workout data for reference
     @Published var previousSetData: [UUID: [PreviousSetInfo]] = [:]  // exerciseId -> sets
 
     // Auto rest timer
     @Published var activeRestTimer: RestTimerState? = nil
+
+    // Set timer
+    @Published var activeSetTimer: SetTimerState? = nil
 
     // Progressive overload suggestions
     @Published var suggestions: [UUID: OverloadSuggestion] = [:] // exerciseId -> suggestion
@@ -217,6 +242,37 @@ class WorkoutManager: ObservableObject {
     
     func resume() {
         isMinimized = false
+    }
+    
+    func pause() {
+        guard !isPaused else { return }
+        isPaused = true
+        pausedTime = Date()
+        
+        // Also pause the set timer if active
+        if activeSetTimer != nil {
+            pauseSetTimer()
+        }
+    }
+    
+    func resumeWorkout() {
+        guard isPaused, let pausedTime = pausedTime else { return }
+        totalPausedDuration += Date().timeIntervalSince(pausedTime)
+        isPaused = false
+        self.pausedTime = nil
+        
+        // Also resume the set timer if it was paused
+        if activeSetTimer != nil {
+            resumeSetTimer()
+        }
+    }
+    
+    func togglePause() {
+        if isPaused {
+            resumeWorkout()
+        } else {
+            pause()
+        }
     }
     
     func cancel() {
@@ -351,10 +407,15 @@ class WorkoutManager: ObservableObject {
         startTime = nil
         isWorkoutActive = false
         isMinimized = false
+        isPaused = false
+        pausedTime = nil
+        totalPausedDuration = 0
         showingRestTimer = false
         sessionNotes = ""
         showingSessionNotes = false
         previousSetData = [:]
+        activeSetTimer = nil
+        activeRestTimer = nil
     }
     
     // MARK: - Exercise Management
@@ -452,6 +513,76 @@ class WorkoutManager: ObservableObject {
         RestTimerActivityManager.shared.start(endTime: endTime)
         NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
 
+        // Auto-dismiss timer when it expires
+        restTimerCancellable?.cancel()
+        restTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if let timer = self.activeRestTimer, timer.isExpired {
+                    self.stopRestTimer()
+                }
+            }
+    }
+
+    // MARK: - Set Timer Management
+    
+    func startSetTimer(exerciseIndex: Int, setIndex: Int) {
+        guard exerciseIndex < exerciseLogs.count,
+              setIndex < exerciseLogs[exerciseIndex].sets.count else { return }
+        
+        let exerciseLog = exerciseLogs[exerciseIndex]
+        let setLog = exerciseLog.sets[setIndex]
+        
+        activeSetTimer = SetTimerState(
+            startTime: Date(),
+            exerciseName: exerciseLog.exerciseName,
+            exerciseIndex: exerciseIndex,
+            setIndex: setIndex,
+            setNumber: setLog.setNumber
+        )
+    }
+    
+    func pauseSetTimer() {
+        guard var timer = activeSetTimer, !timer.isPaused else { return }
+        timer.isPaused = true
+        timer.pauseStartTime = Date()
+        activeSetTimer = timer
+    }
+    
+    func resumeSetTimer() {
+        guard var timer = activeSetTimer, timer.isPaused else { return }
+        if let pauseStart = timer.pauseStartTime {
+            timer.totalPausedDuration += Date().timeIntervalSince(pauseStart)
+        }
+        timer.isPaused = false
+        timer.pauseStartTime = nil
+        activeSetTimer = timer
+    }
+    
+    func stopSetTimer() {
+        guard let timer = activeSetTimer else { return }
+        
+        // Complete the set
+        exerciseLogs[timer.exerciseIndex].sets[timer.setIndex].isCompleted = true
+        updateWorkoutLiveActivity()
+        
+        // Stop the set timer
+        activeSetTimer = nil
+        
+        // Start rest timer for 180 seconds
+        let duration: TimeInterval = 180 // 3 minutes as requested
+        let endTime = Date().addingTimeInterval(duration)
+        activeRestTimer = RestTimerState(
+            endTime: endTime,
+            setContext: "Set \(timer.setNumber)",
+            exerciseName: timer.exerciseName
+        )
+        
+        // Start rest timer Live Activity and notification
+        RestTimerActivityManager.shared.start(endTime: endTime)
+        NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
+        
         // Auto-dismiss timer when it expires
         restTimerCancellable?.cancel()
         restTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)

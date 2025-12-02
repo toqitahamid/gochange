@@ -4,37 +4,21 @@ struct MainTabView: View {
     @EnvironmentObject var workoutManager: WorkoutManager
     @Environment(\.modelContext) private var modelContext
     @State private var selectedTab = 0
+    @State private var showingActiveWorkout = false
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            // Home Tab - shows active workout if running, else HomeView
-            Group {
-                if workoutManager.isWorkoutActive && !workoutManager.isMinimized,
-                   let workoutDay = workoutManager.currentWorkoutDay {
-                    ActiveWorkoutView(workoutDay: workoutDay)
-                } else {
-                    HomeView()
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
                 }
-            }
-            .tabItem {
-                Label("Home", systemImage: "house.fill")
-            }
-            .tag(0)
+                .tag(0)
             
-            // Workout Tab - shows active workout if running
-            Group {
-                if workoutManager.isWorkoutActive && !workoutManager.isMinimized,
-                   let workoutDay = workoutManager.currentWorkoutDay {
-                    ActiveWorkoutView(workoutDay: workoutDay)
-                } else {
-                    WorkoutDaySelectionView()
+            WorkoutDaySelectionView()
+                .tabItem {
+                    Label("Workout", systemImage: "dumbbell.fill")
                 }
-            }
-            .tabItem {
-                Label("Workout", systemImage: "dumbbell.fill")
-            }
-            .tag(1)
-            
+                .tag(1)
             
             FitnessView()
                 .tabItem {
@@ -50,17 +34,30 @@ struct MainTabView: View {
                     .transition(.move(edge: .bottom))
             }
         }
-        .onChange(of: workoutManager.isWorkoutActive) { _, isActive in
-            // Switch to workout tab when starting a workout
-            if isActive && !workoutManager.isMinimized {
-                selectedTab = 1
+        .sheet(isPresented: $showingActiveWorkout, onDismiss: {
+            // When sheet is dismissed by swipe, minimize the workout
+            if workoutManager.isWorkoutActive {
+                workoutManager.minimize()
+            }
+        }) {
+            if let workoutDay = workoutManager.currentWorkoutDay {
+                ActiveWorkoutView(workoutDay: workoutDay)
             }
         }
+        .onChange(of: workoutManager.isWorkoutActive) { _, isActive in
+            showingActiveWorkout = isActive && !workoutManager.isMinimized
+        }
         .onChange(of: workoutManager.isMinimized) { _, isMinimized in
-            // Stay on current tab when minimizing/maximizing
+            if workoutManager.isWorkoutActive {
+                showingActiveWorkout = !isMinimized
+            }
         }
         .onAppear {
             workoutManager.setModelContext(modelContext)
+            // Check if workout is already active
+            if workoutManager.isWorkoutActive && !workoutManager.isMinimized {
+                showingActiveWorkout = true
+            }
         }
     }
 }

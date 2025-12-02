@@ -51,16 +51,19 @@ struct MiniPlayerView: View {
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundColor(.primary)
                         
-                        // Live indicator
-                        Circle()
-                            .fill(Color(hex: "#00D4AA"))
-                            .frame(width: 6, height: 6)
+                        // Live indicator (hidden when paused)
+                        if !workoutManager.isPaused {
+                            Circle()
+                                .fill(Color(hex: "#00D4AA"))
+                                .frame(width: 6, height: 6)
+                        }
                     }
                     
                     HStack(spacing: 8) {
                         Text(elapsed.formattedDuration)
                             .font(.system(size: 12, weight: .medium, design: .rounded))
                             .foregroundColor(.secondary)
+                            .opacity(workoutManager.isPaused ? 0.5 : 1.0)
                         
                         Text("•")
                             .foregroundColor(.gray.opacity(0.5))
@@ -72,6 +75,18 @@ struct MiniPlayerView: View {
                 }
                 
                 Spacer()
+                
+                // Play/Pause Button
+                Button {
+                    workoutManager.togglePause()
+                } label: {
+                    Image(systemName: workoutManager.isPaused ? "play.fill" : "pause.fill")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(accentColor)
+                        .frame(width: 32, height: 32)
+                        .background(accentColor.opacity(0.15))
+                        .clipShape(Circle())
+                }
                 
                 // Resume Button
                 HStack(spacing: 6) {
@@ -104,7 +119,7 @@ struct MiniPlayerView: View {
                 }
             }
             .onReceive(timer) { _ in
-                if let startTime = workoutManager.startTime {
+                if let startTime = workoutManager.startTime, !workoutManager.isPaused {
                     elapsed = Date().timeIntervalSince(startTime)
                 }
             }

@@ -12,6 +12,7 @@ struct ExerciseWorkoutCard: View {
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
+    let onPlaySet: (Int) -> Void // New callback for starting set timer
 
     @State private var showingNotes = false
     @State private var showingHistory = false
@@ -55,7 +56,7 @@ struct ExerciseWorkoutCard: View {
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(Color(hex: "#F5F5F7"))
+        .background(Color.white)
         .sheet(isPresented: $showingNotes) {
             ExerciseNotesSheet(exerciseName: exerciseLog.exerciseName, notes: $exerciseLog.notes)
                 .presentationDetents([.medium])
@@ -213,33 +214,14 @@ struct ExerciseWorkoutCard: View {
     // MARK: - Set List Section
 
     private var setListSection: some View {
-        VStack(spacing: 0) {
-            // Section Header
-            HStack {
-                Text("SETS")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.8)
-                    .foregroundColor(.secondary)
-
-                Spacer()
-            }
-            .padding(.horizontal, 4)
-            .padding(.bottom, 12)
-
-            // Set Cards
-            VStack(spacing: 12) {
-                ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
-                    let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
-                    SetInputCard(
-                        setLog: $exerciseLog.sets[index],
-                        accentColor: accentColor,
-                        previousSet: previousSet,
-                        onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
-                        onToggleCompletion: { onToggleSetCompletion(index) }
-                    )
-                }
-            }
-        }
+        SetListSectionView(
+            exerciseLog: $exerciseLog,
+            previousSets: previousSets,
+            accentColor: accentColor,
+            onRemoveSet: onRemoveSet,
+            onToggleSetCompletion: onToggleSetCompletion,
+            onPlaySet: onPlaySet
+        )
     }
 
     // MARK: - Exercise Actions Row
@@ -265,6 +247,28 @@ struct ExerciseWorkoutCard: View {
                         .stroke(accentColor.opacity(0.2), lineWidth: 1.5)
                 )
             }
+            
+            // Previous Button
+            Button {
+                showingHistory = true
+            } label: {
+                HStack(spacing: 8) {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 16))
+                    Text("Previous")
+                        .font(.system(size: 15, weight: .semibold))
+                }
+                .foregroundColor(.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 14)
+                .background(Color.white)
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
+                )
+            }
 
             // Exercise Notes Button
             Button {
@@ -287,6 +291,78 @@ struct ExerciseWorkoutCard: View {
                         .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                 )
             }
+        }
+    }
+}
+
+// MARK: - Set List Section View
+struct SetListSectionView: View {
+    @Binding var exerciseLog: ExerciseLog
+    let previousSets: [PreviousSetInfo]
+    let accentColor: Color
+    let onRemoveSet: (Int) -> Void
+    let onToggleSetCompletion: (Int) -> Void
+    let onPlaySet: (Int) -> Void
+    
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
+    
+    var body: some View {
+        VStack(spacing: 0) {
+            // Column Headers
+            HStack(spacing: 0) {
+                Text("SET")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 50, alignment: .leading)
+                
+                Text(weightUnit.uppercased())
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 90, alignment: .center)
+                
+                Text("REPS")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 90, alignment: .center)
+                
+                Text("RIR")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 60, alignment: .center)
+                
+                Spacer()
+                    .frame(width: 44) // For the play button column
+            }
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+
+            // Set Rows
+            VStack(spacing: 0) {
+                ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
+                    let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
+                    
+                    SetInputCard(
+                        setLog: $exerciseLog.sets[index],
+                        accentColor: accentColor,
+                        previousSet: previousSet,
+                        onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
+                        onToggleCompletion: { onToggleSetCompletion(index) },
+                        onPlaySet: { onPlaySet(index) }
+                    )
+                    
+                    if index < exerciseLog.sets.count - 1 {
+                        Divider()
+                            .padding(.leading, 20)
+                    }
+                }
+            }
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+            )
         }
     }
 }

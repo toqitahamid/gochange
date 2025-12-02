@@ -7,6 +7,7 @@ struct PreviousWorkoutHistorySheet: View {
     let accentColor: Color
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("weightUnit") private var weightUnit: String = "lbs"
 
     @State private var historyData: [WorkoutHistoryEntry] = []
 
@@ -20,6 +21,7 @@ struct PreviousWorkoutHistorySheet: View {
             let setNumber: Int
             let weight: Double?
             let reps: Int?
+            let rir: Int?
             let setType: SetLog.SetType
             let isCompleted: Bool
         }
@@ -51,17 +53,17 @@ struct PreviousWorkoutHistorySheet: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 16)
             }
-            .background(Color(hex: "#F5F5F7"))
-            .navigationTitle("Previous Workouts")
+            .background(Color.white)
+            .navigationTitle("Last workout on \(historyData.first?.date.formatted(date: .abbreviated, time: .omitted) ?? "")")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+                ToolbarItem(placement: .navigationBarLeading) {
                     Button {
                         dismiss()
                     } label: {
-                        Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(.gray.opacity(0.6))
+                        Image(systemName: "xmark")
+                            .font(.system(size: 18))
+                            .foregroundColor(.primary)
                     }
                 }
             }
@@ -91,82 +93,113 @@ struct PreviousWorkoutHistorySheet: View {
     }
 
     private func historyEntryCard(_ entry: WorkoutHistoryEntry) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Header
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(entry.date.formatted(date: .abbreviated, time: .omitted))
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.primary)
-
-                    Text(entry.date.formatted(date: .omitted, time: .shortened))
-                        .font(.system(size: 13, weight: .medium))
-                        .foregroundColor(.secondary)
-                }
-
+        VStack(spacing: 0) {
+            // Column Headers
+            HStack(spacing: 0) {
+                Text("SET")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 60, alignment: .leading)
+                
+                Text(weightUnit.uppercased())
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 80, alignment: .center)
+                
                 Spacer()
-
-                // Volume Badge
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("Volume")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundColor(.secondary)
-                    Text(String(format: "%.0f lbs", entry.totalVolume))
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(accentColor)
-                }
+                
+                Text("REPS")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 80, alignment: .center)
+                
+                Text("RIR")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+                    .frame(width: 50, alignment: .center)
             }
-
-            Divider()
-
-            // Sets List
-            VStack(spacing: 8) {
-                ForEach(entry.sets) { set in
-                    HStack {
-                        // Set Type Badge
-                        HStack(spacing: 6) {
-                            Image(systemName: set.setType.icon)
-                                .font(.system(size: 10, weight: .semibold))
-                            Text("Set \(set.setNumber)")
-                                .font(.system(size: 13, weight: .semibold))
+            .padding(.horizontal, 20)
+            .padding(.bottom, 12)
+            
+            // Set Rows
+            VStack(spacing: 0) {
+                ForEach(Array(entry.sets.enumerated()), id: \.element.id) { index, set in
+                    HStack(spacing: 0) {
+                        // SET indicator
+                        Group {
+                            switch set.setType {
+                            case .normal:
+                                Text("\(set.setNumber)")
+                                    .font(.system(size: 17, weight: .medium))
+                                    .foregroundColor(.primary)
+                                
+                            case .warmup:
+                                ZStack {
+                                    Circle()
+                                        .stroke(Color.orange, lineWidth: 2)
+                                        .frame(width: 28, height: 28)
+                                    
+                                    Image(systemName: "flame.fill")
+                                        .font(.system(size: 12))
+                                        .foregroundColor(.orange)
+                                }
+                                
+                            case .cooldown:
+                                Image(systemName: "snowflake")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.blue)
+                                
+                            case .failure:
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.red)
+                                
+                            case .dropset:
+                                Image(systemName: "arrow.down.right")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.purple)
+                            }
                         }
-                        .foregroundColor(Color(hex: set.setType.color))
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule()
-                                .fill(Color(hex: set.setType.color).opacity(0.12))
-                        )
-
+                        .frame(width: 60)
+                        
+                        // Weight
+                        Text(set.weight != nil ? "\(Int(set.weight!))" : "-")
+                            .font(.system(size: 17))
+                            .foregroundColor(.primary)
+                            .frame(width: 80)
+                        
                         Spacer()
-
-                        // Weight x Reps
-                        if let weight = set.weight, let reps = set.reps {
-                            Text("\(Int(weight)) × \(reps)")
-                                .font(.system(size: 15, weight: .semibold, design: .rounded))
-                                .foregroundColor(.primary)
-                        } else {
-                            Text("—")
-                                .font(.system(size: 15, weight: .medium))
-                                .foregroundColor(.secondary)
-                        }
-
-                        // Completion Indicator
-                        Image(systemName: set.isCompleted ? "checkmark.circle.fill" : "circle")
-                            .font(.system(size: 18))
-                            .foregroundColor(set.isCompleted ? Color(hex: "#00D4AA") : .gray.opacity(0.3))
+                        
+                        // Reps
+                        Text(set.reps != nil ? "x\(set.reps!)" : "-")
+                            .font(.system(size: 17))
+                            .foregroundColor(.primary)
+                            .frame(width: 80)
+                        
+                        // RIR
+                        Text(set.rir != nil ? "\(set.rir!)" : "-")
+                            .font(.system(size: 17))
+                            .foregroundColor(.primary)
+                            .frame(width: 50)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 16)
+                    .background(set.isCompleted ? Color(hex: "#F5F5F7") : Color.white)
+                    
+                    if index < entry.sets.count - 1 {
+                        Divider()
+                            .padding(.leading, 20)
                     }
                 }
             }
+            .background(Color.white)
+            .cornerRadius(16)
+            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+            )
         }
-        .padding(16)
-        .background(Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.black.opacity(0.04), radius: 8, x: 0, y: 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
     }
 
     private func loadHistoryData() {
@@ -192,6 +225,7 @@ struct PreviousWorkoutHistorySheet: View {
                     setNumber: setLog.setNumber,
                     weight: setLog.weight,
                     reps: setLog.actualReps,
+                    rir: setLog.rir,
                     setType: setLog.setType,
                     isCompleted: setLog.isCompleted
                 )
@@ -199,7 +233,7 @@ struct PreviousWorkoutHistorySheet: View {
 
             return WorkoutHistoryEntry(date: session.date, sets: setData)
         }
-        .prefix(10) // Show last 10 workouts
+        .prefix(1) // Show only the last workout
         .map { $0 }
     }
 }
