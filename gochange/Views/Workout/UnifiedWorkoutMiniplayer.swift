@@ -255,3 +255,13 @@ struct UnifiedWorkoutMiniplayer: View {
     }
     .background(Color.gray.opacity(0.1))
 }
+
+// MARK: - TimeInterval Extension for Set Duration Formatting
+extension TimeInterval {
+    var formattedSetDuration: String {
+        let totalSeconds = Int(self)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+}

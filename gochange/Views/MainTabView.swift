@@ -29,9 +29,35 @@ struct MainTabView: View {
         .tint(AppTheme.accent)
         .overlay(alignment: .bottom) {
             if workoutManager.isWorkoutActive && workoutManager.isMinimized {
-                MiniPlayerView()
+                if let workoutDay = workoutManager.currentWorkoutDay {
+                    UnifiedWorkoutMiniplayer(
+                        workoutDayName: workoutDay.name,
+                        exerciseName: getCurrentExerciseName(),
+                        workoutStartTime: workoutManager.startTime ?? Date(),
+                        workoutIsPaused: workoutManager.isPaused,
+                        setTimerState: workoutManager.activeSetTimer,
+                        restTimerState: workoutManager.activeRestTimer,
+                        currentHeartRate: workoutManager.currentHeartRate,
+                        accentColor: Color(hex: workoutDay.colorHex),
+                        onExpand: {
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                                workoutManager.resume()
+                            }
+                        },
+                        onPauseSession: {
+                            workoutManager.pause()
+                        },
+                        onResumeSession: {
+                            workoutManager.resumeWorkout()
+                        },
+                        onStopSet: {
+                            workoutManager.stopSetTimer()
+                        }
+                    )
+                    .padding(.horizontal, 16)
                     .padding(.bottom, 49) // Standard tab bar height
                     .transition(.move(edge: .bottom))
+                }
             }
         }
         .sheet(isPresented: $showingActiveWorkout, onDismiss: {
@@ -59,6 +85,18 @@ struct MainTabView: View {
                 showingActiveWorkout = true
             }
         }
+    }
+    
+    private func getCurrentExerciseName() -> String? {
+        // If there's an active set timer, use that exercise
+        if let setTimer = workoutManager.activeSetTimer {
+            return setTimer.exerciseName
+        }
+        // Otherwise use the first exercise or current one
+        if !workoutManager.exerciseLogs.isEmpty {
+            return workoutManager.exerciseLogs.first?.exerciseName
+        }
+        return nil
     }
 }
 
