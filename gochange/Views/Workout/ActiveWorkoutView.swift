@@ -15,6 +15,14 @@ struct ActiveWorkoutView: View {
     @State private var showingRPEInput = false
     @State private var rpeValue: Double = 7.0
     @State private var currentExerciseIndex: Int = 0
+    @State private var showingRestTimerAlert = false
+    @State private var showingSetConflictAlert = false
+    @State private var pendingSetStart: PendingSetStart?
+    
+    private struct PendingSetStart {
+        let exerciseIndex: Int
+        let setIndex: Int
+    }
     
     // Track completed sets for live activity
     private var completedSetsCount: Int {
@@ -63,7 +71,15 @@ struct ActiveWorkoutView: View {
                                     workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
                                 },
                                 onPlaySet: { setIndex in
-                                    workoutManager.startSetTimer(exerciseIndex: index, setIndex: setIndex)
+                                    if workoutManager.activeSetTimer != nil {
+                                        pendingSetStart = PendingSetStart(exerciseIndex: index, setIndex: setIndex)
+                                        showingSetConflictAlert = true
+                                    } else if workoutManager.activeRestTimer != nil {
+                                        pendingSetStart = PendingSetStart(exerciseIndex: index, setIndex: setIndex)
+                                        showingRestTimerAlert = true
+                                    } else {
+                                        workoutManager.startSetTimer(exerciseIndex: index, setIndex: setIndex)
+                                    }
                                 },
                                 onPauseSet: {
                                     workoutManager.pauseSetTimer()
@@ -140,17 +156,42 @@ struct ActiveWorkoutView: View {
         } message: {
             Text("Great job! This workout will be saved to your history.")
         }
+        .alert("Stop Rest Timer?", isPresented: $showingRestTimerAlert) {
+            Button("Cancel", role: .cancel) {
+                pendingSetStart = nil
+            }
+            Button("Start Set") {
+                if let pending = pendingSetStart {
+                    workoutManager.stopRestTimer()
+                    workoutManager.startSetTimer(exerciseIndex: pending.exerciseIndex, setIndex: pending.setIndex)
+                    pendingSetStart = nil
+                }
+            }
+        } message: {
+            Text("A rest timer is currently running. Do you want to stop it and start your set?")
+        }
+        .alert("Stop Current Set?", isPresented: $showingSetConflictAlert) {
+            Button("Cancel", role: .cancel) {
+                pendingSetStart = nil
+            }
+            Button("Stop & Start New") {
+                if let pending = pendingSetStart {
+                    workoutManager.stopSetTimer()
+                    workoutManager.stopRestTimer() // Cancel the auto-rest that stopSetTimer starts
+                    workoutManager.startSetTimer(exerciseIndex: pending.exerciseIndex, setIndex: pending.setIndex)
+                    pendingSetStart = nil
+                }
+            }
+        } message: {
+            Text("A set is currently running. Do you want to stop it and start this one?")
+        }
         .onAppear {
             currentExerciseIndex = 0
         }
         .onChange(of: completedSetsCount) { oldValue, newValue in
             // Live activity update is handled in WorkoutManager
         }
-        .sheet(isPresented: $workoutManager.showingRestTimer) {
-            RestTimerView(isPresented: $workoutManager.showingRestTimer)
-                .presentationDetents([.medium])
-                .presentationDragIndicator(.visible)
-        }
+
         .sheet(isPresented: $workoutManager.showingSessionNotes) {
             SessionNotesSheet(notes: $workoutManager.sessionNotes)
                 .presentationDetents([.medium])
@@ -347,27 +388,7 @@ struct WorkoutTimerCard: View {
                 Spacer()
                 
                 VStack(spacing: 10) {
-                    // Rest Timer Button
-                    Button(action: onRestTap) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "timer")
-                                .font(.system(size: 16))
-                            Text("Rest")
-                                .font(.system(size: 15, weight: .semibold))
-                        }
-                        .foregroundColor(.white)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 12)
-                        .background(
-                            LinearGradient(
-                                colors: [accentColor, accentColor.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .cornerRadius(25)
-                        .shadow(color: accentColor.opacity(0.4), radius: 8, y: 4)
-                    }
+
                     
                     // Notes Button
                     Button(action: onNotesTap) {
