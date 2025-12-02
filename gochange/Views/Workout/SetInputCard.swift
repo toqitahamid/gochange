@@ -5,13 +5,16 @@ struct SetInputCard: View {
     let accentColor: Color
     let previousSet: PreviousSetInfo?
     let isPlaying: Bool
+    let weightUnit: String
     let onRemove: (() -> Void)?
     let onToggleCompletion: () -> Void
     let onPlaySet: () -> Void
     let onPauseSet: () -> Void
+    let onUpdateWeight: ((Double, String, Bool) -> Void)?
 
     @State private var weightText: String = ""
     @State private var repsText: String = ""
+    @State private var showWeightSheet = false
     @FocusState private var focusedField: Field?
 
     enum Field {
@@ -118,16 +121,33 @@ struct SetInputCard: View {
             .disabled(setLog.isCompleted)
             
             // Weight
-            TextField("0", text: $weightText)
-                .keyboardType(.decimalPad)
-                .multilineTextAlignment(.center)
-                .font(.system(size: 17))
-                .foregroundColor(.primary)
-                .frame(width: 90)
-                .disabled(setLog.isCompleted)
-                .onChange(of: weightText) { _, newValue in
-                    setLog.weight = Double(newValue)
-                }
+            Button {
+                showWeightSheet = true
+            } label: {
+                Text(weightText.isEmpty ? "0" : weightText)
+                    .font(.system(size: 17))
+                    .foregroundColor(.primary)
+                    .frame(width: 90)
+                    .contentShape(Rectangle())
+            }
+            .disabled(setLog.isCompleted)
+            .sheet(isPresented: $showWeightSheet) {
+                WeightInputSheet(
+                    initialWeight: setLog.weight,
+                    initialUnit: weightUnit,
+                    onSave: { newWeight, newUnit, applyToNext in
+                        // Update local state
+                        setLog.weight = newWeight
+                        weightText = String(format: "%.0f", newWeight)
+                        
+                        // Notify parent
+                        onUpdateWeight?(newWeight, newUnit, applyToNext)
+                        
+                        // Note: handling unit change globally might be needed if user changes unit here
+                        // But for now we just pass the value.
+                    }
+                )
+            }
             
             // REPS
             TextField("0", text: $repsText)

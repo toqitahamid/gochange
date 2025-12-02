@@ -338,10 +338,24 @@ struct SetListSectionView: View {
                         accentColor: accentColor,
                         previousSet: previousSet,
                         isPlaying: isPlaying,
+                        weightUnit: weightUnit,
                         onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
                         onToggleCompletion: { onToggleSetCompletion(index) },
                         onPlaySet: { onPlaySet(index) },
-                        onPauseSet: onPauseSet
+                        onPauseSet: onPauseSet,
+                        onUpdateWeight: { newWeight, newUnit, applyToNext in
+                            // Update unit if changed
+                            if newUnit != weightUnit {
+                                weightUnit = newUnit
+                            }
+                            
+                            // Apply to next sets if requested
+                            if applyToNext {
+                                for i in (index + 1)..<exerciseLog.sets.count {
+                                    exerciseLog.sets[i].weight = newWeight
+                                }
+                            }
+                        }
                     )
                     
                     if index < exerciseLog.sets.count - 1 {

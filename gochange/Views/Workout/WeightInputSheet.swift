@@ -30,7 +30,8 @@ struct WeightInputSheet: View {
                 Button("Cancel") {
                     dismiss()
                 }
-                .foregroundColor(.secondary)
+                .foregroundColor(.primary)
+                .font(.system(size: 17))
                 
                 Spacer()
                 
@@ -46,37 +47,35 @@ struct WeightInputSheet: View {
                         dismiss()
                     }
                 }
-                .fontWeight(.bold)
-                .foregroundColor(Color(hex: "#00D4AA"))
+                .font(.system(size: 17, weight: .bold))
+                .foregroundColor(.primary)
             }
-            .padding()
-            
-            Spacer().frame(height: 20)
+            .padding(.horizontal, 24)
+            .padding(.top, 20)
+            .padding(.bottom, 10)
             
             // Input Display
-            HStack {
+            HStack(spacing: 4) {
                 Text(inputValue.isEmpty ? "0" : inputValue)
-                    .font(.system(size: 40, weight: .medium))
+                    .font(.system(size: 28, weight: .semibold, design: .rounded))
                     .foregroundColor(.primary)
                 
                 // Cursor simulation (blinking)
-                Rectangle()
-                    .fill(Color.blue)
-                    .frame(width: 2, height: 30)
-                    .opacity(1) // Could animate blinking if desired
+                if !inputValue.isEmpty || true {
+                    Rectangle()
+                        .fill(Color.blue)
+                        .frame(width: 2.5, height: 32)
+                        .cornerRadius(1.25)
+                }
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 10)
-            .background(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(Color.gray.opacity(0.3), lineWidth: 1)
-            )
-            .padding(.horizontal, 20)
-            
-            Spacer().frame(height: 20)
+            .frame(height: 60)
+            .background(Color(UIColor.secondarySystemBackground))
+            .cornerRadius(20)
+            .padding(.horizontal, 24)
             
             // Unit Selector
-            HStack(spacing: 20) {
+            HStack(spacing: 0) {
                 UnitButton(title: "lbs", isSelected: selectedUnit == "lbs") {
                     selectedUnit = "lbs"
                 }
@@ -85,10 +84,10 @@ struct WeightInputSheet: View {
                     selectedUnit = "kg"
                 }
             }
-            .padding(.bottom, 20)
+            .padding(.vertical, 10)
             
             // Keypad
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 15) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 6) {
                 ForEach(1...9, id: \.self) { number in
                     KeypadButton(text: "\(number)") {
                         appendCharacter("\(number)")
@@ -110,35 +109,36 @@ struct WeightInputSheet: View {
                         inputValue.removeLast()
                     }
                 } label: {
-                    Image(systemName: "delete.left")
+                    Image(systemName: "delete.left.fill")
                         .font(.title2)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .foregroundColor(.primary)
+                        .foregroundColor(.secondary)
                 }
-                .frame(height: 60)
+                .frame(height: 50)
             }
             .padding(.horizontal, 40)
             
-            Spacer().frame(height: 30)
+            Spacer()
             
             // Apply to next sets
             Button {
                 applyToNextSets.toggle()
             } label: {
-                HStack {
-                    Text("Apply to next sets")
-                        .foregroundColor(.primary)
-                    
+                HStack(spacing: 10) {
                     Image(systemName: applyToNextSets ? "checkmark.circle.fill" : "circle")
-                        .foregroundColor(applyToNextSets ? Color(hex: "#00D4AA") : .gray)
+                        .foregroundColor(applyToNextSets ? .primary : .secondary.opacity(0.3))
                         .font(.system(size: 22))
+                    
+                    Text("Apply to next sets")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.primary)
                 }
             }
-            .padding(.bottom, 30)
+            .padding(.bottom, 20)
         }
         .background(Color(UIColor.systemBackground))
-        .presentationDetents([.fraction(0.6)]) // Half sized sheet roughly
-        .presentationDragIndicator(.visible)
+        .presentationDetents([.fraction(0.65)])
+        .presentationDragIndicator(.hidden) // Show indicator to push content down naturally
     }
     
     private func appendCharacter(_ char: String) {
@@ -162,10 +162,10 @@ struct UnitButton: View {
     var body: some View {
         Button(action: action) {
             Text(title)
-                .font(.system(size: 16, weight: .medium))
-                .foregroundColor(isSelected ? .white : .primary)
-                .frame(width: 50, height: 50)
-                .background(isSelected ? Color.primary : Color.clear) // Dark circle for selected
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundColor(isSelected ? Color(UIColor.systemBackground) : .primary)
+                .frame(width: 44, height: 44)
+                .background(isSelected ? Color.primary : Color.clear)
                 .clipShape(Circle())
         }
     }
@@ -178,7 +178,7 @@ struct KeypadButton: View {
     var body: some View {
         Button(action: action) {
             Text(text)
-                .font(.title)
+                .font(.system(size: 28, weight: .medium))
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .foregroundColor(.primary)
         }
@@ -186,30 +186,4 @@ struct KeypadButton: View {
     }
 }
 
-// Helper for hex color
-extension Color {
-    init(hex: String) {
-        let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
-        var int: UInt64 = 0
-        Scanner(string: hex).scanHexInt64(&int)
-        let a, r, g, b: UInt64
-        switch hex.count {
-        case 3: // RGB (12-bit)
-            (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
-        case 6: // RGB (24-bit)
-            (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
-        case 8: // ARGB (32-bit)
-            (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default:
-            (a, r, g, b) = (1, 1, 1, 0)
-        }
-        
-        self.init(
-            .sRGB,
-            red: Double(r) / 255,
-            green: Double(g) / 255,
-            blue: Double(b) / 255,
-            opacity: Double(a) / 255
-        )
-    }
-}
+
