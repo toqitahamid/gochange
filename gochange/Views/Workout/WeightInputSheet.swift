@@ -118,7 +118,7 @@ struct WeightInputSheet: View {
             }
             .padding(.horizontal, 40)
             
-            Spacer()
+            Spacer().frame(height: 20)
             
             // Apply to next sets
             Button {
