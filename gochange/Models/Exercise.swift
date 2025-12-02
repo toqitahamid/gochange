@@ -6,6 +6,7 @@ final class Exercise {
     @Attribute(.unique) var id: UUID
     var name: String
     var defaultSets: Int
+    var defaultWeight: Double?
     var defaultReps: String       // String to handle ranges like "6-8"
     var muscleGroup: String
     var notes: String?
@@ -18,11 +19,12 @@ final class Exercise {
         case video
     }
     
-    init(name: String, defaultSets: Int, defaultReps: String, muscleGroup: String) {
+    init(name: String, defaultSets: Int, defaultReps: String, defaultWeight: Double? = nil, muscleGroup: String) {
         self.id = UUID()
         self.name = name
         self.defaultSets = defaultSets
         self.defaultReps = defaultReps
+        self.defaultWeight = defaultWeight
         self.muscleGroup = muscleGroup
     }
 }

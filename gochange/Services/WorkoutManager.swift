@@ -438,6 +438,15 @@ class WorkoutManager: ObservableObject {
                     targetReps: exercise.defaultReps,
                     weightUnit: unit
                 )
+                if let defaultWeight = exercise.defaultWeight {
+                    setLog.weight = defaultWeight
+                }
+                
+                // Pre-fill actual reps if target is a simple number
+                if let reps = Int(exercise.defaultReps) {
+                    setLog.actualReps = reps
+                }
+                
                 log.sets.append(setLog)
             }
             
@@ -466,6 +475,27 @@ class WorkoutManager: ObservableObject {
         guard exerciseIndex < exerciseLogs.count,
               setIndex < exerciseLogs[exerciseIndex].sets.count,
               exerciseLogs[exerciseIndex].sets.count > 1 else { return }
+        
+        // Check if we are removing the currently active set
+        if let timer = activeSetTimer, timer.exerciseIndex == exerciseIndex {
+            if timer.setIndex == setIndex {
+                // We are removing the active set - stop the timer
+                activeSetTimer = nil
+            } else if timer.setIndex > setIndex {
+                // We are removing a set before the active one - shift the index down
+                activeSetTimer = SetTimerState(
+                    startTime: timer.startTime,
+                    exerciseName: timer.exerciseName,
+                    exerciseIndex: timer.exerciseIndex,
+                    setIndex: timer.setIndex - 1,
+                    setNumber: timer.setNumber - 1, // Assuming set numbers are sequential
+                    setType: timer.setType,
+                    isPaused: timer.isPaused,
+                    pauseStartTime: timer.pauseStartTime,
+                    totalPausedDuration: timer.totalPausedDuration
+                )
+            }
+        }
         
         exerciseLogs[exerciseIndex].sets.remove(at: setIndex)
         

@@ -37,7 +37,7 @@ struct DefaultWorkoutData {
                 dayNumber: 3,
                 colorHex: "#5DADE2",  // Light Blue
                 exercises: [
-                    Exercise(name: "Squat", defaultSets: 3, defaultReps: "6-8", muscleGroup: "Quads"),
+                    Exercise(name: "Squat", defaultSets: 3, defaultReps: "8", muscleGroup: "Quads"),
                     Exercise(name: "Dumbbell RDL", defaultSets: 3, defaultReps: "8", muscleGroup: "Hamstrings"),
                     Exercise(name: "Leg Press", defaultSets: 3, defaultReps: "12", muscleGroup: "Quads"),
                     Exercise(name: "Leg Extensions", defaultSets: 3, defaultReps: "12", muscleGroup: "Quads"),
