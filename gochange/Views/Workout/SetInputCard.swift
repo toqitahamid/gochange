@@ -171,12 +171,10 @@ struct SetInputCard: View {
                 RepsDurationInputSheet(
                     initialReps: setLog.actualReps,
                     initialDuration: setLog.duration,
-                    initialRir: setLog.rir,
-                    onSave: { reps, duration, rir, applyToNext in
+                    onSave: { reps, duration, applyToNext in
                         // Update local state
                         setLog.actualReps = reps
                         setLog.duration = duration
-                        setLog.rir = rir
                         
                         // Update display text
                         if let reps = reps {
