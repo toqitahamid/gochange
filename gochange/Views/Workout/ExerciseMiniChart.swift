@@ -12,10 +12,18 @@ struct ExerciseMiniChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("RECENT PROGRESS")
-                    .font(.system(size: 10, weight: .bold))
-                    .tracking(1.2)
-                    .foregroundColor(.secondary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("MAX WEIGHT TREND")
+                        .font(.system(size: 9, weight: .bold))
+                        .tracking(1.5)
+                        .foregroundColor(.secondary.opacity(0.8))
+                    
+                    if let latest = historyData.last {
+                        Text("\(Int(latest.maxWeight)) lbs")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                    }
+                }
 
                 Spacer()
 
@@ -24,10 +32,16 @@ struct ExerciseMiniChart: View {
                     if change != 0 {
                         HStack(spacing: 3) {
                             Image(systemName: change > 0 ? "arrow.up.right" : "arrow.down.right")
-                                .font(.system(size: 8, weight: .bold))
-                            Text("\(change > 0 ? "+" : "")\(Int(change)) lbs")
-                                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                                .font(.system(size: 10, weight: .bold))
+                            Text("\(change > 0 ? "+" : "")\(Int(change))")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
                         }
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(
+                            Capsule()
+                                .fill(change > 0 ? Color(hex: "#00D4AA").opacity(0.1) : Color(hex: "#FF6B6B").opacity(0.1))
+                        )
                         .foregroundColor(change > 0 ? Color(hex: "#00D4AA") : Color(hex: "#FF6B6B"))
                     }
                 }

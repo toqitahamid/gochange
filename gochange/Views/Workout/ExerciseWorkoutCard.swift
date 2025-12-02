@@ -77,140 +77,119 @@ struct ExerciseWorkoutCard: View {
 
     private var exerciseHeaderSection: some View {
         VStack(spacing: 16) {
-            // Superset/Circuit Indicator (if grouped)
-            if let groupType = exerciseLog.groupType {
-                HStack(spacing: 8) {
-                    Image(systemName: groupType.icon)
-                        .font(.system(size: 12, weight: .semibold))
-                    Text(groupType.displayName)
-                        .font(.system(size: 13, weight: .bold))
-                        .tracking(1.2)
-                    Spacer()
+            // Top Row: Progress & Previous
+            HStack {
+                // Progress Dots
+                HStack(spacing: 6) {
+                    ForEach(0..<totalExercises, id: \.self) { index in
+                        Circle()
+                            .fill(index < exerciseNumber - 1 ? Color(hex: "#00D4AA") :
+                                  index == exerciseNumber - 1 ? accentColor :
+                                  Color.gray.opacity(0.3))
+                            .frame(width: 6, height: 6)
+                    }
                 }
-                .foregroundColor(Color(hex: groupType.color))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 8)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(hex: groupType.color).opacity(0.12))
-                )
-            }
-
-            // Progress Indicator
-            HStack(spacing: 8) {
-                ForEach(0..<totalExercises, id: \.self) { index in
-                    Circle()
-                        .fill(index < exerciseNumber - 1 ? Color(hex: "#00D4AA") :
-                              index == exerciseNumber - 1 ? accentColor :
-                              Color.gray.opacity(0.3))
-                        .frame(width: 8, height: 8)
-                }
-
+                
                 Spacer()
-
-                Text("Exercise \(exerciseNumber) of \(totalExercises)")
-                    .font(.system(size: 11, weight: .bold))
-                    .tracking(1.2)
-                    .foregroundColor(.secondary)
-
+                
                 // Previous Workout Button
                 Button {
                     showingHistory = true
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("Previous")
-                            .font(.system(size: 11, weight: .semibold))
+                            .font(.system(size: 12, weight: .semibold))
+                        Text("History")
+                            .font(.system(size: 12, weight: .semibold))
                     }
                     .foregroundColor(accentColor)
-                    .padding(.horizontal, 10)
+                    .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(
-                        Capsule()
-                            .fill(accentColor.opacity(0.12))
-                    )
+                    .background(accentColor.opacity(0.1))
+                    .clipShape(Capsule())
                 }
             }
-
-            // Exercise Name and Info
+            
+            // Exercise Info
             VStack(alignment: .leading, spacing: 8) {
-                HStack {
+                HStack(alignment: .top) {
                     Text(exerciseLog.exerciseName)
-                        .font(.system(size: 24, weight: .bold))
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundColor(.primary)
-
+                        .fixedSize(horizontal: false, vertical: true)
+                    
                     Spacer()
-
-                    // Three-dots menu
+                    
+                    // Menu Button
                     Menu {
                         Button {
                             // TODO: Implement replace exercise
                         } label: {
                             Label("Replace Exercise", systemImage: "arrow.triangle.2.circlepath")
                         }
-
+                        
                         Button {
-                            // TODO: Implement reorder (move up/down)
+                            // TODO: Implement reorder
                         } label: {
                             Label("Reorder Exercise", systemImage: "arrow.up.arrow.down")
                         }
-
+                        
                         Button {
                             showingNotes = true
                         } label: {
                             Label("Add Notes", systemImage: "note.text")
                         }
-
+                        
                         Divider()
-
+                        
                         Button(role: .destructive) {
-                            // TODO: Implement delete exercise
+                            // TODO: Implement delete
                         } label: {
                             Label("Delete Exercise", systemImage: "trash")
                         }
                     } label: {
-                        Image(systemName: "ellipsis.circle.fill")
-                            .font(.system(size: 24))
-                            .foregroundColor(.gray.opacity(0.6))
+                        Image(systemName: "ellipsis")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.gray)
+                            .frame(width: 32, height: 32)
+                            .background(Color.gray.opacity(0.1))
+                            .clipShape(Circle())
                     }
                 }
-
+                
                 if let exercise = exercise {
                     HStack(spacing: 12) {
-                        HStack(spacing: 4) {
+                        // Muscle Group Badge
+                        HStack(spacing: 6) {
                             Image(systemName: "figure.strengthtraining.traditional")
-                                .font(.system(size: 12))
-                                .foregroundColor(.secondary)
-                            Text(exercise.muscleGroup)
-                                .font(.system(size: 14))
-                                .foregroundColor(.secondary)
+                                .font(.system(size: 10))
+                            Text(exercise.muscleGroup.uppercased())
+                                .font(.system(size: 10, weight: .bold))
+                                .tracking(1)
                         }
-
-                        Text("•")
-                            .foregroundColor(.secondary)
-
+                        .foregroundColor(.secondary)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(6)
+                        
+                        // Set Completion Status
                         HStack(spacing: 4) {
                             Text("\(completedSets)/\(exerciseLog.sets.count)")
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
                                 .foregroundColor(completedSets == exerciseLog.sets.count ? Color(hex: "#00D4AA") : .secondary)
-                            Text("sets complete")
-                                .font(.system(size: 14))
+                            Text("sets")
+                                .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.secondary)
                         }
                     }
                 }
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(20)
         .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 5)
     }
 
     // MARK: - Set List Section

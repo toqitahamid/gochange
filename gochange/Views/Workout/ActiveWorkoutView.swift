@@ -213,54 +213,84 @@ struct ActiveWorkoutView: View {
 
     private var workoutHeaderBar: some View {
         VStack(spacing: 0) {
-            // Top controls row
-            HStack(alignment: .top) {
-                // Timer display - left aligned
-                if let startTime = workoutManager.startTime {
-                    WorkoutTimerDisplay(startTime: startTime, isPaused: workoutManager.isPaused)
-                }
+            // Top Bar
+            ZStack {
+                // Center: Workout Name
+                Text(workoutDay.name.uppercased())
+                    .font(.system(size: 14, weight: .bold))
+                    .tracking(1.5)
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+                    .padding(.horizontal, 60) // Avoid overlapping with side items
                 
-                Spacer()
-                
-                // Pause and Close buttons
-                HStack(spacing: 12) {
-                    Button {
-                        workoutManager.togglePause()
-                    } label: {
-                        Image(systemName: workoutManager.isPaused ? "play.fill" : "pause.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(.primary)
-                            .frame(width: 36, height: 36)
+                // Left & Right Items
+                HStack {
+                    // Timer
+                    if let startTime = workoutManager.startTime {
+                        WorkoutElapsedTime(startTime: startTime)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.gray.opacity(0.1))
+                            .cornerRadius(20)
                     }
                     
+                    Spacer()
+                    
+                    // Close Button
                     Button {
                         showingCancelAlert = true
                     } label: {
                         Image(systemName: "xmark")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(Color(hex: "#FF6B6B"))
-                            .frame(width: 36, height: 36)
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundColor(Color.gray)
+                            .frame(width: 32, height: 32)
+                            .background(Color.gray.opacity(0.1))
+                            .clipShape(Circle())
                     }
                 }
             }
             .padding(.horizontal, 20)
             .padding(.top, 16)
-            .padding(.bottom, 8)
+            .padding(.bottom, 16)
             
-            // Complete button row
+            // Controls Row
             HStack {
+                // Pause/Resume
+                Button {
+                    workoutManager.togglePause()
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: workoutManager.isPaused ? "play.fill" : "pause.fill")
+                            .font(.system(size: 14))
+                        Text(workoutManager.isPaused ? "Resume" : "Pause")
+                            .font(.system(size: 14, weight: .semibold))
+                    }
+                    .foregroundColor(.primary)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Color.gray.opacity(0.1))
+                    .cornerRadius(20)
+                }
+                
                 Spacer()
                 
+                // Complete Button
                 Button {
                     showingRPEInput = true
                 } label: {
                     HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .font(.system(size: 14))
-                        Text("Complete")
-                            .font(.system(size: 15, weight: .semibold))
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                        Text("Finish Workout")
+                            .font(.system(size: 14, weight: .semibold))
                     }
-                    .foregroundColor(workoutManager.canComplete ? .primary : .secondary)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 20)
+                    .padding(.vertical, 8)
+                    .background(
+                        Capsule()
+                            .fill(workoutManager.canComplete ? Color(hex: "#00D4AA") : Color.gray)
+                    )
                 }
                 .disabled(!workoutManager.canComplete)
             }

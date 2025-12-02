@@ -84,19 +84,20 @@ struct ComparisonMetricCard: View {
     let accentColor: Color
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 6) {
             // Title
             Text(title)
-                .font(.system(size: 10, weight: .bold))
-                .tracking(1.2)
-                .foregroundColor(.secondary)
+                .font(.system(size: 9, weight: .bold))
+                .tracking(1.5)
+                .foregroundColor(.secondary.opacity(0.8))
 
             // Value
             Text(value)
-                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .font(.system(size: 22, weight: .bold, design: .rounded))
                 .foregroundColor(accentColor)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
+                .padding(.vertical, 2)
 
             // Subtitle with optional change indicator
             HStack(spacing: 4) {
@@ -110,22 +111,21 @@ struct ComparisonMetricCard: View {
                         .foregroundColor(change >= 0 ? Color(hex: "#00D4AA") : Color(hex: "#FF6B6B"))
                 } else {
                     Text(subtitle)
-                        .font(.system(size: 11, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.secondary.opacity(0.7))
                 }
             }
             .lineLimit(1)
             .minimumScaleFactor(0.8)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
+        .padding(.vertical, 16)
         .padding(.horizontal, 8)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color.gray.opacity(0.03))
+        .cornerRadius(20)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(accentColor.opacity(0.15), lineWidth: 1)
+            RoundedRectangle(cornerRadius: 20)
+                .stroke(Color.gray.opacity(0.05), lineWidth: 1)
         )
     }
 }
