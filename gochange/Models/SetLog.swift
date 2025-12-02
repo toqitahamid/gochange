@@ -9,6 +9,7 @@ final class SetLog {
     var actualReps: Int?
     var weight: Double?
     var weightUnit: WeightUnit
+    var duration: TimeInterval?   // Duration in seconds
     var rir: Int?                 // Reps In Reserve (0-5 typically)
     var isCompleted: Bool
     var setType: SetType

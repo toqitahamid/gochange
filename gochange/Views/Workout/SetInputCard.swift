@@ -15,6 +15,7 @@ struct SetInputCard: View {
     @State private var weightText: String = ""
     @State private var repsText: String = ""
     @State private var showWeightSheet = false
+    @State private var showRepsDurationSheet = false
     @FocusState private var focusedField: Field?
 
     enum Field {
@@ -22,10 +23,16 @@ struct SetInputCard: View {
     }
 
     private var previousDataText: String? {
-        guard let prev = previousSet,
-              let weight = prev.weight,
-              let reps = prev.reps else { return nil }
-        return "\(Int(weight))×\(reps)"
+        guard let prev = previousSet, let weight = prev.weight else { return nil }
+        
+        if let reps = prev.reps {
+            return "\(Int(weight))×\(reps)"
+        } else if let duration = prev.duration {
+            let minutes = Int(duration) / 60
+            let seconds = Int(duration) % 60
+            return "\(Int(weight))×\(String(format: "%d:%02d", minutes, seconds))"
+        }
+        return nil
     }
 
     var body: some View {
@@ -149,25 +156,44 @@ struct SetInputCard: View {
                 )
             }
             
-            // REPS
-            TextField("0", text: $repsText)
-                .keyboardType(.numberPad)
-                .multilineTextAlignment(.center)
-                .font(.system(size: 17))
-                .foregroundColor(.primary)
-                .frame(width: 90)
-                .disabled(setLog.isCompleted)
-                .onChange(of: repsText) { _, newValue in
-                    // Remove 'x' prefix if user types it
-                    let cleaned = newValue.replacingOccurrences(of: "x", with: "")
-                    if let reps = Int(cleaned) {
+            // REPS / DURATION
+            Button {
+                showRepsDurationSheet = true
+            } label: {
+                Text(repsText.isEmpty ? "-" : repsText)
+                    .font(.system(size: 17))
+                    .foregroundColor(.primary)
+                    .frame(width: 90)
+                    .contentShape(Rectangle())
+            }
+            .disabled(setLog.isCompleted)
+            .sheet(isPresented: $showRepsDurationSheet) {
+                RepsDurationInputSheet(
+                    initialReps: setLog.actualReps,
+                    initialDuration: setLog.duration,
+                    initialRir: setLog.rir,
+                    onSave: { reps, duration, rir, applyToNext in
+                        // Update local state
                         setLog.actualReps = reps
-                        // Update the text field to maintain 'x' prefix
-                        if !cleaned.isEmpty {
-                            repsText = "x\(cleaned)"
+                        setLog.duration = duration
+                        setLog.rir = rir
+                        
+                        // Update display text
+                        if let reps = reps {
+                            repsText = "\(reps)"
+                        } else if let duration = duration {
+                            let minutes = Int(duration) / 60
+                            let seconds = Int(duration) % 60
+                            repsText = String(format: "%d:%02d", minutes, seconds)
+                        } else {
+                            repsText = ""
                         }
+                        
+                        // Handle apply to next sets logic if needed
+                        // For now we just update the current set
                     }
-                }
+                )
+            }
             
             // RIR (Reps in Reserve)
             Menu {
@@ -230,8 +256,13 @@ struct SetInputCard: View {
                         setLog.weight = weight
                     }
                     if let reps = prev.reps {
-                        repsText = "x\(reps)"
+                        repsText = "\(reps)"
                         setLog.actualReps = reps
+                    } else if let duration = prev.duration {
+                        let minutes = Int(duration) / 60
+                        let seconds = Int(duration) % 60
+                        repsText = String(format: "%d:%02d", minutes, seconds)
+                        setLog.duration = duration
                     }
                 }
             }
@@ -240,8 +271,12 @@ struct SetInputCard: View {
             if let weight = setLog.weight, weightText.isEmpty {
                 weightText = String(format: "%.0f", weight)
             }
-            if let reps = setLog.actualReps, repsText.isEmpty {
-                repsText = "x\(reps)"
+            if let reps = setLog.actualReps {
+                repsText = "\(reps)"
+            } else if let duration = setLog.duration {
+                let minutes = Int(duration) / 60
+                let seconds = Int(duration) % 60
+                repsText = String(format: "%d:%02d", minutes, seconds)
             }
         }
     }

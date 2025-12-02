@@ -9,6 +9,7 @@ struct PreviousSetInfo {
     let setNumber: Int
     let weight: Double?
     let reps: Int?
+    let duration: TimeInterval?
     let weightUnit: SetLog.WeightUnit
 }
 
@@ -229,6 +230,7 @@ class WorkoutManager: ObservableObject {
                         setNumber: setLog.setNumber,
                         weight: setLog.weight,
                         reps: setLog.actualReps,
+                        duration: setLog.duration,
                         weightUnit: setLog.weightUnit
                     )
                 }
