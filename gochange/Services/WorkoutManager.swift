@@ -12,6 +12,21 @@ struct PreviousSetInfo {
     let weightUnit: SetLog.WeightUnit
 }
 
+// MARK: - Rest Timer State
+struct RestTimerState {
+    let endTime: Date
+    let setContext: String
+    let exerciseName: String
+
+    var remainingTime: TimeInterval {
+        endTime.timeIntervalSinceNow
+    }
+
+    var isExpired: Bool {
+        remainingTime <= 0
+    }
+}
+
 // MARK: - Widget Data Model (shared with widget)
 struct WidgetWorkoutData: Codable {
     let workoutsThisWeek: Int
@@ -68,10 +83,17 @@ class WorkoutManager: ObservableObject {
     
     // Previous workout data for reference
     @Published var previousSetData: [UUID: [PreviousSetInfo]] = [:]  // exerciseId -> sets
-    
+
+    // Auto rest timer
+    @Published var activeRestTimer: RestTimerState? = nil
+
+    // Progressive overload suggestions
+    @Published var suggestions: [UUID: OverloadSuggestion] = [:] // exerciseId -> suggestion
+
     // MARK: - Dependencies
     private var modelContext: ModelContext?
     private var cancellables = Set<AnyCancellable>()
+    private var restTimerCancellable: AnyCancellable?
     
     init() {
         setupNotifications()
@@ -132,12 +154,22 @@ class WorkoutManager: ObservableObject {
         
         // Fetch previous workout data for reference
         fetchPreviousWorkoutData(for: workoutDay)
-        
+
         // Setup logs
         setupExerciseLogs(for: workoutDay)
-        
+
+        // Calculate progressive overload suggestions
+        calculateSuggestions()
+
         // Start Live Activity
         startWorkoutLiveActivity(workoutDay: workoutDay)
+    }
+
+    private func calculateSuggestions() {
+        suggestions = ProgressiveOverloadService.shared.calculateSuggestions(
+            for: exerciseLogs,
+            previousData: previousSetData
+        )
     }
     
     private func fetchPreviousWorkoutData(for workoutDay: WorkoutDay) {
@@ -386,9 +418,58 @@ class WorkoutManager: ObservableObject {
     func toggleSetCompletion(exerciseIndex: Int, setIndex: Int) {
         guard exerciseIndex < exerciseLogs.count,
               setIndex < exerciseLogs[exerciseIndex].sets.count else { return }
-        
+
+        let wasCompleted = exerciseLogs[exerciseIndex].sets[setIndex].isCompleted
         exerciseLogs[exerciseIndex].sets[setIndex].isCompleted.toggle()
         updateWorkoutLiveActivity()
+
+        // Auto-start rest timer when marking set as complete
+        if !wasCompleted {
+            startAutoRestTimer(exerciseIndex: exerciseIndex, setIndex: setIndex)
+        } else {
+            // If unchecking, stop the timer
+            stopRestTimer()
+        }
+    }
+
+    // MARK: - Auto Rest Timer
+
+    private func startAutoRestTimer(exerciseIndex: Int, setIndex: Int) {
+        let exerciseLog = exerciseLogs[exerciseIndex]
+        let isLastSet = setIndex == exerciseLog.sets.count - 1
+
+        // Use longer rest for last set, shorter for others
+        let duration: TimeInterval = isLastSet ? 180 : 90 // 3 min for last set, 90s otherwise
+
+        let endTime = Date().addingTimeInterval(duration)
+        activeRestTimer = RestTimerState(
+            endTime: endTime,
+            setContext: "Set \(setIndex + 1)",
+            exerciseName: exerciseLog.exerciseName
+        )
+
+        // Start Live Activity
+        RestTimerActivityManager.shared.start(endTime: endTime)
+        NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
+
+        // Auto-dismiss timer when it expires
+        restTimerCancellable?.cancel()
+        restTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+            .autoconnect()
+            .sink { [weak self] _ in
+                guard let self = self else { return }
+                if let timer = self.activeRestTimer, timer.isExpired {
+                    self.stopRestTimer()
+                }
+            }
+    }
+
+    func stopRestTimer() {
+        activeRestTimer = nil
+        restTimerCancellable?.cancel()
+        restTimerCancellable = nil
+        RestTimerActivityManager.shared.end()
+        NotificationService.shared.cancelRestTimerNotification()
     }
     
     // MARK: - Live Activity

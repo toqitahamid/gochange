@@ -34,34 +34,53 @@ struct ActiveWorkoutView: View {
     }
     
     var body: some View {
-        VStack(spacing: 0) {
-            // Custom Navigation Bar
-            workoutHeaderBar
+        ZStack {
+            VStack(spacing: 0) {
+                // Custom Navigation Bar
+                workoutHeaderBar
 
-            // Swipe-based Exercise Navigation
-            TabView(selection: $currentExerciseIndex) {
-                ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
-                    ExerciseWorkoutCard(
-                        exerciseLog: $workoutManager.exerciseLogs[index],
-                        exercise: getExercise(for: exerciseLog),
-                        accentColor: accentColor,
-                        exerciseNumber: index + 1,
-                        totalExercises: workoutManager.exerciseLogs.count,
-                        previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
-                        onAddSet: {
-                            addSet(to: index)
+                // Swipe-based Exercise Navigation
+                TabView(selection: $currentExerciseIndex) {
+                    ForEach(Array(workoutManager.exerciseLogs.enumerated()), id: \.element.id) { index, exerciseLog in
+                        ExerciseWorkoutCard(
+                            exerciseLog: $workoutManager.exerciseLogs[index],
+                            exercise: getExercise(for: exerciseLog),
+                            accentColor: accentColor,
+                            exerciseNumber: index + 1,
+                            totalExercises: workoutManager.exerciseLogs.count,
+                            previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
+                            suggestion: workoutManager.suggestions[exerciseLog.exerciseId],
+                            onAddSet: {
+                                addSet(to: index)
+                            },
+                            onRemoveSet: { setIndex in
+                                removeSet(at: setIndex, from: index)
+                            },
+                            onToggleSetCompletion: { setIndex in
+                                workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
+                            }
+                        )
+                        .tag(index)
+                    }
+                }
+                .tabViewStyle(.page(indexDisplayMode: .never))
+            }
+
+            // Floating Rest Timer Banner
+            if let timerState = workoutManager.activeRestTimer {
+                VStack {
+                    Spacer()
+                    FloatingRestTimerBanner(
+                        timerState: timerState,
+                        onTap: {
+                            workoutManager.showingRestTimer = true
                         },
-                        onRemoveSet: { setIndex in
-                            removeSet(at: setIndex, from: index)
-                        },
-                        onToggleSetCompletion: { setIndex in
-                            workoutManager.toggleSetCompletion(exerciseIndex: index, setIndex: setIndex)
+                        onDismiss: {
+                            workoutManager.stopRestTimer()
                         }
                     )
-                    .tag(index)
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
         }
         .background(Color(hex: "#F5F5F7").ignoresSafeArea())
         .toolbar(.visible, for: .tabBar)

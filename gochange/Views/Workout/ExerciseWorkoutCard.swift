@@ -8,11 +8,13 @@ struct ExerciseWorkoutCard: View {
     let exerciseNumber: Int
     let totalExercises: Int
     let previousSets: [PreviousSetInfo]
+    let suggestion: OverloadSuggestion?
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
 
     @State private var showingNotes = false
+    @State private var showingHistory = false
 
     private var completedSets: Int {
         exerciseLog.sets.filter { $0.isCompleted }.count
@@ -37,6 +39,11 @@ struct ExerciseWorkoutCard: View {
                     accentColor: accentColor
                 )
 
+                // Progressive Overload Suggestion
+                if let suggestion = suggestion {
+                    ProgressiveOverloadBanner(suggestion: suggestion)
+                }
+
                 // Set List Section
                 setListSection
 
@@ -54,12 +61,38 @@ struct ExerciseWorkoutCard: View {
                 .presentationDetents([.medium])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showingHistory) {
+            PreviousWorkoutHistorySheet(
+                exerciseId: exerciseLog.exerciseId,
+                exerciseName: exerciseLog.exerciseName,
+                accentColor: accentColor
+            )
+        }
     }
 
     // MARK: - Exercise Header Section
 
     private var exerciseHeaderSection: some View {
         VStack(spacing: 16) {
+            // Superset/Circuit Indicator (if grouped)
+            if let groupType = exerciseLog.groupType {
+                HStack(spacing: 8) {
+                    Image(systemName: groupType.icon)
+                        .font(.system(size: 12, weight: .semibold))
+                    Text(groupType.displayName)
+                        .font(.system(size: 13, weight: .bold))
+                        .tracking(1.2)
+                    Spacer()
+                }
+                .foregroundColor(Color(hex: groupType.color))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(Color(hex: groupType.color).opacity(0.12))
+                )
+            }
+
             // Progress Indicator
             HStack(spacing: 8) {
                 ForEach(0..<totalExercises, id: \.self) { index in
@@ -76,13 +109,69 @@ struct ExerciseWorkoutCard: View {
                     .font(.system(size: 11, weight: .bold))
                     .tracking(1.2)
                     .foregroundColor(.secondary)
+
+                // Previous Workout Button
+                Button {
+                    showingHistory = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Previous")
+                            .font(.system(size: 11, weight: .semibold))
+                    }
+                    .foregroundColor(accentColor)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(
+                        Capsule()
+                            .fill(accentColor.opacity(0.12))
+                    )
+                }
             }
 
             // Exercise Name and Info
             VStack(alignment: .leading, spacing: 8) {
-                Text(exerciseLog.exerciseName)
-                    .font(.system(size: 24, weight: .bold))
-                    .foregroundColor(.primary)
+                HStack {
+                    Text(exerciseLog.exerciseName)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.primary)
+
+                    Spacer()
+
+                    // Three-dots menu
+                    Menu {
+                        Button {
+                            // TODO: Implement replace exercise
+                        } label: {
+                            Label("Replace Exercise", systemImage: "arrow.triangle.2.circlepath")
+                        }
+
+                        Button {
+                            // TODO: Implement reorder (move up/down)
+                        } label: {
+                            Label("Reorder Exercise", systemImage: "arrow.up.arrow.down")
+                        }
+
+                        Button {
+                            showingNotes = true
+                        } label: {
+                            Label("Add Notes", systemImage: "note.text")
+                        }
+
+                        Divider()
+
+                        Button(role: .destructive) {
+                            // TODO: Implement delete exercise
+                        } label: {
+                            Label("Delete Exercise", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle.fill")
+                            .font(.system(size: 24))
+                            .foregroundColor(.gray.opacity(0.6))
+                    }
+                }
 
                 if let exercise = exercise {
                     HStack(spacing: 12) {
@@ -141,7 +230,7 @@ struct ExerciseWorkoutCard: View {
             VStack(spacing: 12) {
                 ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
                     let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
-                    SetInputRow(
+                    SetInputCard(
                         setLog: $exerciseLog.sets[index],
                         accentColor: accentColor,
                         previousSet: previousSet,
