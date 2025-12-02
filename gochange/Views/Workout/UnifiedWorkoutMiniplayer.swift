@@ -25,13 +25,6 @@ struct UnifiedWorkoutMiniplayer: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Drag Indicator
-            RoundedRectangle(cornerRadius: 2.5)
-                .fill(Color.gray.opacity(0.3))
-                .frame(width: 36, height: 5)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
-            
             // Main Content
             VStack(spacing: 12) {
                 // Top Row: Workout Info
@@ -76,18 +69,6 @@ struct UnifiedWorkoutMiniplayer: View {
                                 .fill(Color(hex: "#FF3B30").opacity(0.1))
                         )
                     }
-                    
-                    // Expand Button
-                    Button(action: onExpand) {
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
-                            .frame(width: 32, height: 32)
-                            .background(
-                                Circle()
-                                    .fill(Color.gray.opacity(0.1))
-                            )
-                    }
                 }
                 
                 // Timer Row
@@ -111,7 +92,8 @@ struct UnifiedWorkoutMiniplayer: View {
                             .frame(height: 30)
                         
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("SET \(setTimer.setNumber)")
+                            // Show Set Type or Set Number
+                            Text(setTimer.setType == .normal ? "SET \(setTimer.setNumber)" : setTimer.setType.rawValue.uppercased())
                                 .font(.system(size: 9, weight: .bold))
                                 .tracking(1)
                                 .foregroundColor(.secondary)
@@ -190,7 +172,7 @@ struct UnifiedWorkoutMiniplayer: View {
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.bottom, 20)
+            .padding(.vertical, 20)
         }
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
@@ -241,7 +223,8 @@ struct UnifiedWorkoutMiniplayer: View {
                 exerciseName: "Bench Press",
                 exerciseIndex: 0,
                 setIndex: 2,
-                setNumber: 3
+                setNumber: 3,
+                setType: .normal
             ),
             restTimerState: nil,
             currentHeartRate: 142,

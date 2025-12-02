@@ -9,10 +9,12 @@ struct ExerciseWorkoutCard: View {
     let totalExercises: Int
     let previousSets: [PreviousSetInfo]
     let suggestion: OverloadSuggestion?
+    let activeSetTimer: SetTimerState? // To check if a set is playing
     let onAddSet: () -> Void
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
-    let onPlaySet: (Int) -> Void // New callback for starting set timer
+    let onPlaySet: (Int) -> Void
+    let onPauseSet: () -> Void // Callback to pause the active timer
 
     @State private var showingNotes = false
     @State private var showingHistory = false
@@ -216,11 +218,14 @@ struct ExerciseWorkoutCard: View {
     private var setListSection: some View {
         SetListSectionView(
             exerciseLog: $exerciseLog,
+            exerciseIndex: exerciseNumber - 1,
             previousSets: previousSets,
             accentColor: accentColor,
+            activeSetTimer: activeSetTimer,
             onRemoveSet: onRemoveSet,
             onToggleSetCompletion: onToggleSetCompletion,
-            onPlaySet: onPlaySet
+            onPlaySet: onPlaySet,
+            onPauseSet: onPauseSet
         )
     }
 
@@ -298,11 +303,14 @@ struct ExerciseWorkoutCard: View {
 // MARK: - Set List Section View
 struct SetListSectionView: View {
     @Binding var exerciseLog: ExerciseLog
+    let exerciseIndex: Int
     let previousSets: [PreviousSetInfo]
     let accentColor: Color
+    let activeSetTimer: SetTimerState?
     let onRemoveSet: (Int) -> Void
     let onToggleSetCompletion: (Int) -> Void
     let onPlaySet: (Int) -> Void
+    let onPauseSet: () -> Void
     
     @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     
@@ -341,13 +349,20 @@ struct SetListSectionView: View {
                 ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
                     let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
                     
+                    // Check if this specific set is playing
+                    let isPlaying = activeSetTimer?.exerciseIndex == exerciseIndex &&
+                                    activeSetTimer?.setIndex == index &&
+                                    activeSetTimer?.isPaused == false
+                    
                     SetInputCard(
                         setLog: $exerciseLog.sets[index],
                         accentColor: accentColor,
                         previousSet: previousSet,
+                        isPlaying: isPlaying,
                         onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
                         onToggleCompletion: { onToggleSetCompletion(index) },
-                        onPlaySet: { onPlaySet(index) }
+                        onPlaySet: { onPlaySet(index) },
+                        onPauseSet: onPauseSet
                     )
                     
                     if index < exerciseLog.sets.count - 1 {

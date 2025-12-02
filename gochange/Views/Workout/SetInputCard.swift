@@ -4,9 +4,11 @@ struct SetInputCard: View {
     @Binding var setLog: SetLog
     let accentColor: Color
     let previousSet: PreviousSetInfo?
+    let isPlaying: Bool
     let onRemove: (() -> Void)?
     let onToggleCompletion: () -> Void
-    let onPlaySet: () -> Void // New callback for starting set timer
+    let onPlaySet: () -> Void
+    let onPauseSet: () -> Void
 
     @State private var weightText: String = ""
     @State private var repsText: String = ""
@@ -175,20 +177,24 @@ struct SetInputCard: View {
             Spacer()
             
             // Play/Complete button
+            // Play/Pause/Complete button
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
                     if setLog.isCompleted {
                         // If already completed, allow uncompleting
                         onToggleCompletion()
+                    } else if isPlaying {
+                        // If playing, pause
+                        onPauseSet()
                     } else {
-                        // If not completed, start the set timer
+                        // If not completed and not playing, start the set timer
                         onPlaySet()
                     }
                 }
             } label: {
-                Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : "play.fill")
+                Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : (isPlaying ? "pause.fill" : "play.fill"))
                     .font(.system(size: 20))
-                    .foregroundColor(setLog.isCompleted ? Color(hex: "#00D4AA") : .primary)
+                    .foregroundColor(setLog.isCompleted ? Color(hex: "#00D4AA") : (isPlaying ? accentColor : .primary))
             }
             .frame(width: 44, alignment: .trailing)
         }

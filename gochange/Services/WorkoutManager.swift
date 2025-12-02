@@ -34,6 +34,7 @@ struct SetTimerState {
     let exerciseIndex: Int
     let setIndex: Int
     let setNumber: Int
+    let setType: SetLog.SetType
     var isPaused: Bool = false
     var pauseStartTime: Date? = nil
     var totalPausedDuration: TimeInterval = 0
@@ -539,7 +540,8 @@ class WorkoutManager: ObservableObject {
             exerciseName: exerciseLog.exerciseName,
             exerciseIndex: exerciseIndex,
             setIndex: setIndex,
-            setNumber: setLog.setNumber
+            setNumber: setLog.setNumber,
+            setType: setLog.setType
         )
     }
     

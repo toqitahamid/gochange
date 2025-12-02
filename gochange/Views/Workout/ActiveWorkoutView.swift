@@ -52,6 +52,7 @@ struct ActiveWorkoutView: View {
                                 totalExercises: workoutManager.exerciseLogs.count,
                                 previousSets: workoutManager.previousSetData[exerciseLog.exerciseId] ?? [],
                                 suggestion: workoutManager.suggestions[exerciseLog.exerciseId],
+                                activeSetTimer: workoutManager.activeSetTimer,
                                 onAddSet: {
                                     addSet(to: index)
                                 },
@@ -63,6 +64,9 @@ struct ActiveWorkoutView: View {
                                 },
                                 onPlaySet: { setIndex in
                                     workoutManager.startSetTimer(exerciseIndex: index, setIndex: setIndex)
+                                },
+                                onPauseSet: {
+                                    workoutManager.pauseSetTimer()
                                 }
                             )
                             .tag(index)
