@@ -23,6 +23,16 @@ struct SessionDetailView: View {
                 // Header Card
                 headerCard
                 
+                // Health / Strain Summary
+                SessionHealthSummaryCard(
+                    session: session,
+                    strain: sessionStrainScore,
+                    totalCalories: estimatedCalories,
+                    avgHeartRate: nil,
+                    cardioLoadDelta: nil,
+                    cardioLoadLabel: sessionStrainCategoryLabel
+                )
+                
                 // Stats Cards
                 statsRow
                 
@@ -242,6 +252,44 @@ struct SessionDetailView: View {
                 }
                 return setTotal
             }
+        }
+    }
+    
+    private var sessionDuration: TimeInterval {
+        if let duration = session.duration {
+            return duration
+        } else if let endTime = session.endTime {
+            return endTime.timeIntervalSince(session.startTime)
+        } else {
+            return 0
+        }
+    }
+    
+    private var sessionStrainScore: Int {
+        // Mirror the simple strain logic from DashboardViewModel but scoped to this session
+        let durationScore = min(sessionDuration / 3600.0 * 50.0, 50.0)
+        let volumeScore = min(totalVolume / 10000.0 * 50.0, 50.0)
+        return Int(durationScore + volumeScore)
+    }
+    
+    private var estimatedCalories: Double? {
+        guard sessionDuration > 0 else { return nil }
+        // Simple heuristic: ~5 active calories per minute, matching DashboardViewModel
+        return (sessionDuration / 60.0) * 5.0
+    }
+    
+    private var sessionStrainCategoryLabel: String? {
+        switch sessionStrainScore {
+        case 80...:
+            return "Overtraining"
+        case 60..<80:
+            return "High Load"
+        case 40..<60:
+            return "Maintaining"
+        case 1..<40:
+            return "Light"
+        default:
+            return nil
         }
     }
     

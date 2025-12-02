@@ -183,6 +183,9 @@ struct UnifiedWorkoutMiniplayer: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
+        .onTapGesture {
+            onExpand()
+        }
         .onReceive(timer) { _ in
             if !workoutIsPaused {
                 workoutElapsed = Date().timeIntervalSince(workoutStartTime)
