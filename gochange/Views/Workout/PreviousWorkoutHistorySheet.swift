@@ -184,7 +184,7 @@ struct PreviousWorkoutHistorySheet: View {
                     }
                     .padding(.horizontal, 20)
                     .padding(.vertical, 16)
-                    .background(set.isCompleted ? Color(hex: "#F5F5F7") : Color.white)
+                    .background(set.isCompleted ? AppColors.background : Color.white)
                     
                     if index < entry.sets.count - 1 {
                         Divider()

@@ -777,7 +777,7 @@ struct SessionNotesSheet: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Notes")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -830,7 +830,7 @@ struct ExerciseNotesSheet: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle(exerciseName)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

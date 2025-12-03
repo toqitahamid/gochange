@@ -42,7 +42,7 @@ struct SessionDetailView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 100)
         }
-        .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
         .preferredColorScheme(.light)
         .navigationTitle(session.workoutDayName)
         .navigationBarTitleDisplayMode(.inline)
@@ -61,7 +61,7 @@ struct SessionDetailView: View {
                     } label: {
                         Text(isEditMode ? "Done" : "Edit")
                             .font(.system(size: 15, weight: .medium))
-                            .foregroundColor(Color.blue)
+                            .foregroundColor(AppColors.primary)
                     }
                     
                     if !isEditMode {
@@ -158,7 +158,7 @@ struct SessionDetailView: View {
                             .font(.system(size: 10))
                     }
                     .font(.caption)
-                    .foregroundColor(Color.blue)
+                            .foregroundColor(AppColors.primary)
                 }
             }
         }
@@ -178,33 +178,33 @@ struct SessionDetailView: View {
     // MARK: - Stats Row
     private var statsRow: some View {
         HStack(spacing: 10) {
-            SessionStatCard(
-                title: "Duration",
-                value: session.duration?.formattedDuration ?? "--",
-                icon: "timer",
-                color: Color(hex: "#64B5F6")
-            )
+                SessionStatCard(
+                    title: "Duration",
+                    value: session.duration?.formattedDuration ?? "--",
+                    icon: "timer",
+                    color: AppColors.primary
+                )
             
-            SessionStatCard(
-                title: "Exercises",
-                value: "\(session.exerciseLogs.count)",
-                icon: "dumbbell.fill",
-                color: Color(hex: "#BA68C8")
-            )
+                SessionStatCard(
+                    title: "Exercises",
+                    value: "\(session.exerciseLogs.count)",
+                    icon: "dumbbell.fill",
+                    color: AppColors.success
+                )
             
-            SessionStatCard(
-                title: "Sets",
-                value: "\(totalSets)",
-                icon: "checkmark.circle.fill",
-                color: Color.blue
-            )
+                SessionStatCard(
+                    title: "Sets",
+                    value: "\(totalSets)",
+                    icon: "checkmark.circle.fill",
+                    color: AppColors.success
+                )
             
-            SessionStatCard(
-                title: "Volume",
-                value: formatVolume(totalVolume),
-                icon: "scalemass.fill",
-                color: Color(hex: "#FF6B35")
-            )
+                SessionStatCard(
+                    title: "Volume",
+                    value: formatVolume(totalVolume),
+                    icon: "scalemass.fill",
+                    color: AppColors.warning
+                )
         }
     }
     
@@ -223,7 +223,7 @@ struct SessionDetailView: View {
                 if isEditMode {
                     Text("Tap values to edit")
                         .font(.system(size: 11))
-                        .foregroundColor(Color.blue)
+                        .foregroundColor(AppColors.primary)
                 }
             }
             
@@ -358,7 +358,7 @@ struct TimeEditSheet: View {
                             Spacer()
                             Text(calculatedDuration.formattedDuration)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(Color.blue)
+                                .foregroundColor(AppColors.primary)
                         }
                         .padding(.top, 8)
                     }
@@ -378,7 +378,8 @@ struct TimeEditSheet: View {
                 Spacer()
             }
             .padding(.top, 20)
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Edit Time")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -588,7 +589,7 @@ struct EditableSetRow: View {
                 } label: {
                     Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(setLog.rir != nil ? Color.blue : .secondary)
+                        .foregroundColor(setLog.rir != nil ? AppColors.primary : .secondary)
                         .frame(width: 32)
                         .padding(.vertical, 6)
                         .background(Color.gray.opacity(0.1))
