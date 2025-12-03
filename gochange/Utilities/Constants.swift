@@ -71,22 +71,21 @@ enum AppConstants {
 
 // MARK: - App Theme
 enum AppTheme {
-    static let primary = Color(hex: "#2C3E50")
-    static let secondary = Color(hex: "#34495E")
-    static let accent = Color(hex: "#3498DB")
-    static let success = Color(hex: "#27AE60")
-    static let warning = Color(hex: "#F39C12")
-    static let danger = Color(hex: "#E74C3C")
+    // Legacy-facing theme mapping into the new brand system.
+    static let primary = AppColors.secondary
+    static let secondary = AppColors.textSecondary
+    static let accent = AppColors.primary
+    static let success = AppColors.success
+    static let warning = AppColors.warning
+    static let danger = AppColors.error
     
-    // System-adaptive colors for dark mode support
-    static let background = Color(.systemGroupedBackground)
-    static let cardBackground = Color(.secondarySystemGroupedBackground)
-    static let textPrimary = Color(.label)
-    static let textSecondary = Color(.secondaryLabel)
+    static let background = AppColors.background
+    static let cardBackground = AppColors.surface
+    static let textPrimary = AppColors.textPrimary
+    static let textSecondary = AppColors.textSecondary
     
-    // Gradient backgrounds
     static let primaryGradient = LinearGradient(
-        colors: [Color(hex: "#2C3E50"), Color(hex: "#34495E")],
+        colors: [AppColors.primary, AppColors.primary.opacity(0.7)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )

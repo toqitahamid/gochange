@@ -51,7 +51,7 @@ struct HomeView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
             }
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea()) // Light Gray Background
+            .background(AppColors.background.ignoresSafeArea()) // Clinical light background from design system
             .preferredColorScheme(.light) // Force Light Mode for the requested "White/Light Gray" theme
             .onAppear {
                 Task {
@@ -66,11 +66,11 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(Date().formatted(date: .long, time: .omitted))
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
                 
                 Text(viewModel.greeting)
                     .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(AppColors.textPrimary)
             }
             
             Spacer()
@@ -78,12 +78,12 @@ struct HomeView: View {
             // Settings Button (User Initials)
             NavigationLink(destination: SettingsView()) {
                 Circle()
-                    .fill(Color.blue.opacity(0.1))
+                    .fill(AppColors.primary.opacity(0.08))
                     .frame(width: 40, height: 40)
                     .overlay(
                         Text(userInitials)
                             .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(.blue)
+                            .foregroundColor(AppColors.primary)
                     )
             }
         }
@@ -100,20 +100,20 @@ struct HomeView: View {
         HStack(spacing: 16) {
             Image(systemName: "sparkles")
                 .font(.system(size: 24))
-                .foregroundColor(.yellow)
+                .foregroundColor(AppColors.primary)
                 .frame(width: 50, height: 50)
-                .background(Color.yellow.opacity(0.1))
+                .background(AppColors.primary.opacity(0.08))
                 .clipShape(Circle())
             
             VStack(alignment: .leading, spacing: 4) {
                 Text("Daily Insight")
                     .font(.subheadline)
                     .fontWeight(.semibold)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(AppColors.textSecondary)
                 
                 Text(insightText)
                     .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(.primary)
+                    .foregroundColor(AppColors.textPrimary)
             }
             
             Spacer()
@@ -162,7 +162,7 @@ struct NextWorkoutPill: View {
         HStack(spacing: 10) {
             ZStack {
                 Circle()
-                    .fill(Color(hex: "#00D4AA")) // Teal
+                    .fill(AppColors.success) // Mint success color from design system
                     .frame(width: 32, height: 32)
                 
                 Image(systemName: "figure.run")

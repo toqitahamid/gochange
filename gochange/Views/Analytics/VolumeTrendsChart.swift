@@ -13,7 +13,7 @@ struct VolumeTrendsChart: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Volume Trends")
                         .font(.headline)
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
 
                     if let average = averageVolume {
                         Text("Avg: \(formatVolume(average))")
@@ -35,14 +35,14 @@ struct VolumeTrendsChart: View {
                     HStack(spacing: 4) {
                         Text(selectedPeriod.displayName)
                             .font(.caption)
-                            .foregroundColor(Color(hex: "#00D4AA"))
+                            .foregroundColor(AppColors.primary)
                         Image(systemName: "chevron.down")
                             .font(.system(size: 10))
-                            .foregroundColor(Color(hex: "#00D4AA"))
+                            .foregroundColor(AppColors.primary)
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(Color(hex: "#00D4AA").opacity(0.15))
+                    .background(AppColors.primary.opacity(0.12))
                     .cornerRadius(8)
                 }
             }
@@ -58,7 +58,7 @@ struct VolumeTrendsChart: View {
                     )
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [Color(hex: "#00D4AA"), Color(hex: "#00B894")],
+                            colors: [AppColors.primary, AppColors.primary.opacity(0.7)],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
@@ -73,8 +73,8 @@ struct VolumeTrendsChart: View {
                     .foregroundStyle(
                         LinearGradient(
                             colors: [
-                                Color(hex: "#00D4AA").opacity(0.3),
-                                Color(hex: "#00D4AA").opacity(0)
+                                AppColors.primary.opacity(0.25),
+                                AppColors.primary.opacity(0.0)
                             ],
                             startPoint: .top,
                             endPoint: .bottom
@@ -113,7 +113,7 @@ struct VolumeTrendsChart: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white)
+                .fill(AppColors.surface)
                 .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24)
@@ -138,9 +138,9 @@ struct VolumeTrendsChart: View {
 
     private var statsRow: some View {
         HStack(spacing: 16) {
-            StatItem(label: "Peak", value: formatVolume(peakVolume ?? 0), color: Color(hex: "#FF6B35"))
-            StatItem(label: "Average", value: formatVolume(averageVolume ?? 0), color: Color(hex: "#00D4AA"))
-            StatItem(label: "Total", value: formatVolume(totalVolume), color: Color(hex: "#FFD700"))
+            StatItem(label: "Peak", value: formatVolume(peakVolume ?? 0), color: AppColors.primary)
+            StatItem(label: "Average", value: formatVolume(averageVolume ?? 0), color: AppColors.success)
+            StatItem(label: "Total", value: formatVolume(totalVolume), color: AppColors.warning)
         }
         .padding(.top, 8)
     }
