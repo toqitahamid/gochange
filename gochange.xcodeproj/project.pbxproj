@@ -87,14 +87,6 @@
 			);
 			target = 964F1C962ED5B38B0081B1EF /* gochange */;
 		};
-		969A6FCA2ED5CA5000272209 /* Exceptions for "gochange" folder in "GoChangeWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Models/WorkoutActivityAttributes.swift,
-				Views/LiveActivity/GoChangeStaticWidget.swift,
-			);
-			target = 969A6FAB2ED5C76000272209 /* GoChangeWidgetExtension */;
-		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -110,7 +102,6 @@
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				969A6FC82ED5CA4400272209 /* Exceptions for "gochange" folder in "gochange" target */,
-				969A6FCA2ED5CA5000272209 /* Exceptions for "gochange" folder in "GoChangeWidgetExtension" target */,
 			);
 			path = gochange;
 			sourceTree = "<group>";
@@ -648,6 +639,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = GoChangeWidget/GoChangeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR9VB4UHUR;
@@ -678,6 +670,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_ENTITLEMENTS = GoChangeWidget/GoChangeWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = BR9VB4UHUR;
