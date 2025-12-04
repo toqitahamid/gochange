@@ -163,44 +163,51 @@ struct WorkoutActivityWidget: Widget {
                 }
                 
             } compactLeading: {
-                // Icon
+                // Simple icon with progress ring - constrained to fit Dynamic Island
                 ZStack {
+                    // Background ring
                     Circle()
-                        .fill(isResting ? LiveActivityColors.restAccent.opacity(0.3) : workoutColor.opacity(0.3))
-                        .frame(width: 24, height: 24)
+                        .stroke(
+                            (isResting ? LiveActivityColors.restAccent : workoutColor).opacity(0.3),
+                            lineWidth: 2
+                        )
                     
-                    Image(systemName: isResting ? "timer" : "dumbbell.fill")
-                        .font(.system(size: 10, weight: .bold))
+                    // Progress ring
+                    Circle()
+                        .trim(from: 0, to: isResting ? 1.0 : progressPercent(context: context))
+                        .stroke(
+                            isResting ? LiveActivityColors.restAccent : workoutColor,
+                            style: StrokeStyle(lineWidth: 2, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(-90))
+                    
+                    // Center icon
+                    Image(systemName: isResting ? "pause.fill" : "dumbbell.fill")
+                        .font(.system(size: 10, weight: .semibold))
                         .foregroundColor(isResting ? LiveActivityColors.restAccent : workoutColor)
                 }
+                .frame(width: 24, height: 24)
             } compactTrailing: {
-                // Timer - no minWidth to keep compact
+                // Timer text only - minimal width
                 if isResting {
                     Text(timerInterval: Date()...safeRestEndTime, countsDown: true)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(LiveActivityColors.restAccent)
                 } else {
                     Text(context.state.startTime, style: .timer)
-                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .monospacedDigit()
                         .foregroundColor(context.state.isPaused ? workoutColor.opacity(0.5) : workoutColor)
                 }
             } minimal: {
+                // Minimal circular view
                 ZStack {
                     Circle()
-                        .fill(
-                            LinearGradient(
-                                colors: isResting 
-                                    ? [LiveActivityColors.restAccent, LiveActivityColors.restAccent.opacity(0.6)]
-                                    : [workoutColor, workoutColor.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
+                        .fill(isResting ? LiveActivityColors.restAccent : workoutColor)
                     
-                    Image(systemName: isResting ? "timer" : "dumbbell.fill")
-                        .font(.system(size: 9, weight: .bold))
+                    Image(systemName: isResting ? "pause.fill" : "dumbbell.fill")
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundColor(.white)
                 }
             }
