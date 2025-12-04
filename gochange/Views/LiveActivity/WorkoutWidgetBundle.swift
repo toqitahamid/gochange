@@ -2,7 +2,7 @@ import WidgetKit
 import SwiftUI
 
 @main
-struct RestTimerWidgetBundle: WidgetBundle {
+struct WorkoutWidgetBundle: WidgetBundle {
     var body: some Widget {
         WorkoutActivityWidget()
         GoChangeStaticWidget()

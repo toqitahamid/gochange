@@ -84,8 +84,6 @@
 			membershipExceptions = (
 				Info.plist,
 				Views/LiveActivity/GoChangeStaticWidget.swift,
-				Views/LiveActivity/RestTimerWidget.swift,
-				Views/LiveActivity/RestTimerWidgetBundle.swift,
 			);
 			target = 964F1C962ED5B38B0081B1EF /* gochange */;
 		};
@@ -94,8 +92,6 @@
 			membershipExceptions = (
 				Models/WorkoutActivityAttributes.swift,
 				Views/LiveActivity/GoChangeStaticWidget.swift,
-				Views/LiveActivity/RestTimerWidget.swift,
-				Views/LiveActivity/RestTimerWidgetBundle.swift,
 			);
 			target = 969A6FAB2ED5C76000272209 /* GoChangeWidgetExtension */;
 		};
