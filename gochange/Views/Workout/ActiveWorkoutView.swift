@@ -90,7 +90,7 @@ struct ActiveWorkoutView: View {
                     }
                     .tabViewStyle(.page(indexDisplayMode: .never))
                 }
-                .background(Color.white.ignoresSafeArea())
+                .background(AppColors.background.ignoresSafeArea())
                 .gesture(
                     DragGesture()
                         .onEnded { value in
@@ -138,7 +138,7 @@ struct ActiveWorkoutView: View {
                 .zIndex(10)
             }
         }
-        .background(Color.white.ignoresSafeArea())
+        .background(AppColors.background.ignoresSafeArea())
         .toolbar(.hidden, for: .tabBar)
         .alert("Cancel Workout?", isPresented: $showingCancelAlert) {
             Button("Keep Going", role: .cancel) { }
@@ -289,7 +289,7 @@ struct ActiveWorkoutView: View {
                     .padding(.vertical, 8)
                     .background(
                         Capsule()
-                            .fill(workoutManager.canComplete ? Color(hex: "#00D4AA") : Color.gray)
+                            .fill(workoutManager.canComplete ? AppColors.success : Color.gray)
                     )
                 }
                 .disabled(!workoutManager.canComplete)
@@ -302,7 +302,7 @@ struct ActiveWorkoutView: View {
                 .fill(Color.gray.opacity(0.15))
                 .frame(height: 1)
         }
-        .background(Color.white)
+        .background(AppColors.surface)
     }
 
     // MARK: - Methods
@@ -404,7 +404,7 @@ struct WorkoutTimerCard: View {
                         HStack(spacing: 6) {
                             Image(systemName: "heart.fill")
                                 .font(.system(size: 14))
-                                .foregroundColor(Color(hex: "#FF3B30"))
+                                .foregroundColor(AppColors.error)
                             
                             Text("\(Int(heartRate)) BPM")
                                 .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -428,18 +428,18 @@ struct WorkoutTimerCard: View {
                             Text("Notes")
                                 .font(.system(size: 13, weight: .medium))
                         }
-                        .foregroundColor(hasNotes ? Color(hex: "#00D4AA") : .gray)
+                        .foregroundColor(hasNotes ? AppColors.success : .gray)
                     }
                 }
             }
         }
-        .padding(24)
-        .background(Color.white)
-        .cornerRadius(20)
-        .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+        .padding(AppLayout.cardPadding)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadius)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
         )
         .onReceive(timer) { _ in
             elapsed = Date().timeIntervalSince(startTime)
@@ -483,7 +483,7 @@ struct ExerciseLogCard: View {
                             if exerciseLog.notes != nil {
                                 Image(systemName: "note.text")
                                     .font(.system(size: 12))
-                                    .foregroundColor(Color(hex: "#00D4AA"))
+                                    .foregroundColor(AppColors.success)
                             }
                         }
                         
@@ -500,7 +500,7 @@ struct ExerciseLogCard: View {
                     HStack(spacing: 8) {
                         Text("\(completedSets)/\(exerciseLog.sets.count)")
                             .font(.system(size: 14, weight: .bold, design: .rounded))
-                            .foregroundColor(isFullyCompleted ? Color(hex: "#00D4AA") : .secondary)
+                            .foregroundColor(isFullyCompleted ? AppColors.success : .secondary)
                         
                         Image(systemName: "chevron.down")
                             .font(.system(size: 12, weight: .semibold))
@@ -575,7 +575,7 @@ struct ExerciseLogCard: View {
                                 Text("Notes")
                                     .font(.system(size: 13, weight: .medium))
                             }
-                            .foregroundColor(exerciseLog.notes != nil ? Color(hex: "#00D4AA") : .gray)
+                            .foregroundColor(exerciseLog.notes != nil ? AppColors.success : .gray)
                         }
                     }
                     .padding(.horizontal, 16)
@@ -584,17 +584,16 @@ struct ExerciseLogCard: View {
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
-        .background(Color.white)
-        .cornerRadius(20)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadius))
         .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadius)
                 .stroke(
-                    isFullyCompleted ? Color(hex: "#00D4AA").opacity(0.3) : Color.gray.opacity(0.15),
+                    isFullyCompleted ? AppColors.success.opacity(0.3) : Color.gray.opacity(0.1),
                     lineWidth: 1
                 )
         )
-        .clipShape(RoundedRectangle(cornerRadius: 20))
         .sheet(isPresented: $showingNotes) {
             ExerciseNotesSheet(exerciseName: exerciseLog.exerciseName, notes: $exerciseLog.notes)
                 .presentationDetents([.medium])
@@ -638,7 +637,7 @@ struct SetInputRow: View {
                 if let prevText = previousDataText {
                     Text(prevText)
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color(hex: "#00D4AA").opacity(0.7))
+                        .foregroundColor(AppColors.success.opacity(0.7))
                 }
             }
             .frame(width: 55, alignment: .center)
@@ -707,17 +706,17 @@ struct SetInputRow: View {
             } label: {
                 ZStack {
                     Circle()
-                        .stroke(setLog.isCompleted ? Color(hex: "#00D4AA") : Color.white.opacity(0.2), lineWidth: 2)
+                        .stroke(setLog.isCompleted ? AppColors.success : AppColors.textTertiary, lineWidth: 2)
                         .frame(width: 28, height: 28)
-                    
+
                     if setLog.isCompleted {
                         Circle()
-                            .fill(Color(hex: "#00D4AA"))
+                            .fill(AppColors.success)
                             .frame(width: 28, height: 28)
-                        
+
                         Image(systemName: "checkmark")
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.black)
+                            .foregroundColor(.white)
                     }
                 }
             }
@@ -727,7 +726,7 @@ struct SetInputRow: View {
         .padding(.vertical, 10)
         .background(
             setLog.isCompleted ?
-            Color(hex: "#00D4AA").opacity(0.08) :
+            AppColors.success.opacity(0.08) :
             Color.clear
         )
         .onAppear {
@@ -758,14 +757,14 @@ struct SessionNotesSheet: View {
                     TextEditor(text: $notes)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 15))
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                         .frame(minHeight: 150)
                         .padding(16)
-                        .background(Color.white)
-                        .cornerRadius(16)
+                        .background(AppColors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AppLayout.miniRadius)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                         )
                     
                     Text("Add any notes about this workout - how you felt, adjustments made, etc.")
@@ -811,14 +810,14 @@ struct ExerciseNotesSheet: View {
                     TextEditor(text: $localNotes)
                         .scrollContentBackground(.hidden)
                         .font(.system(size: 15))
-                        .foregroundColor(.primary)
+                        .foregroundColor(AppColors.textPrimary)
                         .frame(minHeight: 150)
                         .padding(16)
-                        .background(Color.white)
-                        .cornerRadius(16)
+                        .background(AppColors.surface)
+                        .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                            RoundedRectangle(cornerRadius: AppLayout.miniRadius)
+                                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                         )
                     
                     Text("Add notes specific to \(exerciseName)")

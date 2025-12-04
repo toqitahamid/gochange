@@ -58,7 +58,7 @@ struct ExerciseWorkoutCard: View {
             .padding(.bottom, 40)
         }
         .scrollDismissesKeyboard(.interactively)
-        .background(Color.white)
+        .background(AppColors.background)
         .sheet(isPresented: $showingNotes) {
             ExerciseNotesSheet(exerciseName: exerciseLog.exerciseName, notes: $exerciseLog.notes)
                 .presentationDetents([.medium])
@@ -76,120 +76,154 @@ struct ExerciseWorkoutCard: View {
     // MARK: - Exercise Header Section
 
     private var exerciseHeaderSection: some View {
-        VStack(spacing: 16) {
-            // Top Row: Progress & Previous
-            HStack {
-                // Progress Dots
-                HStack(spacing: 6) {
-                    ForEach(0..<totalExercises, id: \.self) { index in
-                        Circle()
-                            .fill(index < exerciseNumber - 1 ? Color(hex: "#00D4AA") :
-                                  index == exerciseNumber - 1 ? accentColor :
-                                  Color.gray.opacity(0.3))
-                            .frame(width: 6, height: 6)
+        VStack(spacing: 0) {
+            // Top accent bar
+            HStack(spacing: 0) {
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(accentColor)
+                    .frame(width: 4, height: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    // Exercise number label
+                    Text("EXERCISE \(exerciseNumber) OF \(totalExercises)")
+                        .font(AppFonts.label(10))
+                        .tracking(1.5)
+                        .foregroundColor(AppColors.textTertiary)
+
+                    // Progress indicator
+                    HStack(spacing: 4) {
+                        ForEach(0..<totalExercises, id: \.self) { index in
+                            RoundedRectangle(cornerRadius: 2)
+                                .fill(index < exerciseNumber ? accentColor : AppColors.textTertiary.opacity(0.3))
+                                .frame(height: 3)
+                        }
                     }
                 }
-                
+                .padding(.leading, 12)
+
                 Spacer()
-                
-                // Previous Workout Button
+
+                // History Button
                 Button {
                     showingHistory = true
                 } label: {
-                    HStack(spacing: 4) {
-                        Image(systemName: "clock.arrow.circlepath")
-                            .font(.system(size: 12, weight: .semibold))
-                        Text("History")
-                            .font(.system(size: 12, weight: .semibold))
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(accentColor)
+                        .frame(width: 36, height: 36)
+                        .background(accentColor.opacity(0.1))
+                        .clipShape(Circle())
+                }
+
+                // Menu Button
+                Menu {
+                    Button {
+                        // TODO: Implement replace exercise
+                    } label: {
+                        Label("Replace Exercise", systemImage: "arrow.triangle.2.circlepath")
                     }
-                    .foregroundColor(accentColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(accentColor.opacity(0.1))
-                    .clipShape(Capsule())
+
+                    Button {
+                        // TODO: Implement reorder
+                    } label: {
+                        Label("Reorder Exercise", systemImage: "arrow.up.arrow.down")
+                    }
+
+                    Button {
+                        showingNotes = true
+                    } label: {
+                        Label("Add Notes", systemImage: "note.text")
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        // TODO: Implement delete
+                    } label: {
+                        Label("Delete Exercise", systemImage: "trash")
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(AppColors.textSecondary)
+                        .frame(width: 36, height: 36)
+                        .background(Color.gray.opacity(0.08))
+                        .clipShape(Circle())
                 }
             }
-            
-            // Exercise Info
-            VStack(alignment: .leading, spacing: 8) {
-                HStack(alignment: .top) {
-                    Text(exerciseLog.exerciseName)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                        .fixedSize(horizontal: false, vertical: true)
-                    
-                    Spacer()
-                    
-                    // Menu Button
-                    Menu {
-                        Button {
-                            // TODO: Implement replace exercise
-                        } label: {
-                            Label("Replace Exercise", systemImage: "arrow.triangle.2.circlepath")
-                        }
-                        
-                        Button {
-                            // TODO: Implement reorder
-                        } label: {
-                            Label("Reorder Exercise", systemImage: "arrow.up.arrow.down")
-                        }
-                        
-                        Button {
-                            showingNotes = true
-                        } label: {
-                            Label("Add Notes", systemImage: "note.text")
-                        }
-                        
-                        Divider()
-                        
-                        Button(role: .destructive) {
-                            // TODO: Implement delete
-                        } label: {
-                            Label("Delete Exercise", systemImage: "trash")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis")
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundColor(.gray)
-                            .frame(width: 32, height: 32)
-                            .background(Color.gray.opacity(0.1))
-                            .clipShape(Circle())
-                    }
-                }
-                
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 12)
+
+            Divider()
+                .padding(.horizontal, 16)
+
+            // Exercise Name & Details
+            VStack(alignment: .leading, spacing: 12) {
+                Text(exerciseLog.exerciseName)
+                    .font(AppFonts.title(26))
+                    .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+
                 if let exercise = exercise {
-                    HStack(spacing: 12) {
+                    HStack(spacing: 10) {
                         // Muscle Group Badge
-                        HStack(spacing: 6) {
+                        HStack(spacing: 5) {
                             Image(systemName: "figure.strengthtraining.traditional")
-                                .font(.system(size: 10))
+                                .font(.system(size: 11, weight: .semibold))
                             Text(exercise.muscleGroup.uppercased())
-                                .font(.system(size: 10, weight: .bold))
-                                .tracking(1)
+                                .font(AppFonts.label(11))
+                                .tracking(0.8)
                         }
-                        .foregroundColor(.secondary)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(Color.gray.opacity(0.1))
-                        .cornerRadius(6)
-                        
+                        .foregroundColor(accentColor)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(accentColor.opacity(0.1))
+                        .clipShape(Capsule())
+
                         // Set Completion Status
                         HStack(spacing: 4) {
-                            Text("\(completedSets)/\(exerciseLog.sets.count)")
-                                .font(.system(size: 14, weight: .bold, design: .rounded))
-                                .foregroundColor(completedSets == exerciseLog.sets.count ? Color(hex: "#00D4AA") : .secondary)
-                            Text("sets")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundColor(.secondary)
+                            Image(systemName: completedSets == exerciseLog.sets.count ? "checkmark.circle.fill" : "circle")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(completedSets == exerciseLog.sets.count ? AppColors.success : AppColors.textTertiary)
+
+                            Text("\(completedSets)/\(exerciseLog.sets.count) sets")
+                                .font(AppFonts.label(12))
+                                .foregroundColor(completedSets == exerciseLog.sets.count ? AppColors.success : AppColors.textSecondary)
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(
+                            completedSets == exerciseLog.sets.count ?
+                            AppColors.success.opacity(0.1) :
+                            Color.gray.opacity(0.08)
+                        )
+                        .clipShape(Capsule())
+
+                        // Notes indicator
+                        if exerciseLog.notes != nil {
+                            Image(systemName: "note.text")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundColor(AppColors.success)
+                                .frame(width: 28, height: 28)
+                                .background(AppColors.success.opacity(0.1))
+                                .clipShape(Circle())
                         }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 16)
+            .padding(.top, 16)
+            .padding(.bottom, 20)
         }
-        .padding(20)
-        .background(Color.white)
-        .cornerRadius(24)
-        .shadow(color: Color.black.opacity(0.06), radius: 15, x: 0, y: 5)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadius)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 
     // MARK: - Set List Section
@@ -223,15 +257,15 @@ struct ExerciseWorkoutCard: View {
                 .foregroundColor(accentColor)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.white)
-                .cornerRadius(16)
+                .background(AppColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
+                    RoundedRectangle(cornerRadius: AppLayout.miniRadius)
                         .stroke(accentColor.opacity(0.2), lineWidth: 1.5)
                 )
             }
-            
+
             // Previous Button
             Button {
                 showingHistory = true
@@ -242,15 +276,15 @@ struct ExerciseWorkoutCard: View {
                     Text("Previous")
                         .font(.system(size: 15, weight: .semibold))
                 }
-                .foregroundColor(.primary)
+                .foregroundColor(AppColors.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.white)
-                .cornerRadius(16)
+                .background(AppColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.gray.opacity(0.2), lineWidth: 1.5)
+                    RoundedRectangle(cornerRadius: AppLayout.miniRadius)
+                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
                 )
             }
 
@@ -264,15 +298,15 @@ struct ExerciseWorkoutCard: View {
                     Text("Notes")
                         .font(.system(size: 15, weight: .semibold))
                 }
-                .foregroundColor(exerciseLog.notes != nil ? Color(hex: "#00D4AA") : .gray)
+                .foregroundColor(exerciseLog.notes != nil ? AppColors.success : AppColors.textSecondary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 14)
-                .background(Color.white)
-                .cornerRadius(16)
+                .background(AppColors.surface)
+                .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
                 .shadow(color: Color.black.opacity(0.05), radius: 8, x: 0, y: 2)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 16)
-                        .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppLayout.miniRadius)
+                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
                 )
             }
         }
@@ -295,82 +329,88 @@ struct SetListSectionView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Column Headers
+            // Column Headers (inside the card)
             HStack(spacing: 0) {
                 Text("SET")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(AppFonts.label(10))
+                    .tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
                     .frame(width: 50, alignment: .leading)
-                
+
                 Text(weightUnit.uppercased())
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(AppFonts.label(10))
+                    .tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
                     .frame(width: 90, alignment: .center)
-                
+
                 Text("REPS")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(AppFonts.label(10))
+                    .tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
                     .frame(width: 90, alignment: .center)
-                
+
                 Text("RIR")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundColor(.secondary)
+                    .font(AppFonts.label(10))
+                    .tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
                     .frame(width: 60, alignment: .center)
-                
+
                 Spacer()
                     .frame(width: 44) // For the play button column
             }
             .padding(.horizontal, 20)
+            .padding(.top, 16)
             .padding(.bottom, 12)
 
+            Divider()
+                .padding(.horizontal, 16)
+
             // Set Rows
-            VStack(spacing: 0) {
-                ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
-                    let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
-                    
-                    // Check if this specific set is playing
-                    let isPlaying = activeSetTimer?.exerciseIndex == exerciseIndex &&
-                                    activeSetTimer?.setIndex == index &&
-                                    activeSetTimer?.isPaused == false
-                    
-                    SetInputCard(
-                        setLog: $exerciseLog.sets[index],
-                        accentColor: accentColor,
-                        previousSet: previousSet,
-                        isPlaying: isPlaying,
-                        weightUnit: weightUnit,
-                        onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
-                        onToggleCompletion: { onToggleSetCompletion(index) },
-                        onPlaySet: { onPlaySet(index) },
-                        onPauseSet: onPauseSet,
-                        onUpdateWeight: { newWeight, newUnit, applyToNext in
-                            // Update unit if changed
-                            if newUnit != weightUnit {
-                                weightUnit = newUnit
-                            }
-                            
-                            // Apply to next sets if requested
-                            if applyToNext {
-                                for i in (index + 1)..<exerciseLog.sets.count {
-                                    exerciseLog.sets[i].weight = newWeight
-                                }
+            ForEach(Array(exerciseLog.sets.enumerated()), id: \.element.id) { index, _ in
+                let previousSet = previousSets.first { $0.setNumber == exerciseLog.sets[index].setNumber }
+
+                // Check if this specific set is playing
+                let isPlaying = activeSetTimer?.exerciseIndex == exerciseIndex &&
+                                activeSetTimer?.setIndex == index &&
+                                activeSetTimer?.isPaused == false
+
+                SetInputCard(
+                    setLog: $exerciseLog.sets[index],
+                    accentColor: accentColor,
+                    previousSet: previousSet,
+                    isPlaying: isPlaying,
+                    weightUnit: weightUnit,
+                    onRemove: exerciseLog.sets.count > 1 ? { onRemoveSet(index) } : nil,
+                    onToggleCompletion: { onToggleSetCompletion(index) },
+                    onPlaySet: { onPlaySet(index) },
+                    onPauseSet: onPauseSet,
+                    onUpdateWeight: { newWeight, newUnit, applyToNext in
+                        // Update unit if changed
+                        if newUnit != weightUnit {
+                            weightUnit = newUnit
+                        }
+
+                        // Apply to next sets if requested
+                        if applyToNext {
+                            for i in (index + 1)..<exerciseLog.sets.count {
+                                exerciseLog.sets[i].weight = newWeight
                             }
                         }
-                    )
-                    
-                    if index < exerciseLog.sets.count - 1 {
-                        Divider()
-                            .padding(.leading, 20)
                     }
+                )
+
+                if index < exerciseLog.sets.count - 1 {
+                    Divider()
+                        .padding(.horizontal, 16)
                 }
             }
-            .background(Color.white)
-            .cornerRadius(16)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-            .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-            )
         }
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.cornerRadius))
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppLayout.cornerRadius)
+                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+        )
     }
 }

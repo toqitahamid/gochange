@@ -43,89 +43,159 @@ struct ComparisonMetricsRow: View {
         return Double(sum) / Double(completedWithRIR.count)
     }
 
+    private var rirIntensity: String {
+        guard let rir = averageRIR else { return "—" }
+        if rir <= 1 { return "MAX" }
+        if rir <= 2 { return "HIGH" }
+        if rir <= 3 { return "MOD" }
+        return "LOW"
+    }
+
+    private var rirColor: Color {
+        guard let rir = averageRIR else { return AppColors.textTertiary }
+        if rir <= 1 { return AppColors.error }
+        if rir <= 2 { return AppColors.warning }
+        if rir <= 3 { return AppColors.primary }
+        return AppColors.success
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             // Volume Metric
-            ComparisonMetricCard(
+            WorkoutMetricCard(
+                icon: "flame.fill",
+                iconColor: AppColors.primary,
                 title: "VOLUME",
-                value: volumeToday > 0 ? "\(Int(volumeToday))" : "—",
-                subtitle: volumeLast > 0 ? "vs \(Int(volumeLast)) lbs" : "No previous data",
+                value: volumeToday > 0 ? formatVolume(volumeToday) : "—",
                 change: volumeToday > 0 && volumeLast > 0 ? volumeChange : nil,
-                accentColor: Color(hex: "#5B7FFF")
+                subtitle: volumeLast > 0 ? "Last: \(formatVolume(volumeLast))" : nil
             )
 
-            // Sets Completed Metric
-            ComparisonMetricCard(
+            // Sets Metric
+            WorkoutMetricCard(
+                icon: "checkmark.circle.fill",
+                iconColor: completedSetsCount == totalSetsCount ? AppColors.success : accentColor,
                 title: "SETS",
                 value: "\(completedSetsCount)/\(totalSetsCount)",
-                subtitle: totalSetsCount > 0 ? "\(Int((Double(completedSetsCount) / Double(totalSetsCount)) * 100))% complete" : "—",
                 change: nil,
-                accentColor: completedSetsCount == totalSetsCount ? Color(hex: "#00D4AA") : Color(hex: "#5B7FFF")
+                subtitle: nil,
+                progress: totalSetsCount > 0 ? Double(completedSetsCount) / Double(totalSetsCount) : 0,
+                progressColor: completedSetsCount == totalSetsCount ? AppColors.success : accentColor
             )
 
             // Average RIR Metric
-            ComparisonMetricCard(
+            WorkoutMetricCard(
+                icon: "gauge.with.dots.needle.67percent",
+                iconColor: rirColor,
                 title: "AVG RIR",
                 value: averageRIR != nil ? String(format: "%.1f", averageRIR!) : "—",
-                subtitle: averageRIR != nil ? "Reps in reserve" : "Not tracked",
                 change: nil,
-                accentColor: Color(hex: "#5B7FFF")
+                subtitle: rirIntensity,
+                subtitleColor: rirColor
             )
         }
     }
+
+    private func formatVolume(_ volume: Double) -> String {
+        if volume >= 1000 {
+            return String(format: "%.1fk", volume / 1000)
+        }
+        return "\(Int(volume))"
+    }
 }
 
-// MARK: - Comparison Metric Card
-struct ComparisonMetricCard: View {
+// MARK: - Workout Metric Card
+struct WorkoutMetricCard: View {
+    let icon: String
+    let iconColor: Color
     let title: String
     let value: String
-    let subtitle: String
-    let change: Double?
-    let accentColor: Color
+    var change: Double? = nil
+    var subtitle: String? = nil
+    var subtitleColor: Color? = nil
+    var progress: Double? = nil
+    var progressColor: Color? = nil
 
     var body: some View {
-        VStack(spacing: 6) {
-            // Title
-            Text(title)
-                .font(.system(size: 9, weight: .bold))
-                .tracking(1.5)
-                .foregroundColor(.secondary.opacity(0.8))
+        VStack(spacing: 8) {
+            // Icon & Title Row
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(iconColor)
+
+                Text(title)
+                    .font(AppFonts.label(9))
+                    .tracking(1)
+                    .foregroundColor(AppColors.textTertiary)
+
+                Spacer()
+            }
 
             // Value
-            Text(value)
-                .font(.system(size: 22, weight: .bold, design: .rounded))
-                .foregroundColor(accentColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-                .padding(.vertical, 2)
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(value)
+                    .font(AppFonts.rounded(24, weight: .bold))
+                    .foregroundColor(AppColors.textPrimary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
 
-            // Subtitle with optional change indicator
-            HStack(spacing: 4) {
+                Spacer()
+
+                // Change indicator
                 if let change = change {
-                    Image(systemName: change >= 0 ? "arrow.up.right" : "arrow.down.right")
-                        .font(.system(size: 9, weight: .bold))
-                        .foregroundColor(change >= 0 ? Color(hex: "#00D4AA") : Color(hex: "#FF6B6B"))
+                    HStack(spacing: 2) {
+                        Image(systemName: change >= 0 ? "arrow.up" : "arrow.down")
+                            .font(.system(size: 8, weight: .bold))
 
-                    Text("\(change >= 0 ? "+" : "")\(String(format: "%.0f", change))%")
-                        .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        .foregroundColor(change >= 0 ? Color(hex: "#00D4AA") : Color(hex: "#FF6B6B"))
-                } else {
-                    Text(subtitle)
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(.secondary.opacity(0.7))
+                        Text("\(abs(Int(change)))%")
+                            .font(AppFonts.rounded(10, weight: .semibold))
+                    }
+                    .foregroundColor(change >= 0 ? AppColors.success : AppColors.error)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 3)
+                    .background(
+                        (change >= 0 ? AppColors.success : AppColors.error).opacity(0.12)
+                    )
+                    .clipShape(Capsule())
                 }
             }
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+
+            // Progress bar or subtitle
+            if let progress = progress, let progressColor = progressColor {
+                GeometryReader { geo in
+                    ZStack(alignment: .leading) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(Color.gray.opacity(0.15))
+                            .frame(height: 4)
+
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(progressColor)
+                            .frame(width: geo.size.width * progress, height: 4)
+                    }
+                }
+                .frame(height: 4)
+            } else if let subtitle = subtitle {
+                HStack {
+                    Text(subtitle)
+                        .font(AppFonts.label(10))
+                        .foregroundColor(subtitleColor ?? AppColors.textTertiary)
+                    Spacer()
+                }
+            } else {
+                Spacer()
+                    .frame(height: 4)
+            }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .padding(.horizontal, 8)
-        .background(Color.gray.opacity(0.03))
-        .cornerRadius(20)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 12)
+        .background(AppColors.surface)
+        .clipShape(RoundedRectangle(cornerRadius: AppLayout.miniRadius))
         .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color.gray.opacity(0.05), lineWidth: 1)
+            RoundedRectangle(cornerRadius: AppLayout.miniRadius)
+                .stroke(Color.gray.opacity(0.08), lineWidth: 1)
         )
+        .shadow(color: Color.black.opacity(0.03), radius: 6, x: 0, y: 2)
     }
 }

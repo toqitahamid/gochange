@@ -87,8 +87,8 @@ struct SetInputCard: View {
                         case .normal:
                             // Normal set - show number
                             Text("\(setLog.setNumber)")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundColor(.primary)
+                                .font(AppFonts.rounded(17, weight: .semibold))
+                                .foregroundColor(AppColors.textPrimary)
                             
                         case .warmup:
                             // Warmup - flame icon in circle
@@ -131,9 +131,9 @@ struct SetInputCard: View {
             Button {
                 showWeightSheet = true
             } label: {
-                Text(weightText.isEmpty ? "0" : weightText)
-                    .font(.system(size: 17))
-                    .foregroundColor(.primary)
+                Text(weightText.isEmpty ? "—" : weightText)
+                    .font(AppFonts.rounded(17, weight: .medium))
+                    .foregroundColor(weightText.isEmpty ? AppColors.textTertiary : AppColors.textPrimary)
                     .frame(width: 90)
                     .contentShape(Rectangle())
             }
@@ -160,9 +160,9 @@ struct SetInputCard: View {
             Button {
                 showRepsDurationSheet = true
             } label: {
-                Text(repsText.isEmpty ? "-" : repsText)
-                    .font(.system(size: 17))
-                    .foregroundColor(.primary)
+                Text(repsText.isEmpty ? "—" : repsText)
+                    .font(AppFonts.rounded(17, weight: .medium))
+                    .foregroundColor(repsText.isEmpty ? AppColors.textTertiary : AppColors.textPrimary)
                     .frame(width: 90)
                     .contentShape(Rectangle())
             }
@@ -200,9 +200,9 @@ struct SetInputCard: View {
                 } label: {
                     Label("Not set", systemImage: setLog.rir == nil ? "checkmark" : "")
                 }
-                
+
                 Divider()
-                
+
                 ForEach(0...5, id: \.self) { rir in
                     Button {
                         setLog.rir = rir
@@ -211,16 +211,15 @@ struct SetInputCard: View {
                     }
                 }
             } label: {
-                Text(setLog.rir != nil ? "\(setLog.rir!)" : "-")
-                    .font(.system(size: 17))
-                    .foregroundColor(setLog.rir != nil ? .primary : .secondary)
+                Text(setLog.rir != nil ? "\(setLog.rir!)" : "—")
+                    .font(AppFonts.rounded(17, weight: .medium))
+                    .foregroundColor(setLog.rir != nil ? AppColors.textPrimary : AppColors.textTertiary)
                     .frame(width: 60, alignment: .center)
             }
             .disabled(setLog.isCompleted)
             
             Spacer()
             
-            // Play/Complete button
             // Play/Pause/Complete button
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) {
@@ -238,13 +237,13 @@ struct SetInputCard: View {
             } label: {
                 Image(systemName: setLog.isCompleted ? "checkmark.circle.fill" : (isPlaying ? "pause.fill" : "play.fill"))
                     .font(.system(size: 20))
-                    .foregroundColor(setLog.isCompleted ? Color(hex: "#00D4AA") : (isPlaying ? accentColor : .primary))
+                    .foregroundColor(setLog.isCompleted ? AppColors.success : (isPlaying ? accentColor : AppColors.textPrimary))
             }
-            .frame(width: 44, alignment: .trailing)
+            .frame(width: 44, alignment: .center)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .background(setLog.isCompleted ? Color(hex: "#00D4AA").opacity(0.05) : Color.white)
+        .padding(.vertical, 14)
+        .background(setLog.isCompleted ? AppColors.success.opacity(0.06) : AppColors.surface)
         .onAppear {
             // Pre-fill with previous data if available
             if weightText.isEmpty && repsText.isEmpty {
