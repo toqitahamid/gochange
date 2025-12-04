@@ -2,258 +2,232 @@ import ActivityKit
 import WidgetKit
 import SwiftUI
 
-// MARK: - Rest Timer Widget
+// MARK: - Premium Color Palette
 
-struct RestTimerWidget: Widget {
-    var body: some WidgetConfiguration {
-        ActivityConfiguration(for: RestTimerAttributes.self) { context in
-            RestTimerLockScreenView(context: context)
-        } dynamicIsland: { context in
-            let safeEndTime = max(context.state.endTime, Date().addingTimeInterval(1))
-            
-            return DynamicIsland {
-                DynamicIslandExpandedRegion(.leading) {
-                    HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.cyan.opacity(0.2))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "pause.fill")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(.cyan)
-                        }
-                        
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("REST")
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.cyan)
-                            Text("Timer")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.leading, 4)
-                }
-                
-                DynamicIslandExpandedRegion(.trailing) {
-                    Text(timerInterval: Date()...safeEndTime, countsDown: true)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .monospacedDigit()
-                        .foregroundColor(.white)
-                        .padding(.trailing, 4)
-                }
-                
-                DynamicIslandExpandedRegion(.bottom) {
-                    ProgressView(
-                        timerInterval: Date()...safeEndTime,
-                        countsDown: true
-                    )
-                    .progressViewStyle(.linear)
-                    .tint(.cyan)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 4)
-                }
-            } compactLeading: {
-                ZStack {
-                    Circle()
-                        .fill(Color.cyan.opacity(0.3))
-                        .frame(width: 24, height: 24)
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.cyan)
-                }
-            } compactTrailing: {
-                Text(timerInterval: Date()...safeEndTime, countsDown: true)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.cyan)
-                    .frame(minWidth: 44)
-            } minimal: {
-                ZStack {
-                    Circle()
-                        .strokeBorder(Color.cyan, lineWidth: 2)
-                    Image(systemName: "pause.fill")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(.cyan)
-                }
-            }
-        }
-    }
+private struct LiveActivityColors {
+    // Premium gradient colors
+    static let workoutGradientStart = Color(red: 1.0, green: 0.42, blue: 0.21)  // #FF6B35
+    static let workoutGradientEnd = Color(red: 0.97, green: 0.58, blue: 0.12)   // #F7931E
+    
+    // Rest timer accent
+    static let restAccent = Color(red: 0.0, green: 0.83, blue: 0.67)  // #00D4AA
+    
+    // Premium dark background
+    static let darkBackground = Color(red: 0.06, green: 0.06, blue: 0.09)  // #0F0F17
+    static let cardSurface = Color(red: 0.1, green: 0.1, blue: 0.14)       // #1A1A24
 }
 
-// MARK: - Rest Timer Lock Screen View
-
-struct RestTimerLockScreenView: View {
-    let context: ActivityViewContext<RestTimerAttributes>
-    
-    private var safeEndTime: Date {
-        max(context.state.endTime, Date().addingTimeInterval(1))
-    }
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.cyan, Color.cyan.opacity(0.6)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 50, height: 50)
-                
-                Image(systemName: "pause.fill")
-                    .font(.system(size: 20, weight: .bold))
-                    .foregroundColor(.white)
-            }
-            
-            // Timer Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text("REST TIMER")
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(.cyan)
-                    .tracking(1)
-
-                Text(timerInterval: Date()...safeEndTime, countsDown: true)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
-            }
-            
-            Spacer()
-            
-            // Progress Ring
-            ZStack {
-                Circle()
-                    .stroke(Color.white.opacity(0.2), lineWidth: 4)
-                    .frame(width: 44, height: 44)
-                
-                ProgressView(
-                    timerInterval: Date()...safeEndTime,
-                    countsDown: true
-                ) {
-                    EmptyView()
-                }
-                .progressViewStyle(.circular)
-                .tint(.cyan)
-                .scaleEffect(1.2)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .activityBackgroundTint(Color.black.opacity(0.85))
-    }
-}
-
-// MARK: - Workout Activity Widget
+// MARK: - Unified Workout Widget (includes Rest Timer)
 
 struct WorkoutActivityWidget: Widget {
     var body: some WidgetConfiguration {
         ActivityConfiguration(for: WorkoutActivityAttributes.self) { context in
-            WorkoutLockScreenView(context: context)
+            UnifiedLockScreenView(context: context)
         } dynamicIsland: { context in
-            let color = Color(hex: context.attributes.workoutColor) ?? .orange
+            let workoutColor = Color(hex: context.attributes.workoutColor) ?? LiveActivityColors.workoutGradientStart
+            let isResting = context.state.restEndTime != nil
+            let restEndTime = context.state.restEndTime ?? Date()
+            let safeRestEndTime = max(restEndTime, Date().addingTimeInterval(1))
             
             return DynamicIsland {
+                // MARK: - Expanded Leading
                 DynamicIslandExpandedRegion(.leading) {
                     HStack(spacing: 8) {
+                        // Icon with progress ring
                         ZStack {
+                            // Glow
                             Circle()
-                                .fill(color.opacity(0.2))
-                                .frame(width: 44, height: 44)
-                            Image(systemName: "dumbbell.fill")
-                                .font(.system(size: 18, weight: .semibold))
-                                .foregroundColor(color)
+                                .fill(
+                                    RadialGradient(
+                                        colors: [workoutColor.opacity(0.5), workoutColor.opacity(0.0)],
+                                        center: .center,
+                                        startRadius: 12,
+                                        endRadius: 22
+                                    )
+                                )
+                                .frame(width: 40, height: 40)
+                            
+                            // Progress ring
+                            Circle()
+                                .stroke(workoutColor.opacity(0.3), lineWidth: 2.5)
+                                .frame(width: 32, height: 32)
+                            
+                            Circle()
+                                .trim(from: 0, to: progressPercent(context: context))
+                                .stroke(workoutColor, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                                .frame(width: 32, height: 32)
+                                .rotationEffect(.degrees(-90))
+                            
+                            Image(systemName: isResting ? "timer" : "dumbbell.fill")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundColor(isResting ? LiveActivityColors.restAccent : workoutColor)
                         }
                         
                         VStack(alignment: .leading, spacing: 2) {
                             Text(context.attributes.workoutName.uppercased())
-                                .font(.caption2)
-                                .fontWeight(.bold)
-                                .foregroundColor(color)
+                                .font(.system(size: 10, weight: .heavy))
+                                .tracking(0.8)
+                                .foregroundColor(workoutColor)
                                 .lineLimit(1)
-                            Text("\(context.state.exerciseCount) exercises")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
-                    }
-                    .padding(.leading, 4)
-                }
-                
-                DynamicIslandExpandedRegion(.trailing) {
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(context.state.startTime, style: .timer)
-                            .font(.system(size: 28, weight: .bold, design: .rounded))
-                            .monospacedDigit()
-                            .foregroundColor(.white)
-                        
-                        Text("\(context.state.completedSets)/\(context.state.totalSets) sets")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.trailing, 4)
-                }
-                
-                DynamicIslandExpandedRegion(.bottom) {
-                    GeometryReader { geometry in
-                        ZStack(alignment: .leading) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.white.opacity(0.2))
-                                .frame(height: 6)
                             
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(color)
-                                .frame(
-                                    width: context.state.totalSets > 0
-                                        ? geometry.size.width * CGFloat(context.state.completedSets) / CGFloat(context.state.totalSets)
-                                        : 0,
-                                    height: 6
-                                )
+                            if isResting {
+                                Text("REST • Set \(context.state.restAfterSetNumber ?? 1)")
+                                    .font(.system(size: 11, weight: .semibold))
+                                    .foregroundColor(LiveActivityColors.restAccent)
+                            } else if let exercise = context.state.currentExerciseName {
+                                Text(exercise)
+                                    .font(.system(size: 11, weight: .medium))
+                                    .foregroundColor(.white.opacity(0.7))
+                                    .lineLimit(1)
+                            }
                         }
                     }
-                    .frame(height: 6)
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 4)
                 }
+                
+                // MARK: - Expanded Trailing
+                DynamicIslandExpandedRegion(.trailing) {
+                    VStack(alignment: .trailing, spacing: 3) {
+                        if isResting {
+                            // Rest countdown (prominent)
+                            Text(timerInterval: Date()...safeRestEndTime, countsDown: true)
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundColor(LiveActivityColors.restAccent)
+                            
+                            // Workout time (small)
+                            Text(context.state.startTime, style: .timer)
+                                .font(.system(size: 11, weight: .medium, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundColor(.white.opacity(0.5))
+                        } else {
+                            // Workout time (prominent)
+                            Text(context.state.startTime, style: .timer)
+                                .font(.system(size: 26, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                                .foregroundColor(context.state.isPaused ? .white.opacity(0.5) : .white)
+                            
+                            // Sets progress
+                            HStack(spacing: 2) {
+                                Text("\(context.state.completedSets)")
+                                    .font(.system(size: 12, weight: .bold))
+                                    .foregroundColor(workoutColor)
+                                Text("/\(context.state.totalSets)")
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.white.opacity(0.5))
+                            }
+                        }
+                    }
+                }
+                
+                // MARK: - Expanded Bottom
+                DynamicIslandExpandedRegion(.bottom) {
+                    if isResting {
+                        // Rest timer progress bar
+                        ProgressView(
+                            timerInterval: Date()...safeRestEndTime,
+                            countsDown: true
+                        ) { EmptyView() }
+                        .progressViewStyle(.linear)
+                        .tint(LiveActivityColors.restAccent)
+                        .frame(height: 4)
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 4)
+                    } else {
+                        // Sets progress bar
+                        GeometryReader { geometry in
+                            ZStack(alignment: .leading) {
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(Color.white.opacity(0.15))
+                                    .frame(height: 4)
+                                
+                                RoundedRectangle(cornerRadius: 2)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [workoutColor, workoutColor.opacity(0.7)],
+                                            startPoint: .leading,
+                                            endPoint: .trailing
+                                        )
+                                    )
+                                    .frame(
+                                        width: context.state.totalSets > 0
+                                            ? geometry.size.width * CGFloat(context.state.completedSets) / CGFloat(context.state.totalSets)
+                                            : 0,
+                                        height: 4
+                                    )
+                            }
+                        }
+                        .frame(height: 4)
+                        .padding(.horizontal, 4)
+                        .padding(.bottom, 4)
+                    }
+                }
+                
             } compactLeading: {
+                // Icon
                 ZStack {
                     Circle()
-                        .fill(color.opacity(0.3))
+                        .fill(isResting ? LiveActivityColors.restAccent.opacity(0.3) : workoutColor.opacity(0.3))
                         .frame(width: 24, height: 24)
-                    Image(systemName: "dumbbell.fill")
+                    
+                    Image(systemName: isResting ? "timer" : "dumbbell.fill")
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(color)
+                        .foregroundColor(isResting ? LiveActivityColors.restAccent : workoutColor)
                 }
             } compactTrailing: {
-                Text(context.state.startTime, style: .timer)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(color)
-                    .frame(minWidth: 44)
+                // Timer - no minWidth to keep compact
+                if isResting {
+                    Text(timerInterval: Date()...safeRestEndTime, countsDown: true)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(LiveActivityColors.restAccent)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 14, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(context.state.isPaused ? workoutColor.opacity(0.5) : workoutColor)
+                }
             } minimal: {
                 ZStack {
                     Circle()
-                        .strokeBorder(color, lineWidth: 2)
-                    Image(systemName: "dumbbell.fill")
-                        .font(.system(size: 8, weight: .bold))
-                        .foregroundColor(color)
+                        .fill(
+                            LinearGradient(
+                                colors: isResting 
+                                    ? [LiveActivityColors.restAccent, LiveActivityColors.restAccent.opacity(0.6)]
+                                    : [workoutColor, workoutColor.opacity(0.6)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                    
+                    Image(systemName: isResting ? "timer" : "dumbbell.fill")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundColor(.white)
                 }
             }
         }
     }
+    
+    private func progressPercent(context: ActivityViewContext<WorkoutActivityAttributes>) -> Double {
+        guard context.state.totalSets > 0 else { return 0 }
+        return Double(context.state.completedSets) / Double(context.state.totalSets)
+    }
 }
 
-// MARK: - Workout Lock Screen View
+// MARK: - Unified Lock Screen View
 
-struct WorkoutLockScreenView: View {
+struct UnifiedLockScreenView: View {
     let context: ActivityViewContext<WorkoutActivityAttributes>
     
     private var workoutColor: Color {
-        Color(hex: context.attributes.workoutColor) ?? .orange
+        Color(hex: context.attributes.workoutColor) ?? LiveActivityColors.workoutGradientStart
+    }
+    
+    private var isResting: Bool {
+        context.state.restEndTime != nil
+    }
+    
+    private var safeRestEndTime: Date {
+        max(context.state.restEndTime ?? Date(), Date().addingTimeInterval(1))
     }
     
     private var progressPercent: Double {
@@ -262,67 +236,132 @@ struct WorkoutLockScreenView: View {
     }
     
     var body: some View {
-        HStack(spacing: 16) {
-            // Icon with progress ring
+        HStack(spacing: 12) {
+            // MARK: - Left: Progress Ring + Icon
             ZStack {
-                // Background circle
+                // Background ring
                 Circle()
-                    .stroke(workoutColor.opacity(0.3), lineWidth: 4)
-                    .frame(width: 50, height: 50)
+                    .stroke(workoutColor.opacity(0.2), lineWidth: 4)
+                    .frame(width: 48, height: 48)
                 
                 // Progress arc
                 Circle()
                     .trim(from: 0, to: progressPercent)
-                    .stroke(workoutColor, style: StrokeStyle(lineWidth: 4, lineCap: .round))
-                    .frame(width: 50, height: 50)
+                    .stroke(
+                        LinearGradient(
+                            colors: [workoutColor, workoutColor.opacity(0.7)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ),
+                        style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                    )
+                    .frame(width: 48, height: 48)
                     .rotationEffect(.degrees(-90))
                 
                 // Center icon
-                Image(systemName: "dumbbell.fill")
-                    .font(.system(size: 18, weight: .bold))
-                    .foregroundColor(workoutColor)
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: isResting
+                                    ? [LiveActivityColors.restAccent, LiveActivityColors.restAccent.opacity(0.7)]
+                                    : [workoutColor, workoutColor.opacity(0.7)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 32, height: 32)
+                    
+                    Image(systemName: isResting ? "timer" : "dumbbell.fill")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundColor(.white)
+                }
             }
             
-            // Workout Info
-            VStack(alignment: .leading, spacing: 4) {
-                Text(context.attributes.workoutName.uppercased())
-                    .font(.caption)
-                    .fontWeight(.bold)
-                    .foregroundColor(workoutColor)
-                    .tracking(1)
-                    .lineLimit(1)
+            // MARK: - Center: Info
+            VStack(alignment: .leading, spacing: 3) {
+                // Workout name + status
+                HStack(spacing: 6) {
+                    Text(context.attributes.workoutName.uppercased())
+                        .font(.system(size: 10, weight: .heavy))
+                        .tracking(0.8)
+                        .foregroundColor(workoutColor)
+                    
+                    if isResting {
+                        Text("REST")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.black)
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(LiveActivityColors.restAccent)
+                            .cornerRadius(4)
+                    } else if context.state.isPaused {
+                        Text("PAUSED")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundColor(.white.opacity(0.6))
+                            .padding(.horizontal, 5)
+                            .padding(.vertical, 2)
+                            .background(Color.white.opacity(0.1))
+                            .cornerRadius(4)
+                    }
+                }
                 
-                Text(context.state.startTime, style: .timer)
-                    .font(.system(size: 28, weight: .bold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundColor(.white)
+                // Main time display
+                if isResting {
+                    Text(timerInterval: Date()...safeRestEndTime, countsDown: true)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(LiveActivityColors.restAccent)
+                } else {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(context.state.isPaused ? .white.opacity(0.5) : .white)
+                }
+                
+                // Secondary info
+                if let exercise = context.state.currentExerciseName {
+                    Text(exercise)
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
+                        .lineLimit(1)
+                }
             }
             
             Spacer()
             
-            // Stats
+            // MARK: - Right: Stats
             VStack(alignment: .trailing, spacing: 4) {
-                HStack(spacing: 4) {
+                // Sets progress
+                HStack(spacing: 2) {
                     Text("\(context.state.completedSets)")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .font(.system(size: 18, weight: .bold, design: .rounded))
                         .foregroundColor(workoutColor)
                     Text("/\(context.state.totalSets)")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.secondary)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundColor(.white.opacity(0.5))
                 }
                 
-                Text("sets done")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                Text("sets")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundColor(.white.opacity(0.4))
+                
+                // Workout time when resting
+                if isResting {
+                    Text(context.state.startTime, style: .timer)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundColor(.white.opacity(0.4))
+                }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 16)
-        .activityBackgroundTint(Color.black.opacity(0.85))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .activityBackgroundTint(LiveActivityColors.darkBackground)
     }
 }
 
-// MARK: - Color Extension for Hex
+// MARK: - Color Extension
 
 extension Color {
     init?(hex: String) {

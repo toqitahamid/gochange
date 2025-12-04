@@ -672,7 +672,7 @@ class WorkoutManager: ObservableObject {
         let isLastSet = setIndex == exerciseLog.sets.count - 1
 
         // Use longer rest for last set, shorter for others
-        let duration: TimeInterval = isLastSet ? 180 : 90 // 3 min for last set, 90s otherwise
+        let duration: TimeInterval = isLastSet ? 180 : 90
 
         let endTime = Date().addingTimeInterval(duration)
         activeRestTimer = RestTimerState(
@@ -681,8 +681,13 @@ class WorkoutManager: ObservableObject {
             exerciseName: exerciseLog.exerciseName
         )
 
-        // Start Live Activity
-        RestTimerActivityManager.shared.start(endTime: endTime)
+        // Update unified Live Activity with rest timer state
+        WorkoutActivityManager.shared.startRestTimer(
+            endTime: endTime,
+            totalDuration: duration,
+            afterSetNumber: setIndex + 1,
+            exerciseName: exerciseLog.exerciseName
+        )
         NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
 
         // Auto-dismiss timer when it expires
@@ -744,7 +749,7 @@ class WorkoutManager: ObservableObject {
         activeSetTimer = nil
         
         // Start rest timer for 180 seconds
-        let duration: TimeInterval = 180 // 3 minutes as requested
+        let duration: TimeInterval = 180
         let endTime = Date().addingTimeInterval(duration)
         activeRestTimer = RestTimerState(
             endTime: endTime,
@@ -752,8 +757,13 @@ class WorkoutManager: ObservableObject {
             exerciseName: timer.exerciseName
         )
         
-        // Start rest timer Live Activity and notification
-        RestTimerActivityManager.shared.start(endTime: endTime)
+        // Update unified Live Activity with rest timer state
+        WorkoutActivityManager.shared.startRestTimer(
+            endTime: endTime,
+            totalDuration: duration,
+            afterSetNumber: timer.setNumber,
+            exerciseName: timer.exerciseName
+        )
         NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
         
         // Auto-dismiss timer when it expires
@@ -772,7 +782,7 @@ class WorkoutManager: ObservableObject {
         activeRestTimer = nil
         restTimerCancellable?.cancel()
         restTimerCancellable = nil
-        RestTimerActivityManager.shared.end()
+        WorkoutActivityManager.shared.stopRestTimer()
         NotificationService.shared.cancelRestTimerNotification()
     }
     

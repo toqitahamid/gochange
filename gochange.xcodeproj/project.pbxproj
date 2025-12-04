@@ -92,7 +92,6 @@
 		969A6FCA2ED5CA5000272209 /* Exceptions for "gochange" folder in "GoChangeWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
-				Models/RestTimerAttributes.swift,
 				Models/WorkoutActivityAttributes.swift,
 				Views/LiveActivity/GoChangeStaticWidget.swift,
 				Views/LiveActivity/RestTimerWidget.swift,

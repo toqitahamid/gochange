@@ -1,6 +1,5 @@
 import SwiftUI
 import AVFoundation
-import ActivityKit
 
 /// A rest timer overlay that can be shown during workouts
 struct RestTimerView: View {
@@ -190,22 +189,7 @@ struct RestTimerView: View {
                 )
         )
         .onAppear {
-            // Check for active Live Activity first
-            // Check for active Live Activity first
-            if let activity = RestTimerActivityManager.shared.activity,
-               case .active = activity.activityState {
-                
-                let endTime = activity.content.state.endTime
-                let remaining = endTime.timeIntervalSinceNow
-                if remaining > 0 {
-                    remainingTime = remaining
-                    startTimer() // This will resume the timer UI
-                } else {
-                    remainingTime = defaultDuration
-                }
-            } else {
-                remainingTime = defaultDuration
-            }
+            remainingTime = defaultDuration
         }
         .onDisappear {
             stopTimer()
@@ -248,9 +232,6 @@ struct RestTimerView: View {
         isRunning = true
         let endTime = Date().addingTimeInterval(remainingTime)
         
-        // Start Live Activity
-        RestTimerActivityManager.shared.start(endTime: endTime)
-        
         // Schedule background notification
         NotificationService.shared.scheduleRestTimerNotification(endTime: endTime)
         
@@ -267,8 +248,6 @@ struct RestTimerView: View {
         isRunning = false
         timer?.invalidate()
         timer = nil
-        // End Live Activity
-        RestTimerActivityManager.shared.end()
         // Cancel background notification
         NotificationService.shared.cancelRestTimerNotification()
     }

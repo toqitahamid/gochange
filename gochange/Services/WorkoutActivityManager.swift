@@ -7,40 +7,56 @@ class WorkoutActivityManager {
     private var activity: Activity<WorkoutActivityAttributes>?
     private var startTime: Date?
     
+    // Current state tracking
+    private var currentExerciseName: String?
+    private var isPaused: Bool = false
+    private var completedSets: Int = 0
+    private var totalSets: Int = 0
+    private var exerciseCount: Int = 0
+    
+    // Rest timer state
+    private var restEndTime: Date?
+    private var restTotalDuration: TimeInterval?
+    private var restAfterSetNumber: Int?
+    
     private init() {}
     
-    func start(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int) {
-        // Run in a detached task to avoid blocking UI
+    func start(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int, currentExerciseName: String? = nil) {
+        self.exerciseCount = exerciseCount
+        self.totalSets = totalSets
+        self.currentExerciseName = currentExerciseName
+        self.completedSets = 0
+        self.isPaused = false
+        self.restEndTime = nil
+        
         Task.detached { [weak self] in
             await self?.startActivity(
                 workoutName: workoutName,
                 workoutColor: workoutColor,
                 exerciseCount: exerciseCount,
-                totalSets: totalSets
+                totalSets: totalSets,
+                currentExerciseName: currentExerciseName
             )
         }
     }
     
     @MainActor
-    private func startActivity(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int) async {
-        print("🏋️ WorkoutActivityManager: Starting workout activity...")
+    private func startActivity(workoutName: String, workoutColor: String, exerciseCount: Int, totalSets: Int, currentExerciseName: String?) async {
+        print("🏋️ WorkoutActivityManager: Starting unified workout activity...")
         
-        // End any existing activity first and WAIT for it to complete
+        // End any existing activity first
         if let existingActivity = activity {
-            print("🏋️ WorkoutActivityManager: Ending existing activity first...")
             await existingActivity.end(nil, dismissalPolicy: .immediate)
             self.activity = nil
             self.startTime = nil
         }
 
-        // Also end any orphaned activities from previous app runs
+        // End orphaned activities
         for activity in Activity<WorkoutActivityAttributes>.activities {
             await activity.end(nil, dismissalPolicy: .immediate)
         }
         
         let authInfo = ActivityAuthorizationInfo()
-        print("🏋️ WorkoutActivityManager: Activities Enabled: \(authInfo.areActivitiesEnabled)")
-        
         guard authInfo.areActivitiesEnabled else {
             print("🔴 WorkoutActivityManager: Activities are NOT enabled!")
             return
@@ -56,7 +72,12 @@ class WorkoutActivityManager {
             startTime: self.startTime!,
             exerciseCount: exerciseCount,
             completedSets: 0,
-            totalSets: totalSets
+            totalSets: totalSets,
+            currentExerciseName: currentExerciseName,
+            isPaused: false,
+            restEndTime: nil,
+            restTotalDuration: nil,
+            restAfterSetNumber: nil
         )
         
         do {
@@ -72,7 +93,36 @@ class WorkoutActivityManager {
         }
     }
     
-    func update(completedSets: Int, totalSets: Int, exerciseCount: Int) {
+    func update(completedSets: Int, totalSets: Int, exerciseCount: Int, currentExerciseName: String? = nil, isPaused: Bool = false) {
+        self.completedSets = completedSets
+        self.totalSets = totalSets
+        self.exerciseCount = exerciseCount
+        self.currentExerciseName = currentExerciseName
+        self.isPaused = isPaused
+        
+        pushUpdate()
+    }
+    
+    // MARK: - Rest Timer Integration
+    
+    func startRestTimer(endTime: Date, totalDuration: TimeInterval, afterSetNumber: Int, exerciseName: String) {
+        self.restEndTime = endTime
+        self.restTotalDuration = totalDuration
+        self.restAfterSetNumber = afterSetNumber
+        self.currentExerciseName = exerciseName
+        
+        pushUpdate()
+    }
+    
+    func stopRestTimer() {
+        self.restEndTime = nil
+        self.restTotalDuration = nil
+        self.restAfterSetNumber = nil
+        
+        pushUpdate()
+    }
+    
+    private func pushUpdate() {
         guard let activity = activity, let startTime = startTime else { return }
         
         Task {
@@ -80,7 +130,12 @@ class WorkoutActivityManager {
                 startTime: startTime,
                 exerciseCount: exerciseCount,
                 completedSets: completedSets,
-                totalSets: totalSets
+                totalSets: totalSets,
+                currentExerciseName: currentExerciseName,
+                isPaused: isPaused,
+                restEndTime: restEndTime,
+                restTotalDuration: restTotalDuration,
+                restAfterSetNumber: restAfterSetNumber
             )
             await activity.update(
                 ActivityContent(state: contentState, staleDate: nil)
@@ -100,8 +155,8 @@ class WorkoutActivityManager {
             await MainActor.run {
                 self.activity = nil
                 self.startTime = nil
+                self.restEndTime = nil
             }
         }
     }
-    
 }
