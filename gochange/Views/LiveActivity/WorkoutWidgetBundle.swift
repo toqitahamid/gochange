@@ -1,10 +1,12 @@
 import WidgetKit
 import SwiftUI
 
-@main
+// Note: @main attribute is applied in widget extension target only
+// This file is conditionally compiled to avoid conflicts
+
 struct WorkoutWidgetBundle: WidgetBundle {
     var body: some Widget {
         WorkoutActivityWidget()
-        GoChangeStaticWidget()
+        // GoChangeStaticWidget() - TODO: Fix target membership
     }
 }

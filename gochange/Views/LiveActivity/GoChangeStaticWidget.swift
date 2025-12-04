@@ -1,6 +1,30 @@
 import WidgetKit
 import SwiftUI
 
+// MARK: - Color Extension for Widget
+// Note: Widget extensions compile separately and need their own Color init
+private extension Color {
+    init(hexString: String) {
+        let hex = hexString.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+        var int: UInt64 = 0
+        Scanner(string: hex).scanHexInt64(&int)
+        let a, r, g, b: UInt64
+        switch hex.count {
+        case 3: (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
+        case 6: (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
+        case 8: (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
+        default: (a, r, g, b) = (255, 0, 0, 0)
+        }
+        self.init(
+            .sRGB,
+            red: Double(r) / 255,
+            green: Double(g) / 255,
+            blue: Double(b) / 255,
+            opacity: Double(a) / 255
+        )
+    }
+}
+
 // MARK: - Widget Data Model
 struct WidgetWorkoutData: Codable {
     let workoutsThisWeek: Int
@@ -81,7 +105,7 @@ struct GoChangeSmallWidgetView: View {
         ZStack {
             // Background
             LinearGradient(
-                colors: [Color(hex: "#1a1a2e") ?? .black, Color(hex: "#16213e") ?? .black],
+                colors: [Color(hexString: "#1a1a2e") ?? .black, Color(hexString: "#16213e") ?? .black],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -97,7 +121,7 @@ struct GoChangeSmallWidgetView: View {
                         .trim(from: 0, to: progressPercent)
                         .stroke(
                             LinearGradient(
-                                colors: [Color(hex: "#00D4AA") ?? .green, Color(hex: "#00B894") ?? .green],
+                                colors: [Color(hexString: "#00D4AA"), Color(hexString: "#00B894")],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -126,7 +150,7 @@ struct GoChangeSmallWidgetView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "flame.fill")
                         .font(.system(size: 12))
-                        .foregroundColor(Color(hex: "#FF6B35") ?? .orange)
+                        .foregroundColor(Color(hexString: "#FF6B35"))
                     Text("\(entry.data.currentStreak)")
                         .font(.system(size: 14, weight: .bold, design: .rounded))
                         .foregroundColor(.white)
@@ -135,7 +159,7 @@ struct GoChangeSmallWidgetView: View {
             .padding()
         }
         .containerBackground(for: .widget) {
-            Color(hex: "#16213e") ?? .black
+            Color(hexString: "#16213e") ?? .black
         }
     }
 }
@@ -153,7 +177,7 @@ struct GoChangeMediumWidgetView: View {
         ZStack {
             // Background
             LinearGradient(
-                colors: [Color(hex: "#1a1a2e") ?? .black, Color(hex: "#16213e") ?? .black],
+                colors: [Color(hexString: "#1a1a2e") ?? .black, Color(hexString: "#16213e") ?? .black],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
@@ -170,7 +194,7 @@ struct GoChangeMediumWidgetView: View {
                             .trim(from: 0, to: progressPercent)
                             .stroke(
                                 LinearGradient(
-                                    colors: [Color(hex: "#00D4AA") ?? .green, Color(hex: "#00B894") ?? .green],
+                                    colors: [Color(hexString: "#00D4AA"), Color(hexString: "#00B894")],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 ),
@@ -201,11 +225,11 @@ struct GoChangeMediumWidgetView: View {
                     HStack(spacing: 8) {
                         ZStack {
                             Circle()
-                                .fill(Color(hex: "#FF6B35")?.opacity(0.2) ?? .orange.opacity(0.2))
+                                .fill(Color(hexString: "#FF6B35").opacity(0.2).opacity(0.2))
                                 .frame(width: 36, height: 36)
                             Image(systemName: "flame.fill")
                                 .font(.system(size: 16))
-                                .foregroundColor(Color(hex: "#FF6B35") ?? .orange)
+                                .foregroundColor(Color(hexString: "#FF6B35"))
                         }
                         
                         VStack(alignment: .leading, spacing: 2) {
@@ -223,11 +247,11 @@ struct GoChangeMediumWidgetView: View {
                         HStack(spacing: 8) {
                             ZStack {
                                 Circle()
-                                    .fill(Color(hex: "#00D4AA")?.opacity(0.2) ?? .green.opacity(0.2))
+                                    .fill(Color(hexString: "#00D4AA").opacity(0.2).opacity(0.2))
                                     .frame(width: 36, height: 36)
                                 Image(systemName: "arrow.right")
                                     .font(.system(size: 14, weight: .semibold))
-                                    .foregroundColor(Color(hex: "#00D4AA") ?? .green)
+                                    .foregroundColor(Color(hexString: "#00D4AA"))
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -248,7 +272,7 @@ struct GoChangeMediumWidgetView: View {
             .padding()
         }
         .containerBackground(for: .widget) {
-            Color(hex: "#16213e") ?? .black
+            Color(hexString: "#16213e") ?? .black
         }
     }
 }
@@ -296,4 +320,3 @@ struct GoChangeWidgetEntryView: View {
 } timeline: {
     GoChangeWidgetEntry(date: Date(), data: .placeholder)
 }
-
