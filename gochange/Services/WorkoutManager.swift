@@ -100,6 +100,11 @@ class WorkoutManager: ObservableObject {
     @Published var sessionNotes: String = ""
     @Published var showingSessionNotes = false
     @Published var currentHeartRate: Double?
+
+    // Workout summary
+    @Published var showingSummary = false
+    @Published var workoutSummary: WorkoutSummaryData?
+    @Published var summaryAccentColor: Color = .blue
     
     // Pause tracking
     private var pausedTime: Date?
@@ -285,10 +290,10 @@ class WorkoutManager: ObservableObject {
     
     func complete(rpe: Double? = nil) {
         guard let session = currentSession, let startTime = startTime, let context = modelContext else { return }
-        
+
         // End Live Activity
         endWorkoutActivity()
-        
+
         // Update session details
         let endTime = Date()
         session.endTime = endTime
@@ -296,24 +301,158 @@ class WorkoutManager: ObservableObject {
         session.isCompleted = true
         session.notes = sessionNotes.isEmpty ? nil : sessionNotes
         session.rpe = rpe
-        
+
         // Attach logs
         for log in exerciseLogs {
             session.exerciseLogs.append(log)
         }
-        
+
         // Save to database
         context.insert(session)
         try? context.save()
-        
+
         // Update widget data
         updateWidgetData(context: context)
-        
+
         // Save to HealthKit if enabled
         let workoutName = session.workoutDayName
         let duration = session.duration ?? endTime.timeIntervalSince(startTime)
         saveToHealthKitIfEnabled(workoutName: workoutName, startTime: startTime, endTime: endTime, duration: duration)
-        
+
+        // Build summary data before resetting
+        buildAndShowSummary(
+            workoutName: workoutName,
+            date: session.date,
+            duration: duration,
+            rpe: rpe,
+            context: context
+        )
+    }
+
+    private func buildAndShowSummary(workoutName: String, date: Date, duration: TimeInterval, rpe: Double?, context: ModelContext) {
+        // Get previous session for comparison
+        let previousSession = fetchPreviousSession(workoutDayName: workoutName, context: context)
+
+        // Build exercise summaries
+        let exerciseSummaries: [WorkoutSummaryData.ExerciseSummary] = exerciseLogs.map { log in
+            let completedSets = log.sets.filter { $0.isCompleted }
+            let totalVolume = completedSets.reduce(0.0) { total, set in
+                if let weight = set.weight, let reps = set.actualReps {
+                    return total + (weight * Double(reps))
+                }
+                return total
+            }
+
+            // Find best set (highest volume)
+            let bestSet = completedSets.max { a, b in
+                let volA = (a.weight ?? 0) * Double(a.actualReps ?? 0)
+                let volB = (b.weight ?? 0) * Double(b.actualReps ?? 0)
+                return volA < volB
+            }
+
+            // Check for PR (compare to previous best)
+            let isPR = checkForPR(exerciseId: log.exerciseId, currentBestWeight: bestSet?.weight, currentBestReps: bestSet?.actualReps, context: context)
+
+            return WorkoutSummaryData.ExerciseSummary(
+                name: log.exerciseName,
+                muscleGroup: currentWorkoutDay?.exercises.first { $0.id == log.exerciseId }?.muscleGroup ?? "—",
+                completedSets: completedSets.count,
+                totalSets: log.sets.count,
+                totalVolume: totalVolume,
+                topWeight: bestSet?.weight,
+                topReps: bestSet?.actualReps,
+                isPR: isPR
+            )
+        }
+
+        // Build previous session data for comparison
+        var previousData: WorkoutSummaryData.PreviousSessionData? = nil
+        if let prev = previousSession {
+            let prevVolume = prev.exerciseLogs.reduce(0.0) { total, log in
+                total + log.sets.filter { $0.isCompleted }.reduce(0.0) { setTotal, set in
+                    if let weight = set.weight, let reps = set.actualReps {
+                        return setTotal + (weight * Double(reps))
+                    }
+                    return setTotal
+                }
+            }
+            let prevSets = prev.exerciseLogs.reduce(0) { $0 + $1.sets.filter { $0.isCompleted }.count }
+
+            previousData = WorkoutSummaryData.PreviousSessionData(
+                duration: prev.duration ?? 0,
+                totalVolume: prevVolume,
+                totalSets: prevSets
+            )
+        }
+
+        // Store accent color before reset
+        if let workoutDay = currentWorkoutDay {
+            summaryAccentColor = Color(hex: workoutDay.colorHex)
+        }
+
+        // Create summary
+        workoutSummary = WorkoutSummaryData(
+            workoutName: workoutName,
+            date: date,
+            duration: duration,
+            rpe: rpe,
+            exercises: exerciseSummaries,
+            previousSession: previousData
+        )
+
+        // Show summary (don't reset state yet)
+        showingSummary = true
+    }
+
+    private func fetchPreviousSession(workoutDayName: String, context: ModelContext) -> WorkoutSession? {
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { session in
+                session.isCompleted && session.workoutDayName == workoutDayName
+            },
+            sortBy: [SortDescriptor(\.date, order: .reverse)]
+        )
+
+        do {
+            let sessions = try context.fetch(descriptor)
+            // Return the second most recent (since current one is now saved)
+            return sessions.count > 1 ? sessions[1] : nil
+        } catch {
+            return nil
+        }
+    }
+
+    private func checkForPR(exerciseId: UUID, currentBestWeight: Double?, currentBestReps: Int?, context: ModelContext) -> Bool {
+        guard let weight = currentBestWeight, let reps = currentBestReps else { return false }
+
+        // Fetch all previous logs for this exercise
+        let descriptor = FetchDescriptor<ExerciseLog>(
+            predicate: #Predicate { log in
+                log.exerciseId == exerciseId
+            }
+        )
+
+        do {
+            let logs = try context.fetch(descriptor)
+            // Find previous best volume (weight × reps)
+            let currentVolume = weight * Double(reps)
+            let previousBest = logs.flatMap { $0.sets }
+                .filter { $0.isCompleted }
+                .compactMap { set -> Double? in
+                    guard let w = set.weight, let r = set.actualReps else { return nil }
+                    return w * Double(r)
+                }
+                .max() ?? 0
+
+            // It's a PR if current is higher than all previous
+            return currentVolume > previousBest
+        } catch {
+            return false
+        }
+    }
+
+    func dismissSummary() {
+        showingSummary = false
+        workoutSummary = nil
         resetState()
     }
     

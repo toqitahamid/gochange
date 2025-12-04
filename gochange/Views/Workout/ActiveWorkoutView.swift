@@ -204,6 +204,17 @@ struct ActiveWorkoutView: View {
             }
             .presentationDetents([.large])
         }
+        .fullScreenCover(isPresented: $workoutManager.showingSummary) {
+            if let summary = workoutManager.workoutSummary {
+                WorkoutSummaryView(
+                    summary: summary,
+                    accentColor: workoutManager.summaryAccentColor,
+                    onDismiss: {
+                        workoutManager.dismissSummary()
+                    }
+                )
+            }
+        }
         .onTapGesture {
             UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
         }
