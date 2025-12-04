@@ -1,0 +1,13 @@
+{
+  "name": "ios-expert-marketplace",
+  "owner": {
+    "name": "GoChange Project"
+  },
+  "plugins": [
+    {
+      "name": "ios-ios-plugin",
+      "source": "./ios-ios-plugin",
+      "description": "iOS app development and Liquid Glass design Skills for SwiftUI and iOS 26+."
+    }
+  ]
+}
