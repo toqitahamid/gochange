@@ -31,7 +31,7 @@ struct SleepView: View {
                             title: insightTitle,
                             message: insightMessage,
                             icon: "moon.stars.fill",
-                            color: .blue
+                            color: AppColors.primary
                         )
                     }
                     
@@ -108,7 +108,7 @@ struct SleepView: View {
                 value: viewModel.sleepData?.formattedTotal ?? "--",
                 unit: nil,
                 icon: "bed.double.fill",
-                color: .blue
+                color: AppColors.primary
             )
             
             MetricCard(

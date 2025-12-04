@@ -25,9 +25,9 @@ struct WorkoutFrequencyHeatmap: View {
                 // Legend
                 HStack(spacing: 12) {
                     LegendItem(color: Color.gray.opacity(0.2), label: "0")
-                    LegendItem(color: Color.green.opacity(0.4), label: "1")
-                    LegendItem(color: Color.green, label: "2")
-                    LegendItem(color: Color.blue, label: "3+")
+                    LegendItem(color: AppColors.success.opacity(0.4), label: "1")
+                    LegendItem(color: AppColors.success, label: "2")
+                    LegendItem(color: AppColors.primary, label: "3+")
                 }
             }
             
@@ -53,14 +53,14 @@ struct WorkoutFrequencyHeatmap: View {
                     icon: "flame.fill",
                     value: "\(currentStreak)",
                     label: "Day Streak",
-                    color: .orange
+                    color: AppColors.warning
                 )
                 
                 HeatmapStatBadge(
                     icon: "calendar.badge.clock",
                     value: "\(activeDays)",
                     label: "Active Days",
-                    color: .blue
+                    color: AppColors.primary
                 )
                 
                 Spacer()
@@ -193,9 +193,9 @@ struct HeatmapMonthGrid: View {
     
     private func color(for count: Int) -> Color {
         if count == 0 { return Color.gray.opacity(0.15) }
-        if count == 1 { return Color.green.opacity(0.4) }
-        if count == 2 { return Color.green }
-        return Color.blue
+        if count == 1 { return AppColors.success.opacity(0.4) }
+        if count == 2 { return AppColors.success }
+        return AppColors.primary
     }
 }
 

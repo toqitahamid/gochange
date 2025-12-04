@@ -9,7 +9,7 @@ struct StrainCard: View {
             // Header
             HStack {
                 Image(systemName: "flame.fill")
-                    .foregroundColor(Color(hex: "#FF6B35"))
+                    .foregroundColor(AppColors.warning)
                 Text("Strain")
                     .font(.subheadline)
                     .fontWeight(.medium)
@@ -66,12 +66,12 @@ struct StrainCard: View {
                     let width = ((viewModel.targetStrainHigh - viewModel.targetStrainLow) / totalRange) * geometry.size.width
                     
                     Capsule()
-                        .fill(Color.blue.opacity(0.15))
+                        .fill(AppColors.primary.opacity(0.12))
                         .frame(width: max(0, width), height: 12)
                         .offset(x: lowX)
                         .overlay(
                             Capsule()
-                                .stroke(Color.blue.opacity(0.3), lineWidth: 1)
+                                .stroke(AppColors.primary.opacity(0.3), lineWidth: 1)
                                 .frame(width: max(0, width), height: 12)
                                 .offset(x: lowX)
                         )
@@ -82,7 +82,7 @@ struct StrainCard: View {
                     Capsule()
                         .fill(
                             LinearGradient(
-                                colors: [Color(hex: "#FF6B35").opacity(0.7), Color(hex: "#FF6B35")],
+                                colors: [AppColors.warning.opacity(0.7), AppColors.warning],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -122,9 +122,9 @@ struct StrainCard: View {
     
     private var statusColor: Color {
         switch viewModel.strainStatus {
-        case "Optimal": return Color(hex: "#00D4AA")
-        case "Overreaching": return Color(hex: "#FF6B35")
-        case "Restoring": return Color(hex: "#64B5F6")
+        case "Optimal": return AppColors.success
+        case "Overreaching": return AppColors.warning
+        case "Restoring": return AppColors.primary
         default: return .gray
         }
     }
@@ -165,10 +165,10 @@ struct StrainInfoSheet: View {
                     Text("Scale Breakdown")
                         .font(.headline)
                     
-                    scaleItem(range: "0-10", title: "Light", desc: "Rest & Recovery", color: Color(hex: "#64B5F6"))
-                    scaleItem(range: "10-14", title: "Moderate", desc: "Maintenance", color: Color(hex: "#00D4AA"))
-                    scaleItem(range: "14-18", title: "High", desc: "Building Fitness", color: Color(hex: "#FFB74D"))
-                    scaleItem(range: "18-21", title: "All Out", desc: "Overreaching", color: Color(hex: "#FF6B35"))
+                    scaleItem(range: "0-10", title: "Light", desc: "Rest & Recovery", color: AppColors.primary)
+                    scaleItem(range: "10-14", title: "Moderate", desc: "Maintenance", color: AppColors.success)
+                    scaleItem(range: "14-18", title: "High", desc: "Building Fitness", color: AppColors.warning)
+                    scaleItem(range: "18-21", title: "All Out", desc: "Overreaching", color: AppColors.error)
                 }
                 .padding(.top, 8)
             }

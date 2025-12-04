@@ -80,7 +80,7 @@ struct FitnessView: View {
                 .padding(.vertical)
                 .padding(.bottom, 80)
             }
-            .background(Color(hex: "#F5F5F7").ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
         }
         .sheet(item: $selectedMetricInfo) { metric in
             let value: Double? = {
@@ -133,9 +133,9 @@ struct FitnessHeatmapCard: View {
             // Legend
             HStack(spacing: 12) {
                 FitnessLegendItem(color: Color.gray.opacity(0.2), label: "0")
-                FitnessLegendItem(color: Color.green.opacity(0.4), label: "1")
-                FitnessLegendItem(color: Color.green, label: "2")
-                FitnessLegendItem(color: Color.blue, label: "3+")
+                FitnessLegendItem(color: AppColors.success.opacity(0.4), label: "1")
+                FitnessLegendItem(color: AppColors.success, label: "2")
+                FitnessLegendItem(color: AppColors.primary, label: "3+")
             }
         }
 
@@ -238,9 +238,9 @@ struct MonthGrid: View {
     
     private func color(for count: Int) -> Color {
         if count == 0 { return Color.gray.opacity(0.2) }
-        if count == 1 { return Color.green.opacity(0.4) }
-        if count == 2 { return Color.green }
-        return Color.blue
+        if count == 1 { return AppColors.success.opacity(0.4) }
+        if count == 2 { return AppColors.success }
+        return AppColors.primary
     }
 }
 
@@ -272,7 +272,7 @@ struct ActivitySummaryCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "figure.walk")
-                    .foregroundColor(.blue)
+                    .foregroundColor(AppColors.primary)
                 Text("Activity Summary")
                     .font(.subheadline)
                     .fontWeight(.medium)
@@ -390,7 +390,7 @@ struct CardioLoadCard: View {
                     Text("Detraining")
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(.orange)
+                        .foregroundColor(AppColors.warning)
                 }
                 
                 Spacer()
@@ -455,9 +455,9 @@ struct CardioFocusCard: View {
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
             
-            Text("\(Int(viewModel.cardioFocusPercentage * 100))%")
-                .font(.subheadline)
-                .foregroundColor(Color(hex: "#00D4AA")) // Teal color
+                Text("\(Int(viewModel.cardioFocusPercentage * 100))%")
+                    .font(.subheadline)
+                    .foregroundColor(AppColors.success)
             
             // Progress Bar
             GeometryReader { geometry in
@@ -467,12 +467,12 @@ struct CardioFocusCard: View {
                         .frame(height: 6)
                     
                     Capsule()
-                        .fill(Color(hex: "#00D4AA"))
+                        .fill(AppColors.success)
                         .frame(width: geometry.size.width * viewModel.cardioFocusPercentage, height: 6)
                     
                     // Indicator dot
                     Circle()
-                        .fill(Color.blue)
+                        .fill(AppColors.primary)
                         .frame(width: 8, height: 8)
                         .offset(x: geometry.size.width * 0.1) // Example position
                         .offset(y: 10) // Below the bar
@@ -833,7 +833,7 @@ struct DailyReadinessCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Image(systemName: "bolt.heart.fill")
-                    .foregroundColor(.blue)
+                    .foregroundColor(AppColors.primary)
                 Text("Daily Readiness")
                     .font(.subheadline)
                     .fontWeight(.medium)
@@ -889,9 +889,9 @@ struct DailyReadinessCard: View {
     }
     
     private var scoreColor: Color {
-        if viewModel.dailyReadinessScore >= 80 { return .green }
-        if viewModel.dailyReadinessScore >= 40 { return .orange }
-        return .red
+        if viewModel.dailyReadinessScore >= 80 { return AppColors.success }
+        if viewModel.dailyReadinessScore >= 40 { return AppColors.warning }
+        return AppColors.error
     }
     
     private var governorMessage: String {
@@ -910,7 +910,7 @@ struct SleepDebtCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "bed.double.fill")
-                    .foregroundColor(.indigo)
+                    .foregroundColor(AppColors.primary)
                 Text("Sleep Debt")
                     .font(.caption)
                     .fontWeight(.medium)
@@ -943,9 +943,9 @@ struct SleepDebtCard: View {
     }
     
     private var debtColor: Color {
-        if viewModel.sleepDebt < 2 { return .green }
-        if viewModel.sleepDebt < 5 { return .orange }
-        return .red
+        if viewModel.sleepDebt < 2 { return AppColors.success }
+        if viewModel.sleepDebt < 5 { return AppColors.warning }
+        return AppColors.error
     }
     
     private var realityCheckMessage: String {
@@ -964,7 +964,7 @@ struct ACWRCard: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "shield.fill")
-                    .foregroundColor(.green)
+                    .foregroundColor(AppColors.success)
                 Text("ACWR (Injury Risk)")
                     .font(.caption)
                     .fontWeight(.medium)
@@ -1022,9 +1022,9 @@ struct ACWRCard: View {
     }
     
     private var ratioColor: Color {
-        if viewModel.acwr >= 0.8 && viewModel.acwr <= 1.3 { return .green }
-        if viewModel.acwr > 1.5 { return .red }
-        return .orange
+        if viewModel.acwr >= 0.8 && viewModel.acwr <= 1.3 { return AppColors.success }
+        if viewModel.acwr > 1.5 { return AppColors.error }
+        return AppColors.warning
     }
     
     private var shieldMessage: String {

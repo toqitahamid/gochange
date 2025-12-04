@@ -50,10 +50,10 @@ struct AdvancedAnalyticsView: View {
                         HStack(spacing: 4) {
                             Text(viewModel.selectedExerciseForTrend)
                                 .font(.subheadline)
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColors.primary)
                             Image(systemName: "chevron.down")
                                 .font(.caption)
-                                .foregroundColor(.blue)
+                                .foregroundColor(AppColors.primary)
                         }
                     }
                 }
@@ -74,7 +74,7 @@ struct AdvancedAnalyticsView: View {
                             x: .value("Date", point.date),
                             y: .value("1RM", point.oneRepMax)
                         )
-                        .foregroundStyle(Color.blue)
+                        .foregroundStyle(AppColors.primary)
                         .interpolationMethod(.catmullRom)
                         .symbol(Circle())
                         
@@ -84,7 +84,7 @@ struct AdvancedAnalyticsView: View {
                         )
                         .foregroundStyle(
                             LinearGradient(
-                                colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.0)],
+                            colors: [AppColors.primary.opacity(0.2), AppColors.primary.opacity(0.0)],
                                 startPoint: .top,
                                 endPoint: .bottom
                             )
@@ -139,7 +139,7 @@ struct AdvancedAnalyticsView: View {
                             x: .value("Volume", point.volume),
                             y: .value("Intensity", point.intensity)
                         )
-                        .foregroundStyle(Color(hex: "#00D4AA").opacity(0.6))
+                        .foregroundStyle(AppColors.primary.opacity(0.6))
                         .symbolSize(50)
                     }
                 }
@@ -268,7 +268,7 @@ struct AdvancedAnalyticsView: View {
                             yStart: .value("Low", 0.8),
                             yEnd: .value("High", 1.3)
                         )
-                        .foregroundStyle(Color.green.opacity(0.1))
+                        .foregroundStyle(AppColors.success.opacity(0.12))
                         
                         LineMark(
                             x: .value("Date", point.date),
@@ -302,9 +302,9 @@ struct AdvancedAnalyticsView: View {
     }
     
     private func acwrColor(for ratio: Double) -> Color {
-        if ratio >= 0.8 && ratio <= 1.3 { return .green }
-        if ratio > 1.5 { return .red }
-        return .orange
+        if ratio >= 0.8 && ratio <= 1.3 { return AppColors.success }
+        if ratio > 1.5 { return AppColors.error }
+        return AppColors.warning
     }
     
     // MARK: - Systemic Load Card
