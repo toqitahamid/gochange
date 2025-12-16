@@ -14,7 +14,7 @@ struct PreviousSetInfo {
 }
 
 // MARK: - Rest Timer State
-struct RestTimerState {
+struct RestTimerState: Codable {
     let endTime: Date
     let setContext: String
     let exerciseName: String
@@ -29,7 +29,7 @@ struct RestTimerState {
 }
 
 // MARK: - Set Timer State
-struct SetTimerState {
+struct SetTimerState: Codable {
     let startTime: Date
     let exerciseName: String
     let exerciseIndex: Int
@@ -106,6 +106,10 @@ class WorkoutManager: ObservableObject {
     @Published var workoutSummary: WorkoutSummaryData?
     @Published var summaryAccentColor: Color = .blue
     
+    // Error Handling
+    @Published var dataSaveError: Error?
+    @Published var showingSaveError = false
+    
     // Pause tracking
     private var pausedTime: Date?
     private var totalPausedDuration: TimeInterval = 0
@@ -129,6 +133,7 @@ class WorkoutManager: ObservableObject {
     
     init() {
         setupNotifications()
+        restoreTimerState()
     }
     
     private func setupNotifications() {
@@ -309,7 +314,15 @@ class WorkoutManager: ObservableObject {
 
         // Save to database
         context.insert(session)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            print("Failed to save workout: \(error)")
+            self.dataSaveError = error
+            self.showingSaveError = true
+            // Depending on requirements, we might want to return here or try to salvage
+            // For now, allow UI to handle the error prompt
+        }
 
         // Update widget data
         updateWidgetData(context: context)
@@ -459,9 +472,16 @@ class WorkoutManager: ObservableObject {
     // MARK: - HealthKit Integration
     
     private func saveToHealthKitIfEnabled(workoutName: String, startTime: Date, endTime: Date, duration: TimeInterval) {
-        // Check if HealthKit is enabled in settings
+        // Check if HealthKit is enabled in settings and authorized
         let healthKitEnabled = UserDefaults.standard.bool(forKey: "healthKitEnabled")
         guard healthKitEnabled else { return }
+        
+        // Verify authorization status
+        let status = HKHealthStore().authorizationStatus(for: .workoutType())
+        guard status == .sharingAuthorized else {
+            print("HealthKit sharing not authorized")
+            return 
+        }
         
         // Calculate total volume for metadata
         let totalVolume = exerciseLogs.reduce(0.0) { total, log in
@@ -607,6 +627,7 @@ class WorkoutManager: ObservableObject {
             targetReps: defaultReps,
             weightUnit: unit
         )
+        // Ensure new set is part of the logs, then update activity
         exerciseLogs[exerciseIndex].sets.append(newSet)
         
         updateWorkoutLiveActivity()
@@ -700,6 +721,8 @@ class WorkoutManager: ObservableObject {
                     self.stopRestTimer()
                 }
             }
+        
+        saveTimerState()
     }
 
     // MARK: - Set Timer Management
@@ -719,6 +742,7 @@ class WorkoutManager: ObservableObject {
             setNumber: setLog.setNumber,
             setType: setLog.setType
         )
+        saveTimerState()
     }
     
     func pauseSetTimer() {
@@ -726,6 +750,7 @@ class WorkoutManager: ObservableObject {
         timer.isPaused = true
         timer.pauseStartTime = Date()
         activeSetTimer = timer
+        saveTimerState()
     }
     
     func resumeSetTimer() {
@@ -736,6 +761,7 @@ class WorkoutManager: ObservableObject {
         timer.isPaused = false
         timer.pauseStartTime = nil
         activeSetTimer = timer
+        saveTimerState()
     }
     
     func stopSetTimer() {
@@ -747,6 +773,7 @@ class WorkoutManager: ObservableObject {
         
         // Stop the set timer
         activeSetTimer = nil
+        saveTimerState()
         
         // Start rest timer for 180 seconds
         let duration: TimeInterval = 180
@@ -784,6 +811,57 @@ class WorkoutManager: ObservableObject {
         restTimerCancellable = nil
         WorkoutActivityManager.shared.stopRestTimer()
         NotificationService.shared.cancelRestTimerNotification()
+        saveTimerState()
+    }
+    
+    // MARK: - Persistence
+    
+    private var sharedUserDefaults: UserDefaults {
+        UserDefaults(suiteName: "group.com.toqitahamid.gochange") ?? .standard
+    }
+    
+    private func saveTimerState() {
+        // Save Rest Timer
+        if let timer = activeRestTimer, let encoded = try? JSONEncoder().encode(timer) {
+            sharedUserDefaults.set(encoded, forKey: "savedRestTimer")
+        } else {
+            sharedUserDefaults.removeObject(forKey: "savedRestTimer")
+        }
+        
+        // Save Set Timer
+        if let timer = activeSetTimer, let encoded = try? JSONEncoder().encode(timer) {
+            sharedUserDefaults.set(encoded, forKey: "savedSetTimer")
+        } else {
+            sharedUserDefaults.removeObject(forKey: "savedSetTimer")
+        }
+    }
+    
+    private func restoreTimerState() {
+        // Restore Rest Timer
+        if let data = sharedUserDefaults.data(forKey: "savedRestTimer"),
+           let timer = try? JSONDecoder().decode(RestTimerState.self, from: data) {
+            
+            if !timer.isExpired {
+                activeRestTimer = timer
+                // Restart the cancellation timer
+                restTimerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+                    .autoconnect()
+                    .sink { [weak self] _ in
+                        guard let self = self else { return }
+                        if let timer = self.activeRestTimer, timer.isExpired {
+                            self.stopRestTimer()
+                        }
+                    }
+            } else {
+                sharedUserDefaults.removeObject(forKey: "savedRestTimer")
+            }
+        }
+        
+        // Restore Set Timer
+        if let data = sharedUserDefaults.data(forKey: "savedSetTimer"),
+           let timer = try? JSONDecoder().decode(SetTimerState.self, from: data) {
+            activeSetTimer = timer
+        }
     }
     
     // MARK: - Live Activity

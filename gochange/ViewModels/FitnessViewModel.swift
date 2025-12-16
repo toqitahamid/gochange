@@ -29,7 +29,12 @@ class FitnessViewModel: ObservableObject {
     // HealthKit Data
     @Published var restingHeartRate: Double = 0
     @Published var cardioFocusStatus: String = "Low Aerobic"
+
     @Published var cardioFocusPercentage: Double = 0.94
+    @Published var cardioLoadHistory: [Double] = []
+    
+    // RHR Status
+    @Published var rhrStatus: String = "Normal"
     
     // Strain Data
     @Published var strainScore: Double = 0
@@ -66,7 +71,19 @@ class FitnessViewModel: ObservableObject {
         // Fetch HealthKit Data
         if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
             self.restingHeartRate = rhr
+        if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
+            self.restingHeartRate = rhr
+            updateRHRStatus(rhr)
         }
+        
+        // Fetch Cardio Load History (Last 7 days)
+        let history = await healthKitService.getHistoricalActiveEnergy(days: 7)
+        // Sort by date and extract values
+        let sortedHistory = history.sorted { $0.key < $1.key }.map { $0.value }
+        // Ensure we have at least 7 days of data (fill with 0 if needed for chart stability)
+        // Or leave it as is, but UI might expect a fixed count.
+        // Let's just publish what we found, and UI can handle it.
+        self.cardioLoadHistory = sortedHistory
         
         // Refresh Strength Data
         fetchStrengthData()
@@ -296,5 +313,17 @@ class FitnessViewModel: ObservableObject {
         if lower.contains("core") || lower.contains("ab") { return "Core" }
         if lower.contains("arm") || lower.contains("bicep") || lower.contains("tricep") { return "Arms" }
         return "Other"
+    }
+    
+    private func updateRHRStatus(_ rhr: Double) {
+        if rhr < 60 {
+            rhrStatus = "Excellent"
+        } else if rhr < 70 {
+            rhrStatus = "Good"
+        } else if rhr < 80 {
+            rhrStatus = "Fair"
+        } else {
+            rhrStatus = "Elevated"
+        }
     }
 }

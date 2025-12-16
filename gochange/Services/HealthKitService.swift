@@ -820,6 +820,60 @@ class HealthKitService: ObservableObject {
         return await getSumQuantity(for: .appleExerciseTime, unit: .minute(), date: date)
     }
     
+    /// Get daily active energy burned for the last N days
+    func getHistoricalActiveEnergy(days: Int = 7) async -> [Date: Double] {
+        guard isHealthKitAvailable else { return [:] }
+        
+        let type = HKQuantityType(.activeEnergyBurned)
+        let calendar = Calendar.current
+        let endDate = Date()
+        let startDate = calendar.date(byAdding: .day, value: -days, to: endDate) ?? endDate
+        
+        // Align start date to start of day
+        let alignedStartDate = calendar.startOfDay(for: startDate)
+        
+        let predicate = HKQuery.predicateForSamples(withStart: alignedStartDate, end: endDate, options: .strictStartDate)
+        
+        // Use HKStatisticsCollectionQuery for daily aggregation
+        return await withCheckedContinuation { continuation in
+            var dailyData: [Date: Double] = [:]
+            
+            // Define the anchor date (any midnight in the past)
+            let anchorDate = calendar.startOfDay(for: Date(timeIntervalSinceReferenceDate: 0))
+            
+            let query = HKStatisticsCollectionQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum,
+                anchorDate: anchorDate,
+                intervalComponents: DateComponents(day: 1)
+            )
+            
+            query.initialResultsHandler = { _, results, error in
+                if let error = error {
+                    print("❌ Historical active energy query error: \(error.localizedDescription)")
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                guard let results = results else {
+                    continuation.resume(returning: [:])
+                    return
+                }
+                
+                results.enumerateStatistics(from: alignedStartDate, to: endDate) { statistics, _ in
+                    let date = statistics.startDate
+                    let value = statistics.sumQuantity()?.doubleValue(for: .kilocalorie()) ?? 0
+                    dailyData[date] = value
+                }
+                
+                continuation.resume(returning: dailyData)
+            }
+            
+            healthStore.execute(query)
+        }
+    }
+    
     // MARK: - Helper for Sum Queries
     
     private func getSumQuantity(for typeIdentifier: HKQuantityTypeIdentifier, unit: HKUnit, date: Date) async -> Double {

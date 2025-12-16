@@ -55,7 +55,7 @@ struct FitnessView: View {
                             .fontWeight(.bold)
                             .padding(.horizontal)
 
-                        CardioLoadCard()
+                        CardioLoadCard(viewModel: viewModel)
 
                         HStack(spacing: 16) {
                             CardioFocusCard(viewModel: viewModel)
@@ -367,6 +367,8 @@ struct ActivitySummaryCard: View {
 
 // MARK: - Cardio Load Card
 struct CardioLoadCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
@@ -384,37 +386,48 @@ struct CardioLoadCard: View {
             
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("3")
+                    // Show average of last 3 days or some aggregate
+                    let avgLoad = viewModel.cardioLoadHistory.suffix(3).reduce(0, +) / 3.0
+                    Text("\(Int(avgLoad))")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.primary)
-                    Text("Detraining")
+                        .contentTransition(.numericText())
+                    
+                    Text(status(for: avgLoad))
                         .font(.subheadline)
                         .fontWeight(.medium)
-                        .foregroundColor(AppColors.warning)
+                        .foregroundColor(statusColor(for: avgLoad))
                 }
                 
                 Spacer()
                 
                 // Mini Chart
-                Chart {
-                    ForEach(0..<10, id: \.self) { index in
-                        AreaMark(
-                            x: .value("Day", index),
-                            y: .value("Load", [2, 3, 1, 4, 2, 5, 3, 6, 2, 3][index])
-                        )
-                        .foregroundStyle(Color.purple.opacity(0.2))
-                        
-                        LineMark(
-                            x: .value("Day", index),
-                            y: .value("Load", [2, 3, 1, 4, 2, 5, 3, 6, 2, 3][index])
-                        )
-                        .foregroundStyle(Color.purple)
-                        .interpolationMethod(.catmullRom)
+                if !viewModel.cardioLoadHistory.isEmpty {
+                    Chart {
+                        ForEach(Array(viewModel.cardioLoadHistory.enumerated()), id: \.offset) { index, value in
+                            AreaMark(
+                                x: .value("Day", index),
+                                y: .value("Load", value)
+                            )
+                            .foregroundStyle(Color.purple.opacity(0.2))
+                            
+                            LineMark(
+                                x: .value("Day", index),
+                                y: .value("Load", value)
+                            )
+                            .foregroundStyle(Color.purple)
+                            .interpolationMethod(.catmullRom)
+                        }
                     }
+                    .frame(width: 120, height: 60)
+                    .chartXAxis(.hidden)
+                    .chartYAxis(.hidden)
+                } else {
+                    Text("No Data")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                        .frame(width: 120, height: 60)
                 }
-                .frame(width: 120, height: 60)
-                .chartXAxis(.hidden)
-                .chartYAxis(.hidden)
             }
         }
 
@@ -427,6 +440,18 @@ struct CardioLoadCard: View {
             RoundedRectangle(cornerRadius: 24)
                 .stroke(Color.gray.opacity(0.15), lineWidth: 1)
         )
+    }
+    
+    private func status(for load: Double) -> String {
+        if load > 500 { return "Productive" } // Mock threshold
+        if load > 200 { return "Maintaining" }
+        return "Detraining"
+    }
+    
+    private func statusColor(for load: Double) -> Color {
+        if load > 500 { return AppColors.success }
+        if load > 200 { return AppColors.primary }
+        return AppColors.warning
     }
 }
 
@@ -510,9 +535,9 @@ struct HRRCard: View {
                     .fontWeight(.bold)
                     .foregroundColor(.primary)
                 
-                Text("Good") // Placeholder logic
+                Text(viewModel.rhrStatus)
                     .font(.subheadline)
-                    .foregroundColor(.orange)
+                    .foregroundColor(rhrColor)
             } else {
                 Text("--")
                     .font(.headline)
@@ -550,6 +575,13 @@ struct HRRCard: View {
             .frame(height: 20)
         }
         .fitnessCardStyle()
+    }
+    private var rhrColor: Color {
+        switch viewModel.rhrStatus {
+        case "Excellent", "Good": return AppColors.success
+        case "Fair": return AppColors.warning
+        default: return AppColors.error
+        }
     }
 }
 
@@ -628,7 +660,7 @@ struct RadarChart: View {
     var body: some View {
         GeometryReader { geometry in
             let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height / 2)
-            let radius = min(geometry.size.width, geometry.size.height) / 2 - 40
+            let radius = min(geometry.size.width / 2, geometry.size.height / 2) - 40 // Safe margin for labels
             let step = radius / 4
             
             ZStack {
@@ -733,6 +765,7 @@ struct RadarChart: View {
 // MARK: - Strength Progression Card
 struct StrengthProgressionCard: View {
     @ObservedObject var viewModel: FitnessViewModel
+    @State private var showAddWorkout = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
@@ -780,7 +813,7 @@ struct StrengthProgressionCard: View {
                 HStack {
                     Spacer()
                     Button {
-                        // Add workout action
+                        showAddWorkout = true
                     } label: {
                         Image(systemName: "plus")
                             .font(.system(size: 20, weight: .medium))
@@ -795,6 +828,9 @@ struct StrengthProgressionCard: View {
             .frame(height: 150)
         }
         .fitnessCardStyle()
+        .sheet(isPresented: $showAddWorkout) {
+             AddWorkoutDayView()
+        }
     }
 }
 

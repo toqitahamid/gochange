@@ -24,26 +24,35 @@ struct WorkoutDaySelectionView: View {
                     
                     // Workout Cards
                     VStack(spacing: 16) {
-                        ForEach(workoutDays) { workoutDay in
-                            NavigationLink(destination: WorkoutPreviewView(workoutDay: workoutDay)) {
-                                WorkoutDayCardContent(
-                                    workoutDay: workoutDay,
-                                    lastCompleted: lastCompletedDate(for: workoutDay),
-                                    isCompletedThisWeek: isCompletedThisWeek(workoutDay)
-                                )
-                            }
-                            .buttonStyle(PremiumCardButtonStyle())
-                            .contextMenu {
-                                Button {
-                                    editingWorkoutDay = workoutDay
-                                } label: {
-                                    Label("Edit Workout", systemImage: "pencil")
+                        if workoutDays.isEmpty {
+                            ContentUnavailableView(
+                                "No Workouts",
+                                systemImage: "dumbbell.fill",
+                                description: Text("Create your first workout day to get started.")
+                            )
+                            .padding(.top, 40)
+                        } else {
+                            ForEach(workoutDays) { workoutDay in
+                                NavigationLink(destination: WorkoutPreviewView(workoutDay: workoutDay)) {
+                                    WorkoutDayCardContent(
+                                        workoutDay: workoutDay,
+                                        lastCompleted: lastCompletedDate(for: workoutDay),
+                                        isCompletedThisWeek: isCompletedThisWeek(workoutDay)
+                                    )
                                 }
-                                
-                                Button(role: .destructive) {
-                                    deleteWorkoutDay(workoutDay)
-                                } label: {
-                                    Label("Delete Workout", systemImage: "trash")
+                                .buttonStyle(PremiumCardButtonStyle())
+                                .contextMenu {
+                                    Button {
+                                        editingWorkoutDay = workoutDay
+                                    } label: {
+                                        Label("Edit Workout", systemImage: "pencil")
+                                    }
+                                    
+                                    Button(role: .destructive) {
+                                        deleteWorkoutDay(workoutDay)
+                                    } label: {
+                                        Label("Delete Workout", systemImage: "trash")
+                                    }
                                 }
                             }
                         }

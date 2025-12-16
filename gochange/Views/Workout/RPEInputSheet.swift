@@ -140,6 +140,7 @@ struct RPEInputSheet: View {
             }
             .animation(.easeInOut(duration: 0.15), value: Int(rpe))
         }
+        .dynamicTypeSize(...DynamicTypeSize.accessibility1)
     }
 
     // MARK: - Slider Section

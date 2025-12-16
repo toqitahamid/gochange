@@ -185,6 +185,11 @@ struct ActiveWorkoutView: View {
         } message: {
             Text("A set is currently running. Do you want to stop it and start this one?")
         }
+        .alert("Error Saving Workout", isPresented: $workoutManager.showingSaveError) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(workoutManager.dataSaveError?.localizedDescription ?? "Unknown error occurred.")
+        }
         .onAppear {
             currentExerciseIndex = 0
         }
