@@ -5,51 +5,88 @@ struct SummaryRingsView: View {
     let recovery: Int
     let sleep: Int
     
+    @State private var showingStrainView = false
+    @State private var showingRecoveryView = false
+    @State private var showingSleepView = false
+    @StateObject private var dashboardViewModel = DashboardViewModel()
+    
     var body: some View {
         HStack(spacing: 16) {
-            // Strain Ring
-            RingItem(
-                title: "Strain",
-                score: strain,
-                color: Color(hex: "#FF9500"), // Orange
-                gradient: LinearGradient(
-                    colors: [Color(hex: "#FF9500"), Color(hex: "#FF5E3A")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+            // Strain Ring (Tappable)
+            Button {
+                showingStrainView = true
+            } label: {
+                RingItem(
+                    title: "Strain",
+                    score: strain,
+                    color: Color(hex: "#FF9500"), // Orange
+                    gradient: LinearGradient(
+                        colors: [Color(hex: "#FF9500"), Color(hex: "#FF5E3A")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingStrainView) {
+                NavigationStack {
+                    StrainView()
+                }
+            }
             
             Divider()
                 .frame(height: 60)
                 .overlay(Color.gray.opacity(0.2))
             
-            // Recovery Ring
-            RingItem(
-                title: "Recovery",
-                score: recovery,
-                color: Color(hex: "#4CD964"), // Green
-                gradient: LinearGradient(
-                    colors: [Color(hex: "#4CD964"), Color(hex: "#34AADC")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+            // Recovery Ring (Tappable)
+            Button {
+                showingRecoveryView = true
+            } label: {
+                RingItem(
+                    title: "Recovery",
+                    score: recovery,
+                    color: Color(hex: "#4CD964"), // Green
+                    gradient: LinearGradient(
+                        colors: [Color(hex: "#4CD964"), Color(hex: "#34AADC")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingRecoveryView) {
+                NavigationStack {
+                    RecoveryView()
+                }
+                .environmentObject(dashboardViewModel)
+            }
             
             Divider()
                 .frame(height: 60)
                 .overlay(Color.gray.opacity(0.2))
             
-            // Sleep Ring
-            RingItem(
-                title: "Sleep",
-                score: sleep,
-                color: Color(hex: "#5AC8FA"), // Blue
-                gradient: LinearGradient(
-                    colors: [Color(hex: "#5AC8FA"), Color(hex: "#007AFF")],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+            // Sleep Ring (Tappable)
+            Button {
+                showingSleepView = true
+            } label: {
+                RingItem(
+                    title: "Sleep",
+                    score: sleep,
+                    color: Color(hex: "#5AC8FA"), // Blue
+                    gradient: LinearGradient(
+                        colors: [Color(hex: "#5AC8FA"), Color(hex: "#007AFF")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
-            )
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showingSleepView) {
+                NavigationStack {
+                    SleepView()
+                }
+                .environmentObject(dashboardViewModel)
+            }
         }
         .padding(.vertical, 24)
         .padding(.horizontal, 16)

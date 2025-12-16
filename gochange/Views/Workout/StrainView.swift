@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct StrainView: View {
-    @EnvironmentObject var viewModel: DashboardViewModel
+    @StateObject private var viewModel = DashboardViewModel()
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
@@ -208,6 +208,7 @@ struct StrainView: View {
 }
 
 #Preview {
-    StrainView()
-        .environmentObject(DashboardViewModel())
+    NavigationStack {
+        StrainView()
+    }
 }

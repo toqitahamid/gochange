@@ -1,7 +1,7 @@
 import SwiftUI
 import SwiftData
 
-struct FitnessAnalyticsView: View {
+struct WorkoutAnalyticsView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     
@@ -51,7 +51,11 @@ struct FitnessAnalyticsView: View {
                             TopExercisesView(exercises: viewModel.topExercises)
                                 .padding(.horizontal, 20)
                             
-                            // 6. Personal Records Button
+                            // 6. Muscle Group Balance
+                            MuscleGroupBalanceView(data: viewModel.muscleGroupData)
+                                .padding(.horizontal, 20)
+                            
+                            // 7. Personal Records Button
                             personalRecordsButton
                                 .padding(.horizontal, 20)
                         }
@@ -381,6 +385,6 @@ struct RecordItem: View {
 }
 
 #Preview {
-    FitnessAnalyticsView()
+    WorkoutAnalyticsView()
         .modelContainer(for: [WorkoutSession.self, WorkoutDay.self])
 }

@@ -103,7 +103,7 @@ struct WorkoutDaySelectionView: View {
             }
             Spacer()
 
-            NavigationLink(destination: FitnessAnalyticsView()) {
+            NavigationLink(destination: WorkoutAnalyticsView()) {
                 Image(systemName: "chart.bar.xaxis")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.primary)

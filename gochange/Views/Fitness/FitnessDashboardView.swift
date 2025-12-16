@@ -2,7 +2,7 @@ import SwiftUI
 import Charts
 import SwiftData
 
-struct FitnessView: View {
+struct FitnessDashboardView: View {
     @StateObject private var viewModel = FitnessViewModel()
     @Environment(\.modelContext) private var modelContext
     @State private var selectedMetricInfo: MetricExplanationSheet.MetricType?
@@ -835,7 +835,7 @@ struct StrengthProgressionCard: View {
 }
 
 #Preview {
-    FitnessView()
+    FitnessDashboardView()
 }
 
 // MARK: - Card Style Modifier

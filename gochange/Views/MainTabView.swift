@@ -20,7 +20,7 @@ struct MainTabView: View {
                 }
                 .tag(1)
             
-            FitnessView()
+            FitnessDashboardView()
                 .tabItem {
                     Label("Fitness", systemImage: "chart.bar.fill")
                 }
