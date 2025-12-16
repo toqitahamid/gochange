@@ -71,8 +71,6 @@ class FitnessViewModel: ObservableObject {
         // Fetch HealthKit Data
         if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
             self.restingHeartRate = rhr
-        if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
-            self.restingHeartRate = rhr
             updateRHRStatus(rhr)
         }
         
