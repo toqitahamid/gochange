@@ -67,32 +67,34 @@ class FitnessViewModel: ObservableObject {
     }
     
     // MARK: - Data Fetching
-    func fetchData() async {
+    func fetchData(for range: TimeRange = .month) async {
+        currentTimeRange = range
+        
         // Fetch HealthKit Data
         if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
             self.restingHeartRate = rhr
             updateRHRStatus(rhr)
         }
         
-        // Fetch Cardio Load History (Last 7 days)
-        let history = await healthKitService.getHistoricalActiveEnergy(days: 7)
+        // Fetch Cardio Load History based on selected range
+        let history = await healthKitService.getHistoricalActiveEnergy(days: range.days)
         // Sort by date and extract values
         let sortedHistory = history.sorted { $0.key < $1.key }.map { $0.value }
-        // Ensure we have at least 7 days of data (fill with 0 if needed for chart stability)
-        // Or leave it as is, but UI might expect a fixed count.
-        // Let's just publish what we found, and UI can handle it.
         self.cardioLoadHistory = sortedHistory
         
-        // Refresh Strength Data
-        fetchStrengthData()
+        // Refresh Strength Data with range
+        fetchStrengthData(for: range)
     }
     
-    private func fetchStrengthData() {
+    // Track current time range
+    private var currentTimeRange: TimeRange = .month
+    
+    private func fetchStrengthData(for range: TimeRange = .month) {
         guard let context = modelContext else { return }
         
-        // Calculate start date (30 days ago)
+        // Calculate start date based on selected range
         let calendar = Calendar.current
-        let startDate = calendar.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let startDate = calendar.date(byAdding: .day, value: -range.days, to: Date()) ?? Date()
         
         // Fetch completed sessions
         let descriptor = FetchDescriptor<WorkoutSession>(

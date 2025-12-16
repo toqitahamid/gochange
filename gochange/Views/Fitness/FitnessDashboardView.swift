@@ -6,24 +6,20 @@ struct FitnessDashboardView: View {
     @StateObject private var viewModel = FitnessViewModel()
     @Environment(\.modelContext) private var modelContext
     @State private var selectedMetricInfo: MetricExplanationSheet.MetricType?
+    @State private var selectedTimeRange: TimeRange = .month
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(spacing: 20) {
                     // Header
-                    HStack {
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Fitness")
-                                .font(.system(size: 34, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                            Text("Last 30 days")
-                                .font(.system(size: 15, design: .rounded))
-                                .foregroundColor(.secondary)
-                        }
-                        Spacer()
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Fitness")
+                            .font(.system(size: 34, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        
+                        TimeRangePicker(selection: $selectedTimeRange)
                     }
-                    // .padding(.horizontal) removed
 
                     // Daily Readiness
                     DailyReadinessCard(viewModel: viewModel) {
@@ -96,9 +92,9 @@ struct FitnessDashboardView: View {
             MetricExplanationSheet(metric: metric, currentValue: value)
                 .presentationDetents([.large])
         }
-        .task {
+        .task(id: selectedTimeRange) {
             viewModel.setModelContext(modelContext)
-            await viewModel.fetchData()
+            await viewModel.fetchData(for: selectedTimeRange)
         }
     }
 }
