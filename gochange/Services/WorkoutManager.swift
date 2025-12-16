@@ -200,6 +200,8 @@ class WorkoutManager: ObservableObject {
 
         // Start Live Activity
         startWorkoutLiveActivity(workoutDay: workoutDay)
+        
+        saveWorkoutState()
     }
 
     private func calculateSuggestions() {
@@ -266,6 +268,7 @@ class WorkoutManager: ObservableObject {
         if activeSetTimer != nil {
             pauseSetTimer()
         }
+        saveWorkoutState()
     }
     
     func resumeWorkout() {
@@ -278,6 +281,7 @@ class WorkoutManager: ObservableObject {
         if activeSetTimer != nil {
             resumeSetTimer()
         }
+        saveWorkoutState()
     }
     
     func togglePause() {
@@ -290,6 +294,7 @@ class WorkoutManager: ObservableObject {
     
     func cancel() {
         endWorkoutActivity()
+        clearSavedState()
         resetState()
     }
     
@@ -298,6 +303,7 @@ class WorkoutManager: ObservableObject {
 
         // End Live Activity
         endWorkoutActivity()
+        clearSavedState()
 
         // Update session details
         let endTime = Date()
@@ -631,6 +637,7 @@ class WorkoutManager: ObservableObject {
         exerciseLogs[exerciseIndex].sets.append(newSet)
         
         updateWorkoutLiveActivity()
+        saveWorkoutState()
     }
     
     func removeSet(at setIndex: Int, from exerciseIndex: Int) {
@@ -667,6 +674,7 @@ class WorkoutManager: ObservableObject {
         }
         
         updateWorkoutLiveActivity()
+        saveWorkoutState()
     }
     
     func toggleSetCompletion(exerciseIndex: Int, setIndex: Int) {
@@ -676,6 +684,7 @@ class WorkoutManager: ObservableObject {
         let wasCompleted = exerciseLogs[exerciseIndex].sets[setIndex].isCompleted
         exerciseLogs[exerciseIndex].sets[setIndex].isCompleted.toggle()
         updateWorkoutLiveActivity()
+        saveWorkoutState()
 
         // Auto-start rest timer when marking set as complete
         if !wasCompleted {
@@ -770,6 +779,7 @@ class WorkoutManager: ObservableObject {
         // Complete the set
         exerciseLogs[timer.exerciseIndex].sets[timer.setIndex].isCompleted = true
         updateWorkoutLiveActivity()
+        saveWorkoutState()
         
         // Stop the set timer
         activeSetTimer = nil
@@ -884,5 +894,155 @@ class WorkoutManager: ObservableObject {
     
     private func endWorkoutActivity() {
         WorkoutActivityManager.shared.end()
+    }
+    // MARK: - Workout Persistence
+    
+    // DTOs for saving state
+    struct SavedSetLog: Codable {
+        let setNumber: Int
+        let targetReps: String
+        let actualReps: Int?
+        let weight: Double?
+        let weightUnit: String
+        let isCompleted: Bool
+        let setType: String
+        let duration: TimeInterval?
+    }
+    
+    struct SavedExerciseLog: Codable {
+        let exerciseId: UUID
+        let exerciseName: String
+        let order: Int
+        let sets: [SavedSetLog]
+        let notes: String?
+    }
+    
+    struct ActiveWorkoutSnapshot: Codable {
+        let workoutDayId: UUID
+        let workoutDayName: String
+        let startTime: Date
+        let exerciseLogs: [SavedExerciseLog]
+        let notes: String
+        let isPaused: Bool
+        let pausedTime: Date?
+        let totalPausedDuration: TimeInterval
+    }
+    
+    private let workoutStateKey = "activeWorkoutState"
+    
+    func saveWorkoutState() {
+        guard isWorkoutActive, let startTime = startTime, let currentDay = currentWorkoutDay else { return }
+        
+        let savedLogs = exerciseLogs.map { log in
+            SavedExerciseLog(
+                exerciseId: log.exerciseId,
+                exerciseName: log.exerciseName,
+                order: log.order,
+                sets: log.sets.map { set in
+                    SavedSetLog(
+                        setNumber: set.setNumber,
+                        targetReps: set.targetReps,
+                        actualReps: set.actualReps,
+                        weight: set.weight,
+                        weightUnit: set.weightUnit.rawValue,
+                        isCompleted: set.isCompleted,
+                        setType: set.setType.rawValue,
+                        duration: set.duration
+                    )
+                },
+                notes: log.notes
+            )
+        }
+        
+        let snapshot = ActiveWorkoutSnapshot(
+            workoutDayId: currentDay.id,
+            workoutDayName: currentDay.name,
+            startTime: startTime,
+            exerciseLogs: savedLogs,
+            notes: sessionNotes,
+            isPaused: isPaused,
+            pausedTime: pausedTime,
+            totalPausedDuration: totalPausedDuration
+        )
+        
+        if let encoded = try? JSONEncoder().encode(snapshot) {
+            sharedUserDefaults.set(encoded, forKey: workoutStateKey)
+        }
+    }
+    
+    func checkForActiveWorkout() {
+        guard let data = sharedUserDefaults.data(forKey: workoutStateKey),
+              let snapshot = try? JSONDecoder().decode(ActiveWorkoutSnapshot.self, from: data),
+              let context = modelContext else { return }
+        
+        // Fetch the WorkoutDay
+        let workoutDayId = snapshot.workoutDayId
+        let descriptor = FetchDescriptor<WorkoutDay>(
+            predicate: #Predicate<WorkoutDay> { day in
+                day.id == workoutDayId
+            }
+        )
+        
+        guard let days = try? context.fetch(descriptor), let workoutDay = days.first else {
+            // If the workout day no longer exists, clear the state
+            clearSavedState()
+            return
+        }
+        
+        // Restore State
+        self.currentWorkoutDay = workoutDay
+        self.startTime = snapshot.startTime
+        self.sessionNotes = snapshot.notes
+        self.isPaused = snapshot.isPaused
+        self.pausedTime = snapshot.pausedTime
+        self.totalPausedDuration = snapshot.totalPausedDuration
+        self.isWorkoutActive = true
+        self.isMinimized = true // Restore as minimized to avoid intrusion
+        
+        // Create a new session object (don't insert yet)
+        let session = WorkoutSession(
+            date: snapshot.startTime,
+            workoutDayId: workoutDay.id,
+            workoutDayName: workoutDay.name
+        )
+        self.currentSession = session
+        
+        // Reconstruct logs
+        self.exerciseLogs = snapshot.exerciseLogs.map { savedLog in
+            let log = ExerciseLog(
+                exerciseId: savedLog.exerciseId,
+                exerciseName: savedLog.exerciseName,
+                order: savedLog.order
+            )
+            log.notes = savedLog.notes
+            
+            log.sets = savedLog.sets.map { savedSet in
+                let set = SetLog(
+                    setNumber: savedSet.setNumber,
+                    targetReps: savedSet.targetReps,
+                    weightUnit: SetLog.WeightUnit(rawValue: savedSet.weightUnit) ?? .lbs
+                )
+                set.actualReps = savedSet.actualReps
+                set.weight = savedSet.weight
+                set.isCompleted = savedSet.isCompleted
+                set.setType = SetLog.SetType(rawValue: savedSet.setType) ?? .normal
+                set.duration = savedSet.duration
+                return set
+            }
+            return log
+        }
+        
+        // Resume timers if needed
+        restoreTimerState()
+        
+        // Restart Live Activity
+        startWorkoutLiveActivity(workoutDay: workoutDay)
+        updateWorkoutLiveActivity()
+    }
+    
+    func clearSavedState() {
+        sharedUserDefaults.removeObject(forKey: workoutStateKey)
+        sharedUserDefaults.removeObject(forKey: "savedRestTimer")
+        sharedUserDefaults.removeObject(forKey: "savedSetTimer")
     }
 }

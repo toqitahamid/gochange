@@ -41,6 +41,9 @@ struct GoChangeApp: App {
                 .onAppear {
                     workoutManager.setModelContext(modelContainer.mainContext)
                     
+                    // Restore active workout state if any
+                    workoutManager.checkForActiveWorkout()
+                    
                     // Initialize Watch Connectivity
                     WatchConnectivityService.shared.setModelContext(modelContainer.mainContext)
                 }
