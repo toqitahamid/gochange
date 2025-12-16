@@ -83,7 +83,6 @@
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
-				Views/LiveActivity/GoChangeStaticWidget.swift,
 			);
 			target = 964F1C962ED5B38B0081B1EF /* gochange */;
 		};

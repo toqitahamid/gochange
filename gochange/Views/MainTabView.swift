@@ -54,7 +54,6 @@ struct MainTabView: View {
                             workoutManager.stopSetTimer()
                         }
                     )
-                    .padding(.horizontal, 16)
                     .padding(.bottom, 49) // Standard tab bar height
                     .transition(.move(edge: .bottom))
                 }

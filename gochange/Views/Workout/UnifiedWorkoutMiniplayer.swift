@@ -174,15 +174,18 @@ struct UnifiedWorkoutMiniplayer: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 20)
         }
+
         .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.15), radius: 25, x: 0, y: -8)
+            Rectangle()
+                .fill(Color(uiColor: .systemBackground))
+                .shadow(color: Color.black.opacity(0.1), radius: 0, x: 0, y: -0.5) // Top border effect via shadow
         )
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-        )
+        // Add top border
+        .overlay(alignment: .top) {
+            Rectangle()
+                .fill(Color(uiColor: .separator))
+                .frame(height: 0.5)
+        }
         .onTapGesture {
             onExpand()
         }
