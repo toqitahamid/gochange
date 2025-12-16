@@ -1,7 +1,7 @@
 import SwiftUI
 
-struct RecoveryView: View {
-    @EnvironmentObject var viewModel: DashboardViewModel
+struct RecoveryDetailSheet: View {
+    @EnvironmentObject var viewModel: HomeViewModel
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -147,6 +147,6 @@ struct RecoveryView: View {
 }
 
 #Preview {
-    RecoveryView()
-        .environmentObject(DashboardViewModel())
+    RecoveryDetailSheet()
+        .environmentObject(HomeViewModel())
 }

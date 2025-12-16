@@ -13,7 +13,7 @@ struct DataManagementView: View {
     @State private var showingResetAlert = false
     @State private var exportData: Data?
     
-    private let dataService = DataService()
+    private let dataService = DataExportService()
     private let mediaService = MediaService()
     
     var body: some View {

@@ -11,7 +11,7 @@ struct RecoveryOverviewCard: View {
     }
     
     var body: some View {
-        NavigationLink(destination: RecoveryInsightsView()) {
+        NavigationLink(destination: RecoveryDashboardView()) {
             HStack(spacing: 20) {
                 // Readiness Ring
                 ZStack {

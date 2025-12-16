@@ -5,16 +5,16 @@ struct SummaryRingsView: View {
     let recovery: Int
     let sleep: Int
     
-    @State private var showingStrainView = false
-    @State private var showingRecoveryView = false
+    @State private var showingStrainDetailView = false
+    @State private var showingRecoveryDetailSheet = false
     @State private var showingSleepView = false
-    @StateObject private var dashboardViewModel = DashboardViewModel()
+    @StateObject private var dashboardViewModel = HomeViewModel()
     
     var body: some View {
         HStack(spacing: 16) {
             // Strain Ring (Tappable)
             Button {
-                showingStrainView = true
+                showingStrainDetailView = true
             } label: {
                 RingItem(
                     title: "Strain",
@@ -28,9 +28,9 @@ struct SummaryRingsView: View {
                 )
             }
             .buttonStyle(.plain)
-            .sheet(isPresented: $showingStrainView) {
+            .sheet(isPresented: $showingStrainDetailView) {
                 NavigationStack {
-                    StrainView()
+                    StrainDetailView()
                 }
             }
             
@@ -40,7 +40,7 @@ struct SummaryRingsView: View {
             
             // Recovery Ring (Tappable)
             Button {
-                showingRecoveryView = true
+                showingRecoveryDetailSheet = true
             } label: {
                 RingItem(
                     title: "Recovery",
@@ -54,9 +54,9 @@ struct SummaryRingsView: View {
                 )
             }
             .buttonStyle(.plain)
-            .sheet(isPresented: $showingRecoveryView) {
+            .sheet(isPresented: $showingRecoveryDetailSheet) {
                 NavigationStack {
-                    RecoveryView()
+                    RecoveryDetailSheet()
                 }
                 .environmentObject(dashboardViewModel)
             }

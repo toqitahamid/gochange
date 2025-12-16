@@ -30,7 +30,7 @@ struct MainTabView: View {
         .overlay(alignment: .bottom) {
             if workoutManager.isWorkoutActive && workoutManager.isMinimized {
                 if let workoutDay = workoutManager.currentWorkoutDay {
-                    UnifiedWorkoutMiniplayer(
+                    WorkoutMiniplayer(
                         workoutDayName: workoutDay.name,
                         exerciseName: getCurrentExerciseName(),
                         workoutStartTime: workoutManager.startTime ?? Date(),

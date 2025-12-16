@@ -2,7 +2,7 @@ import Foundation
 import SwiftData
 
 /// Service for data export/import and backup operations
-class DataService {
+class DataExportService {
     
     // MARK: - Export Data
     

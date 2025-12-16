@@ -108,7 +108,7 @@ struct ActiveWorkoutView: View {
             if workoutManager.isMinimized || workoutManager.activeSetTimer != nil || workoutManager.activeRestTimer != nil {
                 VStack {
                     Spacer()
-                    UnifiedWorkoutMiniplayer(
+                    WorkoutMiniplayer(
                         workoutDayName: workoutDay.name,
                         exerciseName: getCurrentExerciseName(),
                         workoutStartTime: workoutManager.startTime ?? Date(),

@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SleepView: View {
-    @EnvironmentObject var viewModel: DashboardViewModel
+    @EnvironmentObject var viewModel: HomeViewModel
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
@@ -189,5 +189,5 @@ struct SleepView: View {
 
 #Preview {
     SleepView()
-        .environmentObject(DashboardViewModel())
+        .environmentObject(HomeViewModel())
 }

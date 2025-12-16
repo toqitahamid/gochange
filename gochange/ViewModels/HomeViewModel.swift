@@ -4,7 +4,7 @@ import HealthKit
 import Combine
 
 @MainActor
-class DashboardViewModel: ObservableObject {
+class HomeViewModel: ObservableObject {
     // MARK: - Published Properties
     
     // Scores (0-100)

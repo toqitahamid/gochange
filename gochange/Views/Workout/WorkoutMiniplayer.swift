@@ -2,7 +2,7 @@ import SwiftUI
 import Combine
 
 // MARK: - Unified Workout Miniplayer
-struct UnifiedWorkoutMiniplayer: View {
+struct WorkoutMiniplayer: View {
     let workoutDayName: String
     let exerciseName: String?
     let workoutStartTime: Date
@@ -219,7 +219,7 @@ struct UnifiedWorkoutMiniplayer: View {
         Spacer()
         
         // Preview with set timer
-        UnifiedWorkoutMiniplayer(
+        WorkoutMiniplayer(
             workoutDayName: "Push",
             exerciseName: "Bench Press",
             workoutStartTime: Date().addingTimeInterval(-450),

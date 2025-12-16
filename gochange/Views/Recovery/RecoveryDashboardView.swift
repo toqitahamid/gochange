@@ -2,7 +2,7 @@ import SwiftUI
 import SwiftData
 import Charts
 
-struct RecoveryInsightsView: View {
+struct RecoveryDashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var recoveryService = RecoveryService.shared
     @StateObject private var healthKitService = HealthKitService.shared
@@ -353,6 +353,6 @@ struct RecoveryInsightsView: View {
 }
 
 #Preview {
-    RecoveryInsightsView()
+    RecoveryDashboardView()
         .modelContainer(for: [RestDay.self, RecoveryMetrics.self, WorkoutSession.self])
 }
