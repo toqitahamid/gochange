@@ -10,7 +10,7 @@ struct MainTabView: View {
         TabView(selection: $selectedTab) {
             JournalView()
                 .tabItem {
-                    Label("Journal", systemImage: "heart.text.clipboard")
+                    Label("Home", systemImage: "house.fill")
                 }
                 .tag(0)
             
@@ -22,7 +22,7 @@ struct MainTabView: View {
             
             PerformanceAnalyticsView()
                 .tabItem {
-                    Label("Performance", systemImage: "chart.xyaxis.line")
+                    Label("Fitness", systemImage: "chart.xyaxis.line")
                 }
                 .tag(2)
         }

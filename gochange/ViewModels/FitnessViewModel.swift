@@ -42,6 +42,10 @@ class FitnessViewModel: ObservableObject {
     @Published var targetStrainHigh: Double = 0
     @Published var strainStatus: String = "Optimal" // Optimal, Overreaching, Restoring, Undertraining
     
+    // Strain vs Recovery Correlation Data
+    @Published var strainRecoveryData: [StrainRecoveryDataPoint] = []
+    @Published var isLoadingStrainRecoveryData: Bool = false
+    
     private var healthKitService = HealthKitService.shared
     private var modelContext: ModelContext?
     
@@ -84,6 +88,9 @@ class FitnessViewModel: ObservableObject {
         
         // Refresh Strength Data with range
         fetchStrengthData(for: range)
+        
+        // Fetch Strain vs Recovery correlation data
+        await fetchStrainRecoveryData(for: range)
     }
     
     // Track current time range
@@ -155,7 +162,12 @@ class FitnessViewModel: ObservableObject {
         calculateStrain(totalVolume: total)
     }
     
-    private func calculateStrain(totalVolume: Double) {
+    /// Calculate strain score from workout volume (0-21 scale)
+    /// - Parameters:
+    ///   - totalVolume: Total weight volume in lbs/kg
+    ///   - duration: Optional workout duration in seconds
+    /// - Returns: Strain score on 0-21 scale
+    private func calculateStrainScore(totalVolume: Double, duration: TimeInterval = 0) -> Double {
         // Simplified Strain Calculation
         // In a real app, this would combine Heart Rate data (Cardio Load) + Muscular Load
         
@@ -171,9 +183,19 @@ class FitnessViewModel: ObservableObject {
         // Strain is usually cumulative. Let's add them but dampen the sum.
         let totalRawStrain = strengthStrain + cardioStrain
         
-        // Cap at 21 for Whoop-like scale, or just let it ride.
-        // Let's use a 0-21 scale.
-        self.strainScore = min(21.0, totalRawStrain)
+        // Cap at 21 for Whoop-like scale
+        return min(21.0, totalRawStrain)
+    }
+    
+    /// Convert strain score from 0-21 scale to 0-100 scale
+    private func strainScoreToPercentage(_ score: Double) -> Double {
+        return min(100.0, (score / 21.0) * 100.0)
+    }
+    
+    private func calculateStrain(totalVolume: Double) {
+        // Calculate strain score (0-21 scale)
+        let rawStrain = calculateStrainScore(totalVolume: totalVolume)
+        self.strainScore = rawStrain
         
         // Calculate Target Strain based on Recovery (Mocked for now)
         // If recovery is high, target is high.
@@ -326,4 +348,111 @@ class FitnessViewModel: ObservableObject {
             rhrStatus = "Elevated"
         }
     }
+    
+    // MARK: - Strain vs Recovery Correlation
+    
+    /// Fetch historical strain and recovery data for correlation chart
+    func fetchStrainRecoveryData(for range: TimeRange = .month) async {
+        guard let context = modelContext else { return }
+        
+        isLoadingStrainRecoveryData = true
+        defer { isLoadingStrainRecoveryData = false }
+        
+        let calendar = Calendar.current
+        let startDate = calendar.date(byAdding: .day, value: -range.days, to: Date()) ?? Date()
+        let endDate = Date()
+        
+        // Fetch recovery metrics
+        let recoveryDescriptor = FetchDescriptor<RecoveryMetrics>(
+            predicate: #Predicate { metrics in
+                metrics.date >= startDate && metrics.date <= endDate
+            },
+            sortBy: [SortDescriptor(\.date)]
+        )
+        
+        let recoveryMetrics = (try? context.fetch(recoveryDescriptor)) ?? []
+        
+        // Fetch workout sessions for strain calculation
+        let sessionDescriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { session in
+                session.isCompleted && session.date >= startDate && session.date <= endDate
+            },
+            sortBy: [SortDescriptor(\.date)]
+        )
+        
+        let sessions = (try? context.fetch(sessionDescriptor)) ?? []
+        
+        // Group sessions by date
+        var sessionsByDate: [Date: [WorkoutSession]] = [:]
+        for session in sessions {
+            let dayStart = calendar.startOfDay(for: session.date)
+            sessionsByDate[dayStart, default: []].append(session)
+        }
+        
+        // Create data points for each day
+        var dataPoints: [StrainRecoveryDataPoint] = []
+        var currentDate = startDate
+        
+        while currentDate <= endDate {
+            let dayStart = calendar.startOfDay(for: currentDate)
+            
+            // Calculate recovery score for this day
+            let recoveryScore: Double = {
+                if let metric = recoveryMetrics.first(where: { calendar.isDate($0.date, inSameDayAs: dayStart) }) {
+                    return metric.overallRecoveryScore * 100 // Convert to 0-100 scale
+                }
+                return 0
+            }()
+            
+            // Calculate strain score for this day
+            let strainScore: Double = {
+                if let daySessions = sessionsByDate[dayStart], !daySessions.isEmpty {
+                    // Calculate total volume for the day
+                    let totalVolume = daySessions.reduce(0.0) { sessionSum, session in
+                        sessionSum + session.exerciseLogs.reduce(0.0) { logSum, log in
+                            logSum + log.sets.reduce(0.0) { setSum, set in
+                                if set.isCompleted, let weight = set.weight, let reps = set.actualReps {
+                                    return setSum + (weight * Double(reps))
+                                }
+                                return setSum
+                            }
+                        }
+                    }
+                    
+                    // Calculate duration
+                    let totalDuration = daySessions.reduce(0.0) { $0 + ($1.duration ?? 0) }
+                    
+                    // Calculate strain using standardized method
+                    let rawStrain = calculateStrainScore(totalVolume: totalVolume, duration: totalDuration)
+                    
+                    // Convert to 0-100 scale (from 0-21 scale)
+                    return strainScoreToPercentage(rawStrain)
+                }
+                return 0
+            }()
+            
+            // Only add data point if we have at least recovery or strain data
+            if recoveryScore > 0 || strainScore > 0 {
+                dataPoints.append(StrainRecoveryDataPoint(
+                    date: dayStart,
+                    recoveryScore: recoveryScore,
+                    strainScore: strainScore
+                ))
+            }
+            
+            // Move to next day
+            currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? endDate
+        }
+        
+        self.strainRecoveryData = dataPoints
+    }
+}
+
+// MARK: - Supporting Types
+
+struct StrainRecoveryDataPoint: Identifiable {
+    let id = UUID()
+    let date: Date
+    let recoveryScore: Double // 0-100
+    let strainScore: Double // 0-100
 }

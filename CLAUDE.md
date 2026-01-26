@@ -153,6 +153,9 @@ All models are SwiftData `@Model` classes with relationships:
   - Fitness and strength analytics
   - Calculates muscle group volumes, frequency, and load
   - Displays strength metrics and workout distribution
+  - Manages strain vs recovery correlation data with loading states
+  - Standardized strain calculation methods (calculateStrainScore, strainScoreToPercentage)
+  - Fetches historical strain/recovery data for correlation charts
 
 - **AnalyticsViewModel** (`gochange/ViewModels/AnalyticsViewModel.swift`):
   - Advanced analytics and trends
@@ -160,19 +163,30 @@ All models are SwiftData `@Model` classes with relationships:
 
 ### View Structure
 
-- **MainTabView.swift**: Tab-based navigation (Home, Workout, Fitness, More/Settings)
+- **MainTabView.swift**: Tab-based navigation (Home, Workout, Fitness)
+  - Tab 0: "Home" (JournalView) - Primary dashboard with recovery, sleep, and strain metrics
+  - Tab 1: "Workout" (WorkoutDaySelectionView) - Workout planning and selection
+  - Tab 2: "Fitness" (PerformanceAnalyticsView) - Fitness analytics and performance metrics
   - Dynamically shows ActiveWorkoutView when WorkoutManager.isWorkoutActive is true
-  - Shows MiniPlayerView at bottom when workout is minimized
+  - Shows WorkoutMiniplayer at bottom when workout is minimized
   - Injects WorkoutManager as EnvironmentObject
+  - Settings accessible via navigation (no separate tab)
 
 - **Views/Workout/**: ActiveWorkoutView (main workout logging UI), WorkoutDaySelectionView, EditWorkoutDayView, WorkoutPreviewView
 - **Views/LiveActivity/**: RestTimerWidget (WidgetKit/ActivityKit UI), RestTimerWidgetBundle, GoChangeStaticWidget (home screen widget)
-- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView, MiniPlayerView, CircularProgressView
-- **Views/Home/**: HomeView with new dashboard showing Recovery/Strain/Sleep metrics
+- **Views/Components/**: Reusable components like RestTimerView, ProgressChartView, MiniPlayerView, CircularProgressView, WorkoutMiniplayer, NextWorkoutPill
+- **Views/Home/**: SummaryRingsView, TimelineView, StrainDetailView (components used by JournalView)
+- **Views/Fitness/**: 
+  - JournalView - Primary dashboard/home view showing Recovery/Strain/Sleep metrics, activity timeline, and health metrics
+  - FitnessDashboardView - Comprehensive fitness analytics including:
+    - Activity heatmap (GitHub-style contribution grid)
+    - Daily activity summary
+    - Strength analytics (radar chart with 3 metric views: Total Volume, Workout Frequency, Muscular Load)
+    - Cardio analytics (focus, HRR, load)
+    - Strain vs Recovery correlation chart (dual-axis time series with loading states)
 - **Views/Recovery/**: Recovery metrics detail view
 - **Views/Sleep/**: Sleep data detail view
-- **Views/Fitness/**: Fitness/strength analytics view
-- **Views/Analytics/**: Advanced analytics view
+- **Views/Analytics/**: PerformanceAnalyticsView - Advanced analytics and trends (accessed via Fitness tab)
 - **Views/History/**: SessionDetailView (individual workout session details, used in homepage timeline)
 - **Views/Exercise/**: ExerciseLibraryView, ExerciseDetailView
 - **Views/Settings/**: SettingsView
@@ -225,7 +239,7 @@ When starting a workout via WorkoutManager:
 ## Design System
 
 ### Card Styling Standards
-All cards throughout the app should use consistent styling for visual cohesion. These standards are applied in HomeView, WorkoutPreviewView, and should be used for any new card components.
+All cards throughout the app should use consistent styling for visual cohesion. These standards are applied in JournalView, WorkoutPreviewView, and should be used for any new card components.
 
 **Standard Card Style:**
 ```swift
@@ -244,9 +258,11 @@ All cards throughout the app should use consistent styling for visual cohesion. 
 - Border: `Color.gray.opacity(0.1), lineWidth: 1`
 - Background: `Color.white`
 
+**Note:** These standards are applied in JournalView, WorkoutPreviewView, and should be used for any new card components.
+
 ### Color Scheme
 **Background:**
-- Main background: `Color(hex: "#F5F5F7")` - Light gray background used across HomeView, WorkoutPreviewView, and other main screens
+- Main background: `Color(hex: "#F5F5F7")` - Light gray background used across JournalView, WorkoutPreviewView, and other main screens
 
 **Accent Colors:**
 - Primary accent: `Color(hex: "#5B7FFF")` - Blue used for primary actions and highlights
@@ -394,3 +410,47 @@ GoChangeWatch Watch App/          # watchOS app target
     ├── WatchActiveWorkoutView.swift
     └── SetInputView.swift
 ```
+
+## Recent Updates & Improvements
+
+### Fitness Analytics Enhancements (January 2026)
+
+**Strain vs Recovery Correlation Chart:**
+- Dual-axis time series chart implemented in `FitnessDashboardView`
+- Shows strain and recovery metrics over time (7-30 days based on selected range)
+- Includes loading states (`isLoadingStrainRecoveryData`) for better UX
+- Historical data fetching via `FitnessViewModel.fetchStrainRecoveryData()`
+- Empty state handling and insights display
+
+**Strain Calculation Standardization:**
+- Reusable helper methods in `FitnessViewModel`:
+  - `calculateStrainScore(totalVolume:duration:)` - Calculates raw strain (0-21 scale)
+  - `strainScoreToPercentage(_:)` - Converts to 0-100 scale
+- Consistent strain calculations across `calculateStrain()` and `fetchStrainRecoveryData()`
+- Improved maintainability and accuracy
+
+**Chart Improvements:**
+- Dynamic X-axis label spacing based on data count:
+  - >30 data points: 7 labels
+  - >14 data points: 5 labels
+  - >7 data points: 3 labels
+  - ≤7 data points: 1 label per point
+- Enhanced Y-axis labels with stride by 25 (0, 25, 50, 75, 100)
+- Improved grid lines and font styling for better readability
+
+**Code Quality:**
+- Removed unused `recoveryService` reference from `FitnessViewModel`
+- Data comes directly from SwiftData `RecoveryMetrics` model
+- Cleaner codebase with no unused dependencies
+
+### Navigation Updates
+
+**Tab Structure:**
+- Tab 0: "Home" (JournalView) - Primary dashboard (renamed from "Journal" to align with PRD)
+- Tab 1: "Workout" (WorkoutDaySelectionView)
+- Tab 2: "Fitness" (PerformanceAnalyticsView) - Renamed from "Performance"
+- Settings accessible via navigation (no separate tab)
+
+**Dashboard Clarification:**
+- `JournalView` is the primary dashboard/home view
+- Dashboard includes: Recovery/Strain/Sleep cards, activity timeline, health metrics panel

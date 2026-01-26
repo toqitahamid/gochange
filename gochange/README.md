@@ -51,7 +51,9 @@ WorkoutTracker/
 ├── Views/
 │   ├── MainTabView.swift             # Tab navigation
 │   ├── Home/
-│   │   └── HomeView.swift            # Dashboard
+│   │   └── SummaryRingsView.swift    # Dashboard components
+│   ├── Fitness/
+│   │   └── JournalView.swift         # Primary dashboard
 │   ├── Workout/
 │   │   ├── WorkoutDaySelectionView.swift
 │   │   └── ActiveWorkoutView.swift

@@ -71,6 +71,16 @@ struct FitnessDashboardView: View {
 
                         StrengthProgressionCard(viewModel: viewModel)
                     }
+                    
+                    // Strain vs Recovery Section
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Strain Performance")
+                            .font(.title3)
+                            .fontWeight(.bold)
+                            .padding(.horizontal)
+                        
+                        StrainRecoveryCorrelationCard(viewModel: viewModel)
+                    }
                 }
                 .padding(.horizontal, 20)
                 .padding(.vertical)
@@ -1063,5 +1073,176 @@ struct ACWRCard: View {
         if viewModel.acwr >= 0.8 && viewModel.acwr <= 1.3 { return "Sweet Spot" }
         if viewModel.acwr > 1.5 { return "High Risk" }
         return "Undertraining"
+    }
+}
+
+// MARK: - Strain vs Recovery Correlation Card
+struct StrainRecoveryCorrelationCard: View {
+    @ObservedObject var viewModel: FitnessViewModel
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            // Header
+            HStack {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .foregroundColor(.gray)
+                
+                Text("Strain vs Recovery")
+                    .font(.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.secondary)
+                
+                Spacer()
+            }
+            
+            // Chart
+            if viewModel.isLoadingStrainRecoveryData {
+                // Loading state
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                    Text("Loading correlation data...")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+            } else if !viewModel.strainRecoveryData.isEmpty {
+                Chart {
+                    // Recovery line (green)
+                    ForEach(viewModel.strainRecoveryData) { point in
+                        LineMark(
+                            x: .value("Date", point.date, unit: .day),
+                            y: .value("Recovery", point.recoveryScore)
+                        )
+                        .foregroundStyle(Color(hex: "#00D4AA"))
+                        .interpolationMethod(.catmullRom)
+                        .symbol(Circle().strokeBorder(lineWidth: 2))
+                        
+                        // Recovery area
+                        AreaMark(
+                            x: .value("Date", point.date, unit: .day),
+                            y: .value("Recovery", point.recoveryScore)
+                        )
+                        .foregroundStyle(
+                            LinearGradient(
+                                colors: [Color(hex: "#00D4AA").opacity(0.2), Color(hex: "#00D4AA").opacity(0.0)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .interpolationMethod(.catmullRom)
+                    }
+                    
+                    // Strain line (orange)
+                    ForEach(viewModel.strainRecoveryData) { point in
+                        LineMark(
+                            x: .value("Date", point.date, unit: .day),
+                            y: .value("Strain", point.strainScore)
+                        )
+                        .foregroundStyle(Color(hex: "#FF6B35"))
+                        .interpolationMethod(.catmullRom)
+                        .symbol(Circle().strokeBorder(lineWidth: 2))
+                    }
+                }
+                .frame(height: 200)
+                .chartXAxis {
+                    // Improved axis label spacing based on data count
+                    let labelCount = viewModel.strainRecoveryData.count > 30 ? 7 : 
+                                    viewModel.strainRecoveryData.count > 14 ? 5 : 
+                                    viewModel.strainRecoveryData.count > 7 ? 3 : 1
+                    
+                    AxisMarks(values: .stride(by: .day, count: max(1, viewModel.strainRecoveryData.count / max(1, labelCount)))) { _ in
+                        AxisValueLabel(format: .dateTime.month().day(), centered: false)
+                            .font(.caption2)
+                    }
+                }
+                .chartYAxis {
+                    AxisMarks(position: .leading, values: .stride(by: 25)) { value in
+                        AxisValueLabel {
+                            if let intValue = value.as(Double.self) {
+                                Text("\(Int(intValue))")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                        AxisGridLine()
+                            .foregroundStyle(.gray.opacity(0.2))
+                    }
+                }
+                .chartYScale(domain: 0...100)
+                
+                // Legend
+                HStack(spacing: 20) {
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color(hex: "#00D4AA"))
+                            .frame(width: 8, height: 8)
+                        Text("Recovery")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color(hex: "#FF6B35"))
+                            .frame(width: 8, height: 8)
+                        Text("Strain")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                }
+                
+                // Insight text
+                if let insight = generateInsight() {
+                    Text(insight)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                }
+            } else {
+                // Empty state
+                VStack(spacing: 12) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 32))
+                        .foregroundColor(.gray.opacity(0.5))
+                    
+                    Text("No data available")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                    
+                    Text("Complete workouts and sync recovery data to see correlation")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+            }
+        }
+        .fitnessCardStyle()
+    }
+    
+    private func generateInsight() -> String? {
+        guard !viewModel.strainRecoveryData.isEmpty else { return nil }
+        
+        // Calculate average recovery and strain
+        let avgRecovery = viewModel.strainRecoveryData.map { $0.recoveryScore }.reduce(0, +) / Double(viewModel.strainRecoveryData.count)
+        let avgStrain = viewModel.strainRecoveryData.map { $0.strainScore }.reduce(0, +) / Double(viewModel.strainRecoveryData.count)
+        
+        // Generate insight based on correlation
+        if avgRecovery > 70 && avgStrain > 50 {
+            return "Good balance: High recovery supports your training intensity"
+        } else if avgRecovery < 50 && avgStrain > 50 {
+            return "Consider rest: High strain with low recovery may lead to overreaching"
+        } else if avgRecovery > 70 && avgStrain < 30 {
+            return "Ready to push: High recovery suggests you can increase intensity"
+        } else if avgRecovery < 50 && avgStrain < 30 {
+            return "Focus on recovery: Low strain and recovery suggests rest is needed"
+        }
+        
+        return "Track your strain and recovery balance over time"
     }
 }
