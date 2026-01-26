@@ -19,6 +19,13 @@ struct ActiveWorkoutView: View {
     @State private var showingSetConflictAlert = false
     @State private var pendingSetStart: PendingSetStart?
     
+    // Exercise Management State
+    @State private var showingReplaceSheet = false
+    @State private var showingReorderSheet = false
+    @State private var showingDeleteAlert = false
+    @State private var exerciseIndexToReplace: Int?
+    @State private var exerciseIndexToDelete: Int?
+    
     private struct PendingSetStart {
         let exerciseIndex: Int
         let setIndex: Int
@@ -83,6 +90,17 @@ struct ActiveWorkoutView: View {
                                 },
                                 onPauseSet: {
                                     workoutManager.pauseSetTimer()
+                                },
+                                onDeleteExercise: {
+                                    exerciseIndexToDelete = index
+                                    showingDeleteAlert = true
+                                },
+                                onReorderExercise: {
+                                    showingReorderSheet = true
+                                },
+                                onReplaceExercise: {
+                                    exerciseIndexToReplace = index
+                                    showingReplaceSheet = true
                                 }
                             )
                             .tag(index)
@@ -185,6 +203,23 @@ struct ActiveWorkoutView: View {
         } message: {
             Text("A set is currently running. Do you want to stop it and start this one?")
         }
+        .alert("Delete Exercise?", isPresented: $showingDeleteAlert) {
+            Button("Cancel", role: .cancel) {
+                exerciseIndexToDelete = nil
+            }
+            Button("Delete", role: .destructive) {
+                if let index = exerciseIndexToDelete {
+                    workoutManager.removeExercise(at: index)
+                    // Adjust current index if needed
+                    if currentExerciseIndex >= workoutManager.exerciseLogs.count {
+                        currentExerciseIndex = max(0, workoutManager.exerciseLogs.count - 1)
+                    }
+                }
+                exerciseIndexToDelete = nil
+            }
+        } message: {
+            Text("Are you sure you want to remove this exercise from your workout? This cannot be undone.")
+        }
         .alert("Error Saving Workout", isPresented: $workoutManager.showingSaveError) {
             Button("OK", role: .cancel) { }
         } message: {
@@ -208,6 +243,17 @@ struct ActiveWorkoutView: View {
                 workoutManager.complete(rpe: rpeValue)
             }
             .presentationDetents([.large])
+        }
+        .sheet(isPresented: $showingReplaceSheet) {
+            ExerciseSelectionSheet { newExercise in
+                if let index = exerciseIndexToReplace {
+                    workoutManager.replaceExercise(at: index, with: newExercise)
+                }
+                exerciseIndexToReplace = nil
+            }
+        }
+        .sheet(isPresented: $showingReorderSheet) {
+            ReorderExercisesSheet()
         }
         .fullScreenCover(isPresented: $workoutManager.showingSummary) {
             if let summary = workoutManager.workoutSummary {

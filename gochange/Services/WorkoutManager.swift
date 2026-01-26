@@ -621,6 +621,108 @@ class WorkoutManager: ObservableObject {
         }
     }
     
+    func removeExercise(at index: Int) {
+        guard index < exerciseLogs.count else { return }
+        
+        // Check if active timer is for this exercise
+        if let timer = activeSetTimer, timer.exerciseIndex == index {
+            stopSetTimer()
+        } else if let timer = activeSetTimer, timer.exerciseIndex > index {
+            // Shift active timer index if we removed an exercise before it
+             activeSetTimer = SetTimerState(
+                startTime: timer.startTime,
+                exerciseName: timer.exerciseName,
+                exerciseIndex: timer.exerciseIndex - 1,
+                setIndex: timer.setIndex,
+                setNumber: timer.setNumber,
+                setType: timer.setType,
+                isPaused: timer.isPaused,
+                pauseStartTime: timer.pauseStartTime,
+                totalPausedDuration: timer.totalPausedDuration
+            )
+        }
+        
+        exerciseLogs.remove(at: index)
+        
+        // Update order
+        for (i, log) in exerciseLogs.enumerated() {
+            log.order = i
+        }
+        
+        updateWorkoutLiveActivity()
+        saveWorkoutState()
+    }
+    
+    func moveExercise(from source: IndexSet, to destination: Int) {
+        exerciseLogs.move(fromOffsets: source, toOffset: destination)
+        
+        // Update order
+        for (i, log) in exerciseLogs.enumerated() {
+            log.order = i
+        }
+        
+        // If there is an active timer, we need to update its exercise index
+        if let timer = activeSetTimer {
+            // This is tricky because the index changed.
+            // For simplicity, finding the new index of the active exercise
+            if let newIndex = exerciseLogs.firstIndex(where: { $0.exerciseName == timer.exerciseName }) {
+                 activeSetTimer = SetTimerState(
+                    startTime: timer.startTime,
+                    exerciseName: timer.exerciseName,
+                    exerciseIndex: newIndex,
+                    setIndex: timer.setIndex,
+                    setNumber: timer.setNumber,
+                    setType: timer.setType,
+                    isPaused: timer.isPaused,
+                    pauseStartTime: timer.pauseStartTime,
+                    totalPausedDuration: timer.totalPausedDuration
+                )
+            }
+        }
+        
+        saveWorkoutState()
+    }
+    
+    func replaceExercise(at index: Int, with newExercise: Exercise) {
+        guard index < exerciseLogs.count else { return }
+        
+        // Stop timer if it's for this exercise
+        if let timer = activeSetTimer, timer.exerciseIndex == index {
+            stopSetTimer()
+        }
+        
+        @AppStorage("weightUnit") var weightUnit: String = "lbs"
+        let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
+        
+        // Create new log
+        let newLog = ExerciseLog(
+            exerciseId: newExercise.id,
+            exerciseName: newExercise.name,
+            order: index
+        )
+        
+        // Create default sets for new exercise
+        for setNum in 1...newExercise.defaultSets {
+            let setLog = SetLog(
+                setNumber: setNum,
+                targetReps: newExercise.defaultReps,
+                weightUnit: unit
+            )
+            if let defaultWeight = newExercise.defaultWeight {
+                setLog.weight = defaultWeight
+            }
+            if let reps = Int(newExercise.defaultReps) {
+                setLog.actualReps = reps
+            }
+            newLog.sets.append(setLog)
+        }
+        
+        exerciseLogs[index] = newLog
+        
+        updateWorkoutLiveActivity()
+        saveWorkoutState()
+    }
+    
     func addSet(to exerciseIndex: Int, defaultReps: String) {
         guard exerciseIndex < exerciseLogs.count else { return }
         

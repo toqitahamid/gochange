@@ -396,13 +396,14 @@ Empower users to optimize their fitness and recovery by providing comprehensive 
 
 ### Effects
 
-#### Glassmorphism
-- **Material**: `.ultraThinMaterial` (Watch), White (iOS)
-- **Blur**: Background blur effect
-- **Translucency**: Semi-transparent overlays
+#### Glassmorphism "Liquid Glass" Usage
+- **Navigation Only**: Use frosted glass ONLY for floating tab bars, toolbars, and contextual menus.
+- **Content Cards**: MUST be OPAQUE WHITE (#FFFFFF). Do NOT use glass for data cards.
+- **Vibrancy**: While cards are white, the data visualizations inside (rings, charts) should be glowing, vibrant, and gradient-rich to maintain the premium "wow" factor.
+- **Translucency**: Semi-transparent overlays allowed for modal backgrounds only.
 
 #### Shadows
-- **Main Cards**: `radius: 15, x: 0, y: 5, opacity: 0.08`
+- **Main Cards**: `radius: 15, x: 0, y: 5, opacity: 0.08` (Soft, diffuse)
 - **Sub-cards**: `radius: 10, x: 0, y: 4, opacity: 0.05`
 - **Small Elements**: `radius: 8, x: 0, y: 2, opacity: 0.05`
 
@@ -575,6 +576,10 @@ Empower users to optimize their fitness and recovery by providing comprehensive 
 - ✅ Workout-specific SF Symbol icons
 - ✅ Premium shadows and borders
 - ✅ Typography hierarchy
+- ✅ Progressive Overload Suggestions
+- ✅ Rest Timer with Live Activity
+- ✅ Form Reference (Photo/Video)
+- ✅ Home Screen & Lock Screen Widgets
 
 ---
 
@@ -582,18 +587,13 @@ Empower users to optimize their fitness and recovery by providing comprehensive 
 
 ### Potential Features
 - **Social Integration**: Share workouts with friends
-- **Progressive Overload Tracking**: Automatic weight progression suggestions
 - **Nutrition Logging**: Meal tracking and macros
 - **Training Programs**: Pre-built workout plans
-- **Video Form Guides**: In-app exercise demonstrations
-- **Rest Timer**: Countdown between sets
 - **Plate Calculator**: Calculate barbell loading
 - **Advanced Analytics**: ML-powered insights
 
 ### Platform Expansion
 - **iPad App**: Optimized tablet experience
-- **Widget Support**: Home screen widgets for quick stats
-- **Live Activities**: Lock screen workout tracking
 - **Shortcuts Integration**: Siri workout start
 - **Focus Mode**: Workout-specific Focus mode integration
 

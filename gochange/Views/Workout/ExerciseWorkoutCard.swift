@@ -15,6 +15,11 @@ struct ExerciseWorkoutCard: View {
     let onToggleSetCompletion: (Int) -> Void
     let onPlaySet: (Int) -> Void
     let onPauseSet: () -> Void // Callback to pause the active timer
+    
+    // Exercise Management Callbacks
+    let onDeleteExercise: () -> Void
+    let onReorderExercise: () -> Void
+    let onReplaceExercise: () -> Void
 
     @State private var showingNotes = false
     @State private var showingHistory = false
@@ -108,23 +113,23 @@ struct ExerciseWorkoutCard: View {
                     showingHistory = true
                 } label: {
                     Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(accentColor)
-                        .frame(width: 36, height: 36)
-                        .background(accentColor.opacity(0.1))
-                        .clipShape(Circle())
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(accentColor)
+                    .frame(width: 36, height: 36)
+                    .background(accentColor.opacity(0.1))
+                    .clipShape(Circle())
                 }
 
                 // Menu Button
                 Menu {
                     Button {
-                        // TODO: Implement replace exercise
+                        onReplaceExercise()
                     } label: {
                         Label("Replace Exercise", systemImage: "arrow.triangle.2.circlepath")
                     }
 
                     Button {
-                        // TODO: Implement reorder
+                        onReorderExercise()
                     } label: {
                         Label("Reorder Exercise", systemImage: "arrow.up.arrow.down")
                     }
@@ -138,7 +143,7 @@ struct ExerciseWorkoutCard: View {
                     Divider()
 
                     Button(role: .destructive) {
-                        // TODO: Implement delete
+                        onDeleteExercise()
                     } label: {
                         Label("Delete Exercise", systemImage: "trash")
                     }

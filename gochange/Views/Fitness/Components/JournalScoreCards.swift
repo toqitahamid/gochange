@@ -7,10 +7,10 @@ extension View {
             .padding(16)
             .background(Color.white)
             .cornerRadius(20)
-            .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
+            .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
             .overlay(
                 RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.gray.opacity(0.1), lineWidth: 1)
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
             )
     }
 }
@@ -72,6 +72,7 @@ struct RecoveryRingCard: View {
 }
 
 // MARK: - Strain Progress Card
+// MARK: - Strain Progress Card (Gauge)
 struct StrainProgressCard: View {
     let current: Double // 0-21
     let targetLow: Double
@@ -91,66 +92,49 @@ struct StrainProgressCard: View {
         Button {
             onTap?()
         } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Image(systemName: "flame.fill")
-                        .foregroundColor(AppColors.warning)
-                    Text("Strain")
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(.secondary)
-                    Spacer()
+            VStack(spacing: 12) {
+                // Gauge
+                ZStack {
+                    // Track
+                    Circle()
+                        .trim(from: 0, to: 0.75)
+                        .stroke(Color.gray.opacity(0.1), style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .rotationEffect(.degrees(135))
+                    
+                    // Progress
+                    Circle()
+                        .trim(from: 0, to: CGFloat(min(current, 21.0) / 21.0) * 0.75)
+                        .stroke(
+                            LinearGradient(
+                                colors: [AppColors.warning, AppColors.error],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            ),
+                            style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                        )
+                        .rotationEffect(.degrees(135))
+                    
+                    VStack(spacing: 0) {
+                        Text(String(format: "%.1f", current))
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                        Text("Strain")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
+                .frame(width: 80, height: 80)
                 
-                HStack(alignment: .bottom) {
-                    Text(String(format: "%.1f", current))
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundColor(.primary)
-                    
-                    Text("/ 21")
-                        .font(.caption)
+                VStack(spacing: 2) {
+                    Text("Target: \(Int(targetLow))-\(Int(targetHigh))")
+                        .font(.caption2)
                         .foregroundColor(.secondary)
-                        .padding(.bottom, 4)
-                    
-                    Spacer()
                     
                     Text(status)
-                        .font(.caption)
+                        .font(.caption2)
                         .fontWeight(.medium)
                         .foregroundColor(statusColor)
                 }
-                
-                // Progress Bar
-                GeometryReader { geometry in
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.gray.opacity(0.1))
-                            .frame(height: 8)
-                        
-                        // Target Zone
-                        let lowX = (targetLow / 21.0) * geometry.size.width
-                        let zoneWidth = ((targetHigh - targetLow) / 21.0) * geometry.size.width
-                        
-                        Capsule()
-                            .fill(AppColors.primary.opacity(0.15))
-                            .frame(width: max(0, zoneWidth), height: 8)
-                            .offset(x: lowX)
-                        
-                        // Current
-                        let currentWidth = (min(current, 21.0) / 21.0) * geometry.size.width
-                        
-                        Capsule()
-                            .fill(
-                                LinearGradient(
-                                    colors: [AppColors.warning.opacity(0.7), AppColors.warning],
-                                    startPoint: .leading,
-                                    endPoint: .trailing
-                                )
-                            )
-                            .frame(width: max(0, currentWidth), height: 8)
-                    }
-                }
-                .frame(height: 8)
             }
             .frame(maxWidth: .infinity)
             .scoreCardStyle()

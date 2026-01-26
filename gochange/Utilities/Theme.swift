@@ -8,7 +8,7 @@ struct AppColors {
     static let secondary = Color(hex: "1C1C1E")      // Carbon Black (anchor)
 
     // Backgrounds
-    static let background = Color(hex: "F0F2F5")     // Cloud Gray (app background)
+    static let background = Color(hex: "F5F5F7")     // Cloud Gray (app background)
     static let surface = Color(hex: "FFFFFF")        // Pure White (cards)
 
     // Text

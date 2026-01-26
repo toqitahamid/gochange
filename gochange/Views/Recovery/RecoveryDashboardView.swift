@@ -262,39 +262,97 @@ struct RecoveryDashboardView: View {
     }
     
     private var healthKitPromptCard: some View {
-        // ... (Keep existing implementation or simplify)
         VStack(spacing: 16) {
-            Text("Enable HealthKit Integration")
-                .font(.headline)
-            Button("Connect") {
+            Image(systemName: "heart.text.square.fill")
+                .font(.system(size: 40))
+                .foregroundColor(.pink)
+            
+            VStack(spacing: 4) {
+                Text("Enable HealthKit")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Text("Sync your workouts and recovery data with Apple Health for better insights.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button {
                 Task { await healthKitService.requestAuthorization() }
+            } label: {
+                Text("Connect Health")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 12)
+                    .background(Color.pink)
+                    .cornerRadius(12)
             }
         }
-        .padding()
+        .padding(24)
         .background(Color.white)
-        .cornerRadius(16)
+        .cornerRadius(24)
+        .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
     }
     
     private func muscleRecoveryCard(_ metrics: RecoveryMetrics) -> some View {
-        // Reuse existing logic or simplify
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Muscle Recovery")
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Muscle Recovery")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                if !metrics.muscleRecovery.isEmpty {
+                    Text("\(metrics.muscleRecovery.count) Active")
+                        .font(.caption)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.gray.opacity(0.1))
+                        .cornerRadius(8)
+                }
+            }
             
             if metrics.muscleRecovery.isEmpty {
-                Text("No data")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            } else {
-                ForEach(metrics.muscleRecovery.prefix(3), id: \.muscleGroup) { recovery in
-                    HStack {
-                        Text(recovery.muscleGroup)
-                        Spacer()
-                        Circle()
-                            .fill(sorenessColor(recovery.sorenessLevel))
-                            .frame(width: 8, height: 8)
+                HStack {
+                    Spacer()
+                    VStack(spacing: 8) {
+                        Image(systemName: "figure.arms.open")
+                            .font(.largeTitle)
+                            .foregroundColor(.gray.opacity(0.3))
+                        Text("No soreness recorded")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
                     }
-                    .font(.subheadline)
+                    Spacer()
+                }
+                .padding(.vertical, 20)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(metrics.muscleRecovery.prefix(5), id: \.muscleGroup) { recovery in
+                        HStack {
+                            Text(recovery.muscleGroup.capitalized)
+                                .font(.subheadline)
+                                .fontWeight(.medium)
+                            
+                            Spacer()
+                            
+                            HStack(spacing: 6) {
+                                ForEach(1...5, id: \.self) { level in
+                                    Circle()
+                                        .fill(level <= recovery.sorenessLevel ? sorenessColor(recovery.sorenessLevel) : Color.gray.opacity(0.2))
+                                        .frame(width: 6, height: 6)
+                                }
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        
+                        if recovery.muscleGroup != metrics.muscleRecovery.prefix(5).last?.muscleGroup {
+                            Divider()
+                        }
+                    }
                 }
             }
         }
@@ -305,21 +363,61 @@ struct RecoveryDashboardView: View {
     }
     
     private var recentRestDaysSection: some View {
-        // Reuse existing logic
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Recent Rest Days")
-                .font(.headline)
-            
-            ForEach(restDays.prefix(3)) { day in
-                HStack {
-                    Text(day.date.formatted(date: .abbreviated, time: .omitted))
-                    Spacer()
-                    Text(day.type.rawValue.capitalized)
-                        .foregroundColor(.secondary)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Text("Recent Rest Days")
+                    .font(.headline)
+                    .foregroundColor(.primary)
+                
+                Spacer()
+                
+                NavigationLink(destination: RestDayListView()) {
+                    Text("See All")
+                        .font(.subheadline)
+                        .foregroundColor(.blue)
                 }
-                .padding()
-                .background(Color.white)
-                .cornerRadius(16)
+            }
+            
+            if restDays.isEmpty {
+                 Text("No rest days logged yet.")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 8)
+            } else {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(restDays.prefix(5)) { day in
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Image(systemName: day.type == .activeRecovery ? "figure.walk" : "bed.double.fill")
+                                        .foregroundColor(day.type == .activeRecovery ? .green : .blue)
+                                    Spacer()
+                                    Text(day.date.formatted(.dateTime.day().month()))
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                Text(day.type.rawValue.capitalized)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundColor(.primary)
+                                
+                                if let note = day.notes, !note.isEmpty {
+                                    Text(note)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            .padding(16)
+                            .frame(width: 140)
+                            .background(Color.white)
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 6, x: 0, y: 2)
+                        }
+                    }
+                    .padding(.bottom, 8) // For shadow
+                }
             }
         }
     }

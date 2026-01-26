@@ -71,7 +71,8 @@ class HealthKitService: ObservableObject {
         HKCharacteristicType(.activityMoveMode)
     ]
     
-    // ... (Existing code) ...
+    
+    // MARK: - Health Metrics Queries
 
     // MARK: - Respiratory Rate
     

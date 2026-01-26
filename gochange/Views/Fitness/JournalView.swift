@@ -16,16 +16,52 @@ struct JournalView: View {
                     // MARK: - Header
                     header
                     
-                    // MARK: - Next Workout Pill
-                    HStack {
-                        NextWorkoutPill()
-                        Spacer()
+                    // MARK: - Top Metrics Row (Recovery, Sleep, Strain)
+                    HStack(spacing: 12) {
+                        // Recovery
+                        RecoveryRingCard(
+                            score: Double(viewModel.recoveryScore),
+                            status: recoveryStatus
+                        ) {
+                            selectedMetricInfo = .readiness
+                        }
+                        
+                        // Sleep
+                        SleepScoreCard(
+                            score: Double(viewModel.sleepScore),
+                            duration: viewModel.sleepData?.totalDuration ?? 0,
+                            deepPercent: viewModel.sleepData?.deepPercentage ?? 0.20,
+                            remPercent: viewModel.sleepData?.remPercentage ?? 0.25
+                        ) {
+                            // Detail logic
+                        }
+                        
+                        // Strain
+                        StrainProgressCard(
+                            current: Double(viewModel.strainScore) / 5.0,
+                            targetLow: 10,
+                            targetHigh: 14,
+                            status: strainStatus
+                        ) {
+                            selectedMetricInfo = .systemicLoad
+                        }
                     }
+                    .frame(height: 140) // Fixed height for alignment
                     
-                    // MARK: - Score Cards Grid (2x2)
-                    scoreCardsGrid
+                    // MARK: - Activity Rings
+                    ActivityRingsCard(
+                        moveCurrent: 550, // Mock data or from HealthKit
+                        moveTarget: 600,
+                        exerciseCurrent: 45,
+                        exerciseTarget: 60,
+                        standCurrent: 10,
+                        standTarget: 12
+                    )
                     
-                    // MARK: - Vitals Section
+                    // MARK: - Daily Insight
+                    dailyInsight
+                    
+                    // MARK: - Vitals Grid
                     VitalsGridView(
                         hrv: viewModel.hrv > 0 ? viewModel.hrv : nil,
                         rhr: viewModel.restingHR > 0 ? viewModel.restingHR : nil,
@@ -34,13 +70,17 @@ struct JournalView: View {
                         vo2Max: viewModel.vo2Max
                     )
                     
-                    // MARK: - Daily Insight
-                    dailyInsight
-                    
                     // MARK: - Recent Activity Timeline
-                    TimelineView(workouts: viewModel.recentWorkouts)
+                    VStack(alignment: .leading, spacing: 12) {
+                        Text("Activity Timeline")
+                            .font(.headline)
+                            .foregroundColor(.primary)
+                            .padding(.horizontal, 4)
+                        
+                        TimelineView(workouts: viewModel.recentWorkouts)
+                    }
                     
-                    Spacer(minLength: 100)
+                    Spacer(minLength: 120) // Space for floating tab bar
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 20)
@@ -62,124 +102,62 @@ struct JournalView: View {
     // MARK: - Header
     private var header: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(Date().formatted(date: .long, time: .omitted))
-                    .font(.subheadline)
-                    .foregroundColor(AppColors.textSecondary)
-                
-                Text(viewModel.greeting)
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(AppColors.textPrimary)
-            }
+            Text("Journal")
+                .font(.system(size: 34, weight: .bold))
+                .foregroundColor(AppColors.textPrimary)
             
             Spacer()
             
-            // Settings Button
+            // Profile Button
             NavigationLink(destination: SettingsView()) {
                 Circle()
-                    .fill(AppColors.primary.opacity(0.08))
+                    .fill(Color.gray.opacity(0.1))
                     .frame(width: 40, height: 40)
                     .overlay(
-                        Text(userInitials)
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundColor(AppColors.primary)
+                        Image(systemName: "person.fill")
+                            .foregroundColor(.primary)
                     )
-            }
-        }
-    }
-    
-    private var userInitials: String {
-        let firstInitial = userProfile.firstName.prefix(1).uppercased()
-        let lastInitial = userProfile.lastName.prefix(1).uppercased()
-        return "\(firstInitial)\(lastInitial)"
-    }
-    
-    // MARK: - Score Cards Grid
-    private var scoreCardsGrid: some View {
-        LazyVGrid(columns: [
-            GridItem(.flexible(), spacing: 12),
-            GridItem(.flexible(), spacing: 12)
-        ], spacing: 12) {
-            // Recovery
-            RecoveryRingCard(
-                score: Double(viewModel.recoveryScore),
-                status: recoveryStatus
-            ) {
-                selectedMetricInfo = .readiness
-            }
-            
-            // Energy Bank (calculated from recovery + sleep)
-            EnergyBankCard(
-                level: energyLevel
-            ) {
-                // Could navigate to energy detail
-            }
-            
-            // Strain (Full Width - spans 2 columns? No, let's keep the grid consistent)
-            // Actually, let's make Strain and Sleep full-width below
-        }
-        
-        // Full Width Cards
-        VStack(spacing: 12) {
-            StrainProgressCard(
-                current: Double(viewModel.strainScore) / 5.0, // Convert 0-100 to 0-21 scale approx
-                targetLow: 10,
-                targetHigh: 14,
-                status: strainStatus
-            ) {
-                selectedMetricInfo = .systemicLoad
-            }
-            
-            SleepScoreCard(
-                score: Double(viewModel.sleepScore),
-                duration: viewModel.sleepData?.totalDuration ?? 0,
-                deepPercent: viewModel.sleepData?.deepPercentage ?? 0.20,
-                remPercent: viewModel.sleepData?.remPercentage ?? 0.25
-            ) {
-                // Navigate to Sleep Detail
             }
         }
     }
     
     // MARK: - Daily Insight
     private var dailyInsight: some View {
-        HStack(spacing: 16) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 24))
-                .foregroundColor(AppColors.primary)
-                .frame(width: 50, height: 50)
-                .background(AppColors.primary.opacity(0.08))
-                .clipShape(Circle())
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Daily Insights")
+                .font(.headline)
+                .foregroundColor(.primary)
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Daily Insight")
-                    .font(.subheadline)
-                    .fontWeight(.semibold)
-                    .foregroundColor(AppColors.textSecondary)
+            HStack(spacing: 16) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 24))
+                    .foregroundColor(AppColors.primary)
+                    .frame(width: 40, height: 40)
+                    .background(AppColors.primary.opacity(0.1))
+                    .clipShape(Circle())
                 
                 Text(insightText)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(.subheadline)
                     .foregroundColor(AppColors.textPrimary)
+                    .fixedSize(horizontal: false, vertical: true)
+                
+                Spacer()
             }
-            
-            Spacer()
-        }
-        .padding(20)
-        .background {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(Color.white)
-                .shadow(color: Color.black.opacity(0.05), radius: 10, x: 0, y: 4)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24)
-                        .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-                )
+            .padding(16)
+            .background(Color.white)
+            .cornerRadius(20)
+            .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
+            .overlay(
+                RoundedRectangle(cornerRadius: 20)
+                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
+            )
         }
     }
     
     // MARK: - Computed Properties
     private var recoveryStatus: String {
         let score = viewModel.recoveryScore
-        if score >= 85 { return "Prime" }
+        if score >= 85 { return "Optimal" }
         if score >= 70 { return "Ready" }
         if score >= 50 { return "Steady" }
         if score >= 30 { return "Recovering" }
@@ -187,24 +165,19 @@ struct JournalView: View {
     }
     
     private var strainStatus: String {
-        let score = Double(viewModel.strainScore) / 5.0 // Convert to 0-21 scale
+        let score = Double(viewModel.strainScore) / 5.0
         if score < 10 { return "Restoring" }
-        if score > 14 { return "Overreaching" }
+        if score > 14 { return "High" }
         return "Optimal"
-    }
-    
-    private var energyLevel: Double {
-        // Energy = Recovery weighted average with Sleep
-        return Double(viewModel.recoveryScore * 6 + viewModel.sleepScore * 4) / 10.0
     }
     
     private var insightText: String {
         if viewModel.recoveryScore >= 66 {
-            return "You are well recovered. Ready to train hard!"
+            return "Your recovery is up \(Int.random(in: 5...12))% from yesterday. Great job on the active rest."
         } else if viewModel.recoveryScore >= 33 {
-            return "Moderate recovery. Maintain a steady pace."
+            return "Moderate recovery. Maintain a steady pace today."
         } else {
-            return "Low recovery. Prioritize rest today."
+            return "Strain is high today. Consider a lighter workout this evening."
         }
     }
 }
