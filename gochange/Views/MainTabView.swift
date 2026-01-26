@@ -8,9 +8,9 @@ struct MainTabView: View {
 
     var body: some View {
         TabView(selection: $selectedTab) {
-            HomeView()
+            JournalView()
                 .tabItem {
-                    Label("Home", systemImage: "house.fill")
+                    Label("Journal", systemImage: "heart.text.clipboard")
                 }
                 .tag(0)
             
@@ -20,9 +20,9 @@ struct MainTabView: View {
                 }
                 .tag(1)
             
-            FitnessDashboardView()
+            PerformanceAnalyticsView()
                 .tabItem {
-                    Label("Fitness", systemImage: "chart.bar.fill")
+                    Label("Performance", systemImage: "chart.xyaxis.line")
                 }
                 .tag(2)
         }
