@@ -34,7 +34,8 @@ playground.xcworkspace
 .swiftpm/
 Packages/
 Package.pins
-Package.resolved
+# Keep Package.resolved so contributors get pinned dependency versions
+# Package.resolved
 *.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
 
 ## CocoaPods
@@ -86,4 +87,17 @@ Thumbs.db
 *.zip
 *.tar.gz
 *.rar
+
+# Claude Code — personal dev tool config (contains private workflow instructions)
+CLAUDE.md
+.claude/settings.local.json
+
+# Serena MCP — local language server / project config
+.serena/
+
+# Internal development docs (planning, mockup prompts, analysis)
+docs/
+
+# Internal Claude plugin (not part of the app)
+claude-ios-marketplace/
 
