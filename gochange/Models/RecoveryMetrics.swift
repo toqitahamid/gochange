@@ -4,7 +4,7 @@ import Foundation
 @Model
 final class RecoveryMetrics {
     @Attribute(.unique) var id: UUID
-    var date: Date
+    @Attribute(.index) var date: Date
 
     // Sleep metrics from HealthKit
     var sleepDuration: TimeInterval? // Total sleep in seconds

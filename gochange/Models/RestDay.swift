@@ -4,7 +4,7 @@ import Foundation
 @Model
 final class RestDay {
     @Attribute(.unique) var id: UUID
-    var date: Date
+    @Attribute(.index) var date: Date
     var type: RestDayType
     var notes: String?
     var quality: Int? // 1-5 rating of how rested the user feels (nil if not reported)

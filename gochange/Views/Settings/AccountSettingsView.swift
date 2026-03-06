@@ -1,8 +1,9 @@
 import SwiftUI
 
 struct AccountSettingsView: View {
-    @StateObject private var userProfile = UserProfileService.shared
     @StateObject private var healthKit = HealthKitService.shared
+    @AppStorage("userFirstName") private var storedFirstName: String = "User"
+    @AppStorage("userLastName") private var storedLastName: String = "Name"
     @AppStorage("weightUnit") private var weightUnit: String = "lbs"
     @AppStorage("userBirthdate") private var birthdateTimestamp: Double = Date().timeIntervalSince1970
     @Environment(\.dismiss) private var dismiss
@@ -114,10 +115,9 @@ struct AccountSettingsView: View {
     }
     
     private func loadData() {
-        // Load from UserProfileService
-        firstName = userProfile.firstName
-        lastName = userProfile.lastName
-        
+        firstName = storedFirstName
+        lastName = storedLastName
+
         // Load birthdate from AppStorage or HealthKit
         if let healthKitBirthdate = healthKit.getBirthdate() {
             birthdate = healthKitBirthdate
@@ -128,10 +128,9 @@ struct AccountSettingsView: View {
     }
     
     private func saveData() {
-        // Save to UserProfileService (updates published properties)
-        userProfile.firstName = firstName
-        userProfile.lastName = lastName
-        
+        storedFirstName = firstName
+        storedLastName = lastName
+
         // Save birthdate to AppStorage
         birthdateTimestamp = birthdate.timeIntervalSince1970
     }

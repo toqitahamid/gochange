@@ -4,7 +4,6 @@ import SwiftData
 struct JournalView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = HomeViewModel()
-    @StateObject private var userProfile = UserProfileService.shared
     @EnvironmentObject var workoutManager: WorkoutManager
     
     @State private var selectedMetricInfo: MetricExplanationSheet.MetricType?
