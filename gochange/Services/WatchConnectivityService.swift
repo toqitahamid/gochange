@@ -247,9 +247,12 @@ extension WatchConnectivityService: WCSessionDelegate {
             }
             
         case "completedWorkout":
-            // Workout completed on watch - process and save
+            // Workout completed on watch - import and save to SwiftData
             if let workoutData = message["workout"] as? [String: Any] {
-                DispatchQueue.main.async {
+                Task { @MainActor in
+                    if let context = self.modelContext {
+                        try? WatchWorkoutImporter.importWorkout(from: workoutData, context: context)
+                    }
                     self.onWorkoutReceived?(workoutData)
                 }
             }
