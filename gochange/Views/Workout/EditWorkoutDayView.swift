@@ -227,7 +227,7 @@ struct EditWorkoutDayView: View {
                     }
                     .frame(maxWidth: .infinity)
                 } else {
-                    ForEach(Array(workoutDay.exercises.sorted { $0.sortOrder < $1.sortOrder }.enumerated()), id: \.element.id) { index, exercise in
+                    ForEach(Array(sortedExercises.enumerated()), id: \.element.id) { index, exercise in
                         Button {
                             if editMode == .inactive {
                                 editingExercise = exercise
@@ -242,7 +242,7 @@ struct EditWorkoutDayView: View {
                         }
                         .buttonStyle(.plain)
 
-                        if exercise.id != workoutDay.exercises.last?.id {
+                        if index < sortedExercises.count - 1 {
                             Rectangle()
                                 .fill(
                                     LinearGradient(
@@ -298,6 +298,10 @@ struct EditWorkoutDayView: View {
 
     // MARK: - Computed Properties
 
+    private var sortedExercises: [Exercise] {
+        workoutDay.exercises.sorted { $0.sortOrder < $1.sortOrder }
+    }
+
     private var workoutIcon: String {
         let name = workoutDay.name.lowercased()
         if name.contains("push") { return "figure.strengthtraining.traditional" }
@@ -321,20 +325,23 @@ struct EditWorkoutDayView: View {
     // MARK: - Methods
 
     private func deleteExercises(at offsets: IndexSet) {
+        let sorted = sortedExercises
         for index in offsets {
-            let exercise = workoutDay.exercises[index]
-            modelContext.delete(exercise)
+            modelContext.delete(sorted[index])
         }
-        workoutDay.exercises.remove(atOffsets: offsets)
-        for (index, exercise) in workoutDay.exercises.enumerated() {
+        workoutDay.exercises.removeAll { exercise in
+            offsets.contains(sorted.firstIndex(where: { $0.id == exercise.id })!)
+        }
+        for (index, exercise) in sortedExercises.enumerated() {
             exercise.sortOrder = index
         }
         saveChanges()
     }
 
     private func moveExercises(from source: IndexSet, to destination: Int) {
-        workoutDay.exercises.move(fromOffsets: source, toOffset: destination)
-        for (index, exercise) in workoutDay.exercises.enumerated() {
+        var sorted = sortedExercises
+        sorted.move(fromOffsets: source, toOffset: destination)
+        for (index, exercise) in sorted.enumerated() {
             exercise.sortOrder = index
         }
         saveChanges()
@@ -986,6 +993,7 @@ struct AddExerciseView: View {
             defaultReps: defaultReps,
             muscleGroup: muscleGroup
         )
+        exercise.sortOrder = workoutDay.exercises.count
         workoutDay.exercises.append(exercise)
         try? modelContext.save()
         dismiss()
