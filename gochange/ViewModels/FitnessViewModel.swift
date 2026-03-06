@@ -1,7 +1,5 @@
 import SwiftUI
 import SwiftData
-import HealthKit
-import Combine
 
 @MainActor
 class FitnessViewModel: ObservableObject {

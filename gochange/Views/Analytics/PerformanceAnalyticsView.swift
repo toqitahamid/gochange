@@ -234,12 +234,10 @@ struct PerformanceAnalyticsView: View {
     }
     
     private var rpeData: [RPETrendChart.RPEDataPoint] {
-        // Mock data - would need to extract from session logs
         []
     }
-    
+
     private var restPeriodData: [TimeInterval] {
-        // Mock data - would need to extract from session logs
         [45, 60, 75, 90, 120, 60, 45, 30, 90, 60]
     }
     

@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import Combine
 
 /// ViewModel for analytics dashboard
 @MainActor

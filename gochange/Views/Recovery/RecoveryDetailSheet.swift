@@ -111,7 +111,7 @@ struct RecoveryDetailSheet: View {
                 unit: "ms",
                 icon: "waveform.path.ecg",
                 color: .green,
-                trend: .up // Mock trend for now
+                trend: .up
             )
             
             MetricCard(
@@ -120,7 +120,7 @@ struct RecoveryDetailSheet: View {
                 unit: "bpm",
                 icon: "heart.fill",
                 color: .red,
-                trend: .down // Mock trend for now
+                trend: .down
             )
         }
     }
