@@ -326,6 +326,9 @@ struct EditWorkoutDayView: View {
             modelContext.delete(exercise)
         }
         workoutDay.exercises.remove(atOffsets: offsets)
+        for (index, exercise) in workoutDay.exercises.enumerated() {
+            exercise.sortOrder = index
+        }
         saveChanges()
     }
 
