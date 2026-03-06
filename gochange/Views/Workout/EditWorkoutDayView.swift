@@ -330,9 +330,13 @@ struct EditWorkoutDayView: View {
             modelContext.delete(sorted[index])
         }
         workoutDay.exercises.removeAll { exercise in
-            offsets.contains(sorted.firstIndex(where: { $0.id == exercise.id })!)
+            guard let idx = sorted.firstIndex(where: { $0.id == exercise.id }) else { return false }
+            return offsets.contains(idx)
         }
-        for (index, exercise) in sortedExercises.enumerated() {
+        let surviving = sorted.filter { exercise in
+            workoutDay.exercises.contains(where: { $0.id == exercise.id })
+        }
+        for (index, exercise) in surviving.enumerated() {
             exercise.sortOrder = index
         }
         saveChanges()
