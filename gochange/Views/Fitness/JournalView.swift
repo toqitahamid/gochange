@@ -49,12 +49,12 @@ struct JournalView: View {
                     
                     // MARK: - Activity Rings
                     ActivityRingsCard(
-                        moveCurrent: 550, // Mock data or from HealthKit
-                        moveTarget: 600,
-                        exerciseCurrent: 45,
-                        exerciseTarget: 60,
-                        standCurrent: 10,
-                        standTarget: 12
+                        moveCurrent: viewModel.moveCalories,
+                        moveTarget: viewModel.moveTarget,
+                        exerciseCurrent: viewModel.exerciseMinutes,
+                        exerciseTarget: viewModel.exerciseTarget,
+                        standCurrent: Double(viewModel.standHours),
+                        standTarget: Double(viewModel.standTarget)
                     )
                     
                     // MARK: - Daily Insight
@@ -135,7 +135,7 @@ struct JournalView: View {
                     .background(AppColors.primary.opacity(0.1))
                     .clipShape(Circle())
                 
-                Text(insightText)
+                Text(viewModel.insightText)
                     .font(.subheadline)
                     .foregroundColor(AppColors.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -168,16 +168,6 @@ struct JournalView: View {
         if score < 10 { return "Restoring" }
         if score > 14 { return "High" }
         return "Optimal"
-    }
-    
-    private var insightText: String {
-        if viewModel.recoveryScore >= 66 {
-            return "Your recovery is up \(Int.random(in: 5...12))% from yesterday. Great job on the active rest."
-        } else if viewModel.recoveryScore >= 33 {
-            return "Moderate recovery. Maintain a steady pace today."
-        } else {
-            return "Strain is high today. Consider a lighter workout this evening."
-        }
     }
 }
 

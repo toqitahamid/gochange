@@ -138,64 +138,29 @@ struct SessionHealthSummaryCard: View {
             Text("Cardio Impact")
                 .font(.system(size: 15, weight: .semibold))
                 .foregroundColor(.primary)
-            
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Cardio Load")
-                        .font(.system(size: 12, weight: .semibold))
-                        .foregroundColor(.secondary)
-                    
-                    HStack(spacing: 6) {
-                        if let delta = cardioLoadDelta {
-                            Text(delta >= 0 ? "+\(delta)" : "\(delta)")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                        } else {
-                            Text("—")
-                                .font(.system(size: 20, weight: .bold, design: .rounded))
-                                .foregroundColor(.primary)
-                        }
-                        
-                        if let label = cardioLoadLabel {
-                            Text(label)
-                                .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(Color(hex: "#FF3B30"))
-                        }
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Cardio Load")
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundColor(.secondary)
+
+                HStack(spacing: 6) {
+                    if let delta = cardioLoadDelta {
+                        Text(delta >= 0 ? "+\(delta)" : "\(delta)")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                    } else {
+                        Text("—")
+                            .font(.system(size: 20, weight: .bold, design: .rounded))
+                            .foregroundColor(.primary)
+                    }
+
+                    if let label = cardioLoadLabel {
+                        Text(label)
+                            .font(.system(size: 13, weight: .semibold))
+                            .foregroundColor(Color(hex: "#FF3B30"))
                     }
                 }
-                
-                Spacer()
-                
-                HStack(spacing: 0) {
-                    VStack {
-                        Text("Before")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.secondary)
-                        Text("—")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.secondary)
-                    }
-                    .frame(width: 70, height: 50)
-                    .background(Color.gray.opacity(0.06))
-                    
-                    VStack {
-                        Text("After")
-                            .font(.system(size: 11, weight: .medium))
-                            .foregroundColor(.white.opacity(0.9))
-                        Text("—")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
-                    }
-                    .frame(width: 70, height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: [Color(hex: "#FF7EB3"), Color(hex: "#FF3B30")],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                }
-                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
         }
     }

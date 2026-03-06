@@ -20,7 +20,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var acwrData: [ACWRDataPoint] = []
     @Published var systemicLoadData: [SystemicLoadDataPoint] = []
     @Published var availableExercisesForTrend: [String] = []
-    @Published var selectedExerciseForTrend: String = "Bench Press" {
+    @Published var selectedExerciseForTrend: String = "" {
         didSet {
             updateOneRepMaxTrend()
         }
@@ -95,7 +95,9 @@ class AnalyticsViewModel: ObservableObject {
         let allExercises = Set(sessions.flatMap { $0.exerciseLogs.map { $0.exerciseName } }).sorted()
         availableExercisesForTrend = allExercises
         
-        if !availableExercisesForTrend.isEmpty && !availableExercisesForTrend.contains(selectedExerciseForTrend) {
+        if selectedExerciseForTrend.isEmpty, let firstExercise = availableExercisesForTrend.first {
+            selectedExerciseForTrend = firstExercise
+        } else if !availableExercisesForTrend.isEmpty && !availableExercisesForTrend.contains(selectedExerciseForTrend) {
             selectedExerciseForTrend = availableExercisesForTrend.first ?? ""
         }
         

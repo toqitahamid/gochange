@@ -18,6 +18,19 @@ struct SleepData {
         guard totalDuration > 0 else { return 0 }
         return remDuration / totalDuration
     }
+
+    var qualityPercentage: Int {
+        Int(quality * 100)
+    }
+
+    var formattedTotal: String {
+        let hours = Int(totalDuration / 3600)
+        let minutes = Int(totalDuration.truncatingRemainder(dividingBy: 3600) / 60)
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
 }
 
 protocol HealthDataProviding: Sendable {

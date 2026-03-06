@@ -449,14 +449,22 @@ struct CardioLoadCard: View {
     }
     
     private func status(for load: Double) -> String {
-        if load > 500 { return "Productive" } // Mock threshold
-        if load > 200 { return "Maintaining" }
+        let avg = viewModel.cardioLoadHistory.isEmpty
+            ? 0.0
+            : viewModel.cardioLoadHistory.reduce(0, +) / Double(viewModel.cardioLoadHistory.count)
+        if avg > 0 && load > avg * 1.5 { return "Productive" }
+        if avg > 0 && load > avg * 0.75 { return "Maintaining" }
+        if avg == 0 && load > 0 { return "Maintaining" }
         return "Detraining"
     }
-    
+
     private func statusColor(for load: Double) -> Color {
-        if load > 500 { return AppColors.success }
-        if load > 200 { return AppColors.primary }
+        let avg = viewModel.cardioLoadHistory.isEmpty
+            ? 0.0
+            : viewModel.cardioLoadHistory.reduce(0, +) / Double(viewModel.cardioLoadHistory.count)
+        if avg > 0 && load > avg * 1.5 { return AppColors.success }
+        if avg > 0 && load > avg * 0.75 { return AppColors.primary }
+        if avg == 0 && load > 0 { return AppColors.primary }
         return AppColors.warning
     }
 }
@@ -788,21 +796,9 @@ struct StrengthProgressionCard: View {
                     .foregroundColor(.gray)
             }
             
-            // Placeholder Content
             VStack(spacing: 12) {
-                // Mock lines
-                HStack {
-                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 40, height: 4)
-                    Spacer()
-                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 80, height: 4)
-                }
-                HStack {
-                    Capsule().fill(Color.gray.opacity(0.1)).frame(width: 60, height: 4)
-                    Spacer()
-                }
-                
                 Spacer().frame(height: 10)
-                
+
                 Text("No progression data")
                     .font(.headline)
                     .fontWeight(.medium)

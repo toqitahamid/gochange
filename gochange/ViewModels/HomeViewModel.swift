@@ -1,173 +1,155 @@
 import SwiftUI
 import SwiftData
-import HealthKit
 import Combine
 
 @MainActor
-class HomeViewModel: ObservableObject {
-    // MARK: - Published Properties
-    
-    // Scores (0-100)
+final class HomeViewModel: ObservableObject {
+    // MARK: - Load State
+    enum LoadState: Equatable {
+        case idle, loading, loaded, error(String)
+    }
+
+    @Published var loadState: LoadState = .idle
+
+    // MARK: - Scores (0-100)
     @Published var recoveryScore: Int = 0
     @Published var sleepScore: Int = 0
     @Published var strainScore: Int = 0
-    
-    // Metrics
+
+    // MARK: - Vitals
     @Published var hrv: Double = 0
     @Published var restingHR: Double = 0
-    @Published var sleepData: SleepData?
-    @Published var activeCalories: Double = 0
-    @Published var workoutDuration: TimeInterval = 0
-    
-    // New Real Metrics
     @Published var respiratoryRate: Double?
     @Published var oxygenSaturation: Double?
     @Published var bodyTemperature: Double?
-    @Published var stepCount: Int = 0
     @Published var vo2Max: Double?
-    
+    @Published var stepCount: Int = 0
+
+    // MARK: - Sleep
+    @Published var sleepData: SleepData?
+
+    // MARK: - Activity Rings
+    @Published var moveCalories: Double = 0
+    @Published var moveTarget: Double = 600
+    @Published var exerciseMinutes: Double = 0
+    @Published var exerciseTarget: Double = 30
+    @Published var standHours: Int = 0
+    @Published var standTarget: Int = 12
+
+    // MARK: - Workouts
     @Published var recentWorkouts: [WorkoutSession] = []
-    
-    // Status
-    @Published var isLoading: Bool = false
+
+    // MARK: - Greeting
     @Published var greeting: String = ""
-    
-    // Services
-    private let healthKitService = HealthKitService.shared
-    private let recoveryService = RecoveryService.shared
-    
-    // MARK: - Initialization
-    
-    init() {
+
+    // MARK: - Dependencies
+    private let healthProvider: HealthDataProviding
+
+    init(healthProvider: HealthDataProviding = HealthKitService.shared) {
+        self.healthProvider = healthProvider
         updateGreeting()
     }
-    
-    func loadData(context: ModelContext) async {
-        isLoading = true
-        
-        // Parallel data fetching
-        async let recoveryTask: () = loadRecoveryData(context: context)
-        async let sleepTask: () = loadSleepData()
-        async let workoutTask: () = loadWorkoutData(context: context)
-        async let healthTask: () = loadAdditionalHealthData()
-        
-        _ = await (recoveryTask, sleepTask, workoutTask, healthTask)
-        
-        isLoading = false
-    }
-    
-    private func loadAdditionalHealthData() async {
-        let today = Date()
-        
-        // Fetch new metrics in parallel
-        async let rr = healthKitService.getRespiratoryRate(for: today)
-        async let spo2 = healthKitService.getOxygenSaturation(for: today)
-        async let temp = healthKitService.getBodyTemperature(for: today)
-        async let steps = healthKitService.getStepCount(for: today)
-        async let vo2 = healthKitService.getVO2Max()
-        
-        let (rrVal, spo2Val, tempVal, stepsVal, vo2Val) = await (rr, spo2, temp, steps, vo2)
-        
-        self.respiratoryRate = rrVal
-        self.oxygenSaturation = spo2Val
-        self.bodyTemperature = tempVal
-        self.stepCount = stepsVal
-        self.vo2Max = vo2Val
-    }
-    
-    private func loadRecoveryData(context: ModelContext) async {
-        // Sync latest data
-        await recoveryService.syncRecoveryData(context: context)
-        
-        // Get today's metrics
-        let today = Calendar.current.startOfDay(for: Date())
-        
-        // Fetch HRV and RHR directly from HealthKit for real-time display
-        if let hrvVal = await healthKitService.getHeartRateVariability(for: today) {
-            self.hrv = hrvVal
-        }
-        
-        if let rhrVal = await healthKitService.getRestingHeartRate(for: today) {
-            self.restingHR = rhrVal
-        }
-        
-        // Calculate Recovery Score (simplified logic for now, can be enhanced)
-        // Base on HRV relative to baseline (mock baseline of 50ms for now)
-        let hrvScore = min(max((hrv / 50.0) * 50.0 + 25.0, 0), 100)
-        let rhrScore = min(max((60.0 / max(restingHR, 40.0)) * 50.0 + 25.0, 0), 100)
-        
-        self.recoveryScore = Int((hrvScore + rhrScore) / 2.0)
-    }
-    
-    private func loadSleepData() async {
-        let today = Date()
-        if let data = await healthKitService.getSleepData(for: today) {
-            self.sleepData = data
-            self.sleepScore = data.qualityPercentage
-        } else {
-            // Mock data if no sleep data available (for demo purposes)
-            // In production, handle empty state gracefully
-            self.sleepScore = 0
-        }
-    }
-    
-    private func loadWorkoutData(context: ModelContext) async {
-        // Fetch today's workouts from SwiftData
-        let todayStart = Calendar.current.startOfDay(for: Date())
-        
-        let descriptor = FetchDescriptor<WorkoutSession>(
-            predicate: #Predicate<WorkoutSession> { session in
-                session.date >= todayStart
+
+    func loadData(context: ModelContext?) async {
+        loadState = .loading
+
+        await withTaskGroup(of: Void.self) { group in
+            group.addTask { await self.loadVitals() }
+            group.addTask { await self.loadSleep() }
+            group.addTask { await self.loadActivity() }
+            if let context = context {
+                group.addTask { await self.loadWorkouts(context: context) }
             }
-        )
-        
-        // Fetch recent workouts for timeline (last 7 days)
-        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: todayStart) ?? todayStart
-        let recentDescriptor = FetchDescriptor<WorkoutSession>(
-            predicate: #Predicate<WorkoutSession> { session in
-                session.date >= sevenDaysAgo && session.isCompleted == true
-            },
+        }
+
+        calculateScores()
+        loadState = .loaded
+    }
+
+    private func loadVitals() async {
+        let today = Calendar.current.startOfDay(for: Date())
+        hrv = await healthProvider.getHeartRateVariability(for: today) ?? 0
+        restingHR = await healthProvider.getRestingHeartRate(for: today) ?? 0
+        respiratoryRate = await healthProvider.getRespiratoryRate(for: today)
+        oxygenSaturation = await healthProvider.getOxygenSaturation(for: today)
+        bodyTemperature = await healthProvider.getBodyTemperature(for: today)
+        stepCount = await healthProvider.getStepCount(for: today)
+        vo2Max = await healthProvider.getVO2Max()
+    }
+
+    private func loadSleep() async {
+        let today = Calendar.current.startOfDay(for: Date())
+        sleepData = await healthProvider.getSleepData(for: today)
+    }
+
+    private func loadActivity() async {
+        let today = Date()
+        moveCalories = await healthProvider.getActiveEnergyBurned(for: today) ?? 0
+        exerciseMinutes = await healthProvider.getExerciseTime(for: today) ?? 0
+        standHours = await healthProvider.getStandHours(for: today) ?? 0
+    }
+
+    private func loadWorkouts(context: ModelContext) async {
+        let sevenDaysAgo = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate { $0.isCompleted && $0.date >= sevenDaysAgo },
             sortBy: [SortDescriptor(\.date, order: .reverse)]
         )
-        
-        do {
-            let sessions = try context.fetch(descriptor)
-            let completedSessions = sessions.filter { $0.isCompleted }
-            
-            self.workoutDuration = completedSessions.reduce(0) { $0 + ($1.duration ?? 0) }
-            
-            // Calculate strain based on duration and volume
-            // This is a simplified strain calculation
-            let volume = completedSessions.reduce(0.0) { sessionSum, session in
-                sessionSum + session.exerciseLogs.reduce(0.0) { logSum, log in
-                    logSum + log.sets.reduce(0.0) { setSum, set in
-                        setSum + (set.weight ?? 0) * Double(set.actualReps ?? 0)
-                    }
-                }
-            }
-            
-            // Normalize strain (arbitrary scaling for demo)
-            let durationScore = min(workoutDuration / 3600.0 * 50.0, 50.0)
-            let volumeScore = min(volume / 10000.0 * 50.0, 50.0)
-            self.strainScore = Int(durationScore + volumeScore)
-            
-            // Estimate calories (mock)
-            self.activeCalories = (workoutDuration / 60.0) * 5.0 // ~5 active cals/min
-            
-            // Load recent workouts
-            self.recentWorkouts = try context.fetch(recentDescriptor)
-            
-        } catch {
-            print("Failed to fetch workout data: \(error)")
+        recentWorkouts = (try? context.fetch(descriptor)) ?? []
+    }
+
+    private func calculateScores() {
+        // Recovery: Based on HRV and RHR
+        if hrv > 0 || restingHR > 0 {
+            let hrvScore = hrv > 0 ? min(max((hrv / 60.0) * 60.0 + 20.0, 0), 100) : 50
+            let rhrScore = restingHR > 0 ? min(max((65.0 / max(restingHR, 40.0)) * 60.0 + 10.0, 0), 100) : 50
+            recoveryScore = Int((hrvScore + rhrScore) / 2.0)
+        } else {
+            recoveryScore = 0
+        }
+
+        // Sleep: Based on duration and quality
+        if let sleep = sleepData {
+            let hours = sleep.totalDuration / 3600.0
+            let durationScore = min(max((hours / 8.0) * 60.0 + 20.0, 0), 100)
+            let qualityScore = sleep.quality * 100.0
+            sleepScore = Int((durationScore + qualityScore) / 2.0)
+        } else {
+            sleepScore = 0
+        }
+
+        // Strain: Based on active energy and exercise time
+        if moveCalories > 0 {
+            let energyScore = min(moveCalories / 8.0, 100)
+            let exerciseScore = min(exerciseMinutes * 1.5, 100)
+            strainScore = Int((energyScore + exerciseScore) / 2.0)
+        } else {
+            strainScore = 0
         }
     }
-    
+
+    // MARK: - Deterministic Insight Text
+    var insightText: String {
+        if recoveryScore >= 80 {
+            return "Recovery is strong today. Great conditions for a challenging workout."
+        } else if recoveryScore >= 60 {
+            return "Solid recovery. You're ready for a normal training session."
+        } else if recoveryScore >= 40 {
+            return "Moderate recovery. Consider a lighter intensity today."
+        } else if recoveryScore > 0 {
+            return "Recovery is low. Prioritize rest or light movement today."
+        } else {
+            return "Connect Health to see personalized insights based on your data."
+        }
+    }
+
     private func updateGreeting() {
         let hour = Calendar.current.component(.hour, from: Date())
         switch hour {
         case 5..<12: greeting = "Good Morning"
         case 12..<17: greeting = "Good Afternoon"
-        default: greeting = "Good Evening"
+        case 17..<22: greeting = "Good Evening"
+        default: greeting = "Good Night"
         }
     }
 }

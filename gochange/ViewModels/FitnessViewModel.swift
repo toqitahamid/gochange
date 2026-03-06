@@ -30,7 +30,7 @@ class FitnessViewModel: ObservableObject {
     @Published var restingHeartRate: Double = 0
     @Published var cardioFocusStatus: String = "Low Aerobic"
 
-    @Published var cardioFocusPercentage: Double = 0.94
+    @Published var cardioFocusPercentage: Double = 0
     @Published var cardioLoadHistory: [Double] = []
     
     // RHR Status
@@ -88,7 +88,10 @@ class FitnessViewModel: ObservableObject {
         
         // Refresh Strength Data with range
         fetchStrengthData(for: range)
-        
+
+        // Update cardio focus metrics from fetched load history
+        updateCardioFocusMetrics()
+
         // Fetch Strain vs Recovery correlation data
         await fetchStrainRecoveryData(for: range)
     }
@@ -162,6 +165,30 @@ class FitnessViewModel: ObservableObject {
         calculateStrain(totalVolume: total)
     }
     
+    /// Update cardioFocusPercentage and cardioFocusStatus from session data.
+    /// Cardio focus = days with active energy recorded / total days in the loaded history.
+    private func updateCardioFocusMetrics() {
+        guard !cardioLoadHistory.isEmpty else {
+            cardioFocusPercentage = 0
+            cardioFocusStatus = "No Data"
+            return
+        }
+        let activeDays = cardioLoadHistory.filter { $0 > 0 }.count
+        let percentage = Double(activeDays) / Double(cardioLoadHistory.count)
+        cardioFocusPercentage = percentage
+
+        switch percentage {
+        case 0.75...:
+            cardioFocusStatus = "High Aerobic"
+        case 0.5..<0.75:
+            cardioFocusStatus = "Moderate Aerobic"
+        case 0.25..<0.5:
+            cardioFocusStatus = "Low Aerobic"
+        default:
+            cardioFocusStatus = "Minimal Aerobic"
+        }
+    }
+
     /// Calculate strain score from workout volume (0-21 scale)
     /// - Parameters:
     ///   - totalVolume: Total weight volume in lbs/kg
@@ -175,9 +202,10 @@ class FitnessViewModel: ObservableObject {
         // Assuming 10,000 lbs volume is a "moderate" workout (~10 strain)
         let strengthStrain = totalVolume > 0 ? 5.0 * log10(totalVolume / 100 + 1) : 0
         
-        // 2. Calculate Cardio Strain (Mocked for now, or use HealthKit active energy)
-        // Let's assume some base cardio strain from daily activity
-        let cardioStrain = 4.0 // Placeholder
+        // 2. Calculate Cardio Strain from active energy history (kcal-based estimate)
+        // Average daily active energy; 500 kcal/day maps to ~4 strain on 0-21 scale
+        let avgActiveEnergy = cardioLoadHistory.isEmpty ? 0.0 : cardioLoadHistory.reduce(0, +) / Double(cardioLoadHistory.count)
+        let cardioStrain = avgActiveEnergy > 0 ? min(10.0, avgActiveEnergy / 125.0) : 0.0
         
         // 3. Combine (Weighted average or max?)
         // Strain is usually cumulative. Let's add them but dampen the sum.

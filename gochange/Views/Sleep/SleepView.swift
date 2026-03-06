@@ -35,7 +35,6 @@ struct SleepView: View {
                         )
                     }
                     
-                    // Sleep Stages (Mock for now, can be expanded)
                     sleepStages
                     
                     Spacer(minLength: 100)
@@ -101,19 +100,30 @@ struct SleepView: View {
         .padding(.vertical, 20)
     }
     
+    private func formatDuration(_ seconds: TimeInterval) -> String {
+        let hours = Int(seconds / 3600)
+        let minutes = Int(seconds.truncatingRemainder(dividingBy: 3600) / 60)
+        if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
     private var metricsGrid: some View {
         HStack(spacing: 12) {
             MetricCard(
                 title: "Time in bed",
-                value: viewModel.sleepData?.formattedTotal ?? "--",
+                value: viewModel.sleepData.map { formatDuration($0.totalDuration) } ?? "--",
                 unit: nil,
                 icon: "bed.double.fill",
                 color: AppColors.primary
             )
-            
+
             MetricCard(
                 title: "Time asleep",
-                value: viewModel.sleepData?.formattedTotal ?? "--", // Using total for now
+                value: viewModel.sleepData.map {
+                    formatDuration($0.deepDuration + $0.remDuration + $0.coreDuration)
+                } ?? "--",
                 unit: nil,
                 icon: "clock.fill",
                 color: .purple,
@@ -127,37 +137,48 @@ struct SleepView: View {
             Text("Sleep Stages")
                 .font(.headline)
                 .foregroundColor(.white)
-            
-            HStack(spacing: 0) {
-                // Deep
-                Rectangle()
-                    .fill(Color.blue)
-                    .frame(height: 30)
-                    .frame(maxWidth: .infinity)
-                // Core
-                Rectangle()
-                    .fill(Color.blue.opacity(0.6))
-                    .frame(height: 30)
-                    .frame(maxWidth: .infinity)
-                // REM
-                Rectangle()
-                    .fill(Color.purple)
-                    .frame(height: 30)
-                    .frame(maxWidth: .infinity)
+
+            if let sleep = viewModel.sleepData, sleep.totalDuration > 0 {
+                let total = sleep.totalDuration
+                GeometryReader { geo in
+                    HStack(spacing: 0) {
+                        Rectangle()
+                            .fill(Color.blue)
+                            .frame(width: geo.size.width * (sleep.deepDuration / total), height: 30)
+                        Rectangle()
+                            .fill(Color.blue.opacity(0.6))
+                            .frame(width: geo.size.width * (sleep.coreDuration / total), height: 30)
+                        Rectangle()
+                            .fill(Color.purple)
+                            .frame(width: geo.size.width * (sleep.remDuration / total), height: 30)
+                    }
+                    .cornerRadius(8)
+                }
+                .frame(height: 30)
+
+                HStack {
+                    Label("Deep  \(formatDuration(sleep.deepDuration))", systemImage: "circle.fill")
+                        .foregroundColor(.blue)
+                    Spacer()
+                    Label("Core  \(formatDuration(sleep.coreDuration))", systemImage: "circle.fill")
+                        .foregroundColor(.blue.opacity(0.6))
+                    Spacer()
+                    Label("REM  \(formatDuration(sleep.remDuration))", systemImage: "circle.fill")
+                        .foregroundColor(.purple)
+                }
+                .font(.caption)
+            } else {
+                VStack(spacing: 8) {
+                    Image(systemName: "bed.double")
+                        .font(.system(size: 32))
+                        .foregroundColor(.white.opacity(0.4))
+                    Text("No sleep data available")
+                        .font(.subheadline)
+                        .foregroundColor(.white.opacity(0.5))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 16)
             }
-            .cornerRadius(8)
-            
-            HStack {
-                Label("Deep", systemImage: "circle.fill")
-                    .foregroundColor(.blue)
-                Spacer()
-                Label("Core", systemImage: "circle.fill")
-                    .foregroundColor(.blue.opacity(0.6))
-                Spacer()
-                Label("REM", systemImage: "circle.fill")
-                    .foregroundColor(.purple)
-            }
-            .font(.caption)
         }
         .padding(20)
         .background(
