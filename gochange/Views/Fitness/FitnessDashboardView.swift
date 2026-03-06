@@ -87,6 +87,13 @@ struct FitnessDashboardView: View {
                 .padding(.bottom, 80)
             }
             .background(AppColors.background.ignoresSafeArea())
+            .overlay {
+                if viewModel.loadState == .loading {
+                    ProgressView("Loading...")
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.ultraThinMaterial)
+                }
+            }
         }
         .sheet(item: $selectedMetricInfo) { metric in
             let value: Double? = {

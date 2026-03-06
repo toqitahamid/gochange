@@ -85,6 +85,14 @@ struct JournalView: View {
                 .padding(.top, 20)
             }
             .background(AppColors.background.ignoresSafeArea())
+            .overlay {
+                if viewModel.loadState == .loading {
+                    ProgressView()
+                        .scaleEffect(1.2)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background(.ultraThinMaterial)
+                }
+            }
             .refreshable {
                 await viewModel.loadData(context: modelContext)
             }
