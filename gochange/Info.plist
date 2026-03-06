@@ -4,6 +4,10 @@
 <dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSHealthShareUsageDescription</key>
+	<string>GoChange reads your health data to show recovery metrics, sleep analysis, heart rate variability, and workout history.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>GoChange saves your completed workouts to Apple Health so they appear in your health records.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>fetch</string>
