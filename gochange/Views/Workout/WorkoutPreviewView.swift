@@ -192,7 +192,7 @@ struct WorkoutPreviewView: View {
             .padding(.horizontal, 4)
 
             VStack(spacing: 0) {
-                ForEach(Array(workoutDay.exercises.enumerated()), id: \.element.id) { index, exercise in
+                ForEach(Array(workoutDay.exercises.sorted { $0.sortOrder < $1.sortOrder }.enumerated()), id: \.element.id) { index, exercise in
                     NavigationLink(destination: ExerciseDetailView(exercise: exercise)) {
                         ExercisePreviewRow(
                             exercise: exercise,

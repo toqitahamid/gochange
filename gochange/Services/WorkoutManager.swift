@@ -592,7 +592,9 @@ class WorkoutManager: ObservableObject {
         @AppStorage("weightUnit") var weightUnit: String = "lbs"
         let unit: SetLog.WeightUnit = weightUnit == "kg" ? .kg : .lbs
         
-        exerciseLogs = workoutDay.exercises.enumerated().map { index, exercise in
+        exerciseLogs = workoutDay.exercises
+            .sorted { $0.sortOrder < $1.sortOrder }
+            .enumerated().map { index, exercise in
             let log = ExerciseLog(
                 exerciseId: exercise.id,
                 exerciseName: exercise.name,

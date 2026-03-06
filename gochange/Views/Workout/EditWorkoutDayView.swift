@@ -227,7 +227,7 @@ struct EditWorkoutDayView: View {
                     }
                     .frame(maxWidth: .infinity)
                 } else {
-                    ForEach(Array(workoutDay.exercises.enumerated()), id: \.element.id) { index, exercise in
+                    ForEach(Array(workoutDay.exercises.sorted { $0.sortOrder < $1.sortOrder }.enumerated()), id: \.element.id) { index, exercise in
                         Button {
                             if editMode == .inactive {
                                 editingExercise = exercise
