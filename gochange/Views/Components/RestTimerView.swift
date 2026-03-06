@@ -209,7 +209,7 @@ struct RestTimerView: View {
         } else if remainingTime <= 30 {
             return .orange
         }
-        return AppTheme.accent
+        return AppColors.primary
     }
     
     private var timeString: String {
@@ -300,10 +300,10 @@ struct RestTimerButton: View {
             }
             .font(.subheadline)
             .fontWeight(.medium)
-            .foregroundColor(AppTheme.accent)
+            .foregroundColor(AppColors.primary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(AppTheme.accent.opacity(0.1))
+            .background(AppColors.primary.opacity(0.1))
             .cornerRadius(20)
         }
         .sheet(isPresented: $showingTimer) {

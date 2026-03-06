@@ -14,7 +14,7 @@ struct SessionDetailView: View {
     @State private var isEditMode = false
     
     private var accentColor: Color {
-        AppConstants.WorkoutColors.color(for: session.workoutDayName)
+        AppColors.workoutColor(for: session.workoutDayName)
     }
     
     var body: some View {

@@ -19,7 +19,7 @@ struct MainTabView: View {
                 PerformanceAnalyticsView()
                     .tag(2)
             }
-            .tint(AppTheme.accent)
+            .tint(AppColors.primary)
             // Hide native tab bar
             .toolbar(.hidden, for: .tabBar)
             

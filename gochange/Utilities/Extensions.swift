@@ -90,14 +90,4 @@ extension TimeInterval {
     }
 }
 
-// MARK: - View Extensions
-extension View {
-    func cardStyle(color: Color = .white) -> some View {
-        self
-            .padding()
-            .background(color)
-            .cornerRadius(16)
-            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
-    }
-}
 

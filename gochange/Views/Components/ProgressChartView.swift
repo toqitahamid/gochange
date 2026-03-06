@@ -41,7 +41,7 @@ struct ProgressChartView: View {
                         x: .value("Date", point.date),
                         y: .value(selectedMetric.rawValue, value(for: point))
                     )
-                    .foregroundStyle(AppTheme.accent)
+                    .foregroundStyle(AppColors.primary)
                     .interpolationMethod(.catmullRom)
                     
                     AreaMark(
@@ -50,7 +50,7 @@ struct ProgressChartView: View {
                     )
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [AppTheme.accent.opacity(0.3), AppTheme.accent.opacity(0)],
+                            colors: [AppColors.primary.opacity(0.3), AppColors.primary.opacity(0)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -60,7 +60,7 @@ struct ProgressChartView: View {
                         x: .value("Date", point.date),
                         y: .value(selectedMetric.rawValue, value(for: point))
                     )
-                    .foregroundStyle(AppTheme.accent)
+                    .foregroundStyle(AppColors.primary)
                 }
                 .frame(height: 200)
                 .chartXAxis {
@@ -79,7 +79,7 @@ struct ProgressChartView: View {
             }
         }
         .padding(20)
-        .background(AppTheme.cardBackground)
+        .background(AppColors.surface)
         .cornerRadius(16)
         .shadow(color: .black.opacity(0.05), radius: 8, y: 4)
     }

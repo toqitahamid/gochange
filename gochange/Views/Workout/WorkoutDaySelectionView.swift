@@ -456,7 +456,7 @@ struct AddWorkoutDayView: View {
                             .foregroundColor(name.isEmpty ? .secondary : .primary)
                     }
                     .padding()
-                    .background(AppTheme.cardBackground)
+                    .background(AppColors.surface)
                     .cornerRadius(12)
                 }
             }
