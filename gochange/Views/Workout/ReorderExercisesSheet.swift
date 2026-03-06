@@ -12,11 +12,9 @@ struct ReorderExercisesSheet: View {
                         Text(log.exerciseName)
                             .font(.system(size: 16, weight: .medium))
                         Spacer()
-                        if let count = log.sets.count {
-                            Text("\(count) sets")
-                                .font(.caption)
-                                .foregroundColor(.secondary)
-                        }
+                        Text("\(log.sets.count) sets")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
                     }
                 }
                 .onMove { source, destination in
