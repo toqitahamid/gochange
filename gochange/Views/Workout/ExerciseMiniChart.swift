@@ -53,14 +53,8 @@ struct ExerciseMiniChart: View {
                 chartView
             }
         }
-        .padding(16)
-        .background(Color.white)
-        .cornerRadius(16)
-        .shadow(color: Color.black.opacity(0.04), radius: 6, x: 0, y: 2)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(Color.gray.opacity(0.1), lineWidth: 1)
-        )
+        .padding(AppLayout.cardPadding)
+        .subCardStyle()
         .onAppear {
             fetchHistory()
         }

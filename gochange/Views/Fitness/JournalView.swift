@@ -150,14 +150,8 @@ struct JournalView: View {
                 
                 Spacer()
             }
-            .padding(16)
-            .background(Color.white)
-            .cornerRadius(20)
-            .shadow(color: Color.black.opacity(0.08), radius: 15, x: 0, y: 5)
-            .overlay(
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(Color.gray.opacity(0.15), lineWidth: 1)
-            )
+            .padding(AppLayout.cardPadding)
+            .cardStyle()
         }
     }
     
