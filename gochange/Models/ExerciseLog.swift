@@ -8,6 +8,7 @@ final class ExerciseLog {
     var exerciseName: String
     var order: Int
     var notes: String?
+    var restDuration: TimeInterval = 90  // Per-exercise rest timer preset (seconds)
     var groupId: UUID?           // Exercises with same groupId are grouped together
     var groupType: GroupType?    // Type of grouping (superset or circuit)
     @Relationship(deleteRule: .cascade) var sets: [SetLog]

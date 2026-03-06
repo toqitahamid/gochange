@@ -598,6 +598,7 @@ class WorkoutManager: ObservableObject {
                 exerciseName: exercise.name,
                 order: index
             )
+            log.restDuration = exercise.defaultRestDuration
             
             for setNum in 1...exercise.defaultSets {
                 let setLog = SetLog(
@@ -803,8 +804,9 @@ class WorkoutManager: ObservableObject {
         let exerciseLog = exerciseLogs[exerciseIndex]
         let isLastSet = setIndex == exerciseLog.sets.count - 1
 
-        // Use longer rest for last set, shorter for others
-        let duration: TimeInterval = isLastSet ? 180 : 90
+        // Use per-exercise preset; last set gets 2× for muscle recovery between exercises
+        let baseDuration = exerciseLog.restDuration
+        let duration: TimeInterval = isLastSet ? min(baseDuration * 2, 300) : baseDuration
 
         let endTime = Date().addingTimeInterval(duration)
         activeRestTimer = RestTimerState(

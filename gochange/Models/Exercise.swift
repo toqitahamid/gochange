@@ -12,6 +12,7 @@ final class Exercise {
     var notes: String?
     var mediaURL: String?         // Local file path for video/image
     var mediaType: MediaType?
+    var defaultRestDuration: TimeInterval = AppConstants.Defaults.restTimerDuration
     @Relationship(inverse: \WorkoutDay.exercises) var workoutDay: WorkoutDay?
     
     enum MediaType: String, Codable {
