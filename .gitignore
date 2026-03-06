@@ -89,7 +89,6 @@ Thumbs.db
 *.rar
 
 # Claude Code — personal dev tool config (contains private workflow instructions)
-CLAUDE.md
 .claude/settings.local.json
 
 # Serena MCP — local language server / project config
@@ -97,10 +96,7 @@ CLAUDE.md
 
 # Internal development docs (planning, mockup prompts, analysis)
 
-
-# Internal Claude plugin (not part of the app)
-claude-ios-marketplace/
-
 # Git worktrees
 .worktrees/
 
+                                                                                                                                                                                                                                                    
