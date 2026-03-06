@@ -51,9 +51,56 @@ class WatchWorkoutManager: ObservableObject {
         return String(format: "%d:%02d", minutes, seconds)
     }
     
+    // MARK: - Persistence Keys
+    private enum PersistenceKey {
+        static let state = "watchWorkoutState"
+    }
+
     // MARK: - Initialization
 
-    init() {}
+    init() {
+        restoreStateIfNeeded()
+    }
+
+    // MARK: - State Persistence
+
+    private func saveState() {
+        guard let workoutDay, let startTime else {
+            UserDefaults.standard.removeObject(forKey: PersistenceKey.state)
+            return
+        }
+        let state = WatchWorkoutState(
+            workoutDay: workoutDay,
+            exerciseLogs: exerciseLogs,
+            startTime: startTime,
+            currentExerciseIndex: currentExerciseIndex,
+            currentSetIndex: currentSetIndex,
+            completedSets: completedSets
+        )
+        if let data = try? JSONEncoder().encode(state) {
+            UserDefaults.standard.set(data, forKey: PersistenceKey.state)
+        }
+    }
+
+    private func restoreStateIfNeeded() {
+        guard
+            let data = UserDefaults.standard.data(forKey: PersistenceKey.state),
+            let state = try? JSONDecoder().decode(WatchWorkoutState.self, from: data)
+        else { return }
+
+        workoutDay = state.workoutDay
+        workoutDayName = state.workoutDay.name
+        workoutColorHex = state.workoutDay.colorHex
+        totalExercises = state.workoutDay.exercises.count
+        exerciseLogs = state.exerciseLogs
+        startTime = state.startTime
+        currentExerciseIndex = state.currentExerciseIndex
+        currentSetIndex = state.currentSetIndex
+        completedSets = state.completedSets
+        elapsedTime = Date().timeIntervalSince(state.startTime)
+        isWorkoutActive = true
+        startTimer()
+    }
     
     // MARK: - Workout Lifecycle
     
@@ -88,7 +135,8 @@ class WatchWorkoutManager: ObservableObject {
         Task { try? await healthKit.startWorkoutSession() }
         
         isWorkoutActive = true
-        
+        saveState()
+
         // Notify iPhone
         WatchConnectivityManager.shared.sendMessage([
             "type": "workoutStarted",
@@ -120,6 +168,7 @@ class WatchWorkoutManager: ObservableObject {
         currentExerciseIndex = 0
         currentSetIndex = 0
         completedSets = 0
+        saveState() // clears persisted state
     }
     
     func pauseWorkout() {
@@ -156,7 +205,8 @@ class WatchWorkoutManager: ObservableObject {
         exerciseLogs[currentExerciseIndex][currentSetIndex].weightUnit = weightUnit
         
         completedSets += 1
-        
+        saveState()
+
         // Haptic feedback
         WKInterfaceDevice.current().play(.success)
         
@@ -270,12 +320,21 @@ class WatchWorkoutManager: ObservableObject {
 
 // MARK: - Watch Models
 
-struct WatchSetLog {
+struct WatchSetLog: Codable {
     let setNumber: Int
     let targetReps: String
     var actualReps: Int?
     var weight: Double?
     var weightUnit: String = "lbs"
     var isCompleted: Bool = false
+}
+
+struct WatchWorkoutState: Codable {
+    let workoutDay: WatchWorkoutDay
+    let exerciseLogs: [[WatchSetLog]]
+    let startTime: Date
+    let currentExerciseIndex: Int
+    let currentSetIndex: Int
+    let completedSets: Int
 }
 
