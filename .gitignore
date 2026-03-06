@@ -96,8 +96,11 @@ CLAUDE.md
 .serena/
 
 # Internal development docs (planning, mockup prompts, analysis)
-docs/
+
 
 # Internal Claude plugin (not part of the app)
 claude-ios-marketplace/
+
+# Git worktrees
+.worktrees/
 
