@@ -3,39 +3,39 @@ import HealthKit
 import Combine
 
 @MainActor
-class WatchWorkoutManager: NSObject, ObservableObject {
+class WatchWorkoutManager: ObservableObject {
     // MARK: - Published State
-    
+
     @Published var isWorkoutActive = false
     @Published var workoutDayName = ""
     @Published var workoutColorHex = "#00D4AA"
-    
+
     @Published var currentExerciseIndex = 0
     @Published var currentSetIndex = 0
     @Published var completedSets = 0
     @Published var totalExercises = 0
-    
+
     @Published var currentWeight: Double = 0
     @Published var currentReps: Int = 8
     @Published var weightUnit = "lbs"
-    
-    @Published var currentHeartRate: Double?
+
     @Published var elapsedTime: TimeInterval = 0
-    
+
     // MARK: - Private State
-    
+
     @Published var isPaused = false
-    
+
     private var workoutDay: WatchWorkoutDay?
     private var exerciseLogs: [[WatchSetLog]] = []
     private var startTime: Date?
     private var timer: Timer?
-    
-    private var healthStore: HKHealthStore?
-    private var workoutSession: HKWorkoutSession?
-    private var workoutBuilder: HKLiveWorkoutBuilder?
-    
+
+    private let healthKit = WatchHealthKitService.shared
+    private var cancellables = Set<AnyCancellable>()
+
     // MARK: - Computed Properties
+
+    var currentHeartRate: Double? { healthKit.currentHeartRate }
     
     var currentExercise: WatchExercise? {
         guard let workoutDay = workoutDay,
@@ -52,12 +52,8 @@ class WatchWorkoutManager: NSObject, ObservableObject {
     }
     
     // MARK: - Initialization
-    
-    override init() {
-        if HKHealthStore.isHealthDataAvailable() {
-            healthStore = HKHealthStore()
-        }
-    }
+
+    init() {}
     
     // MARK: - Workout Lifecycle
     
@@ -88,8 +84,8 @@ class WatchWorkoutManager: NSObject, ObservableObject {
         // Start timer
         startTimer()
         
-        // Start HealthKit workout session
-        startHealthKitWorkout()
+        // Start HealthKit workout session via shared service
+        Task { try? await healthKit.startWorkoutSession() }
         
         isWorkoutActive = true
         
@@ -104,8 +100,8 @@ class WatchWorkoutManager: NSObject, ObservableObject {
         timer?.invalidate()
         timer = nil
         
-        // End HealthKit session
-        endHealthKitWorkout()
+        // End HealthKit session via shared service
+        Task { try? await healthKit.endWorkoutSession() }
         
         // Send completed workout to iPhone
         sendCompletedWorkout()
@@ -221,60 +217,6 @@ class WatchWorkoutManager: NSObject, ObservableObject {
         }
     }
     
-    // MARK: - HealthKit Integration
-    
-    private func startHealthKitWorkout() {
-        guard let healthStore = healthStore else { return }
-        
-        let configuration = HKWorkoutConfiguration()
-        configuration.activityType = .traditionalStrengthTraining
-        configuration.locationType = .indoor
-        
-        do {
-            workoutSession = try HKWorkoutSession(healthStore: healthStore, configuration: configuration)
-            workoutBuilder = workoutSession?.associatedWorkoutBuilder()
-            
-            workoutBuilder?.dataSource = HKLiveWorkoutDataSource(
-                healthStore: healthStore,
-                workoutConfiguration: configuration
-            )
-            
-            workoutSession?.delegate = self
-            workoutBuilder?.delegate = self
-            
-            let startDate = Date()
-            workoutSession?.startActivity(with: startDate)
-            workoutBuilder?.beginCollection(withStart: startDate) { success, error in
-                if let error = error {
-                    print("Error starting workout collection: \(error)")
-                }
-            }
-        } catch {
-            print("Error creating workout session: \(error)")
-        }
-    }
-    
-    private func endHealthKitWorkout() {
-        guard let workoutSession = workoutSession,
-              let workoutBuilder = workoutBuilder else { return }
-        
-        let endDate = Date()
-        workoutSession.end()
-        
-        workoutBuilder.endCollection(withEnd: endDate) { success, error in
-            if let error = error {
-                print("Error ending collection: \(error)")
-                return
-            }
-            
-            workoutBuilder.finishWorkout { workout, error in
-                if let error = error {
-                    print("Error finishing workout: \(error)")
-                }
-            }
-        }
-    }
-    
     // MARK: - Send to iPhone
     
     private func sendCompletedWorkout() {
@@ -316,8 +258,8 @@ class WatchWorkoutManager: NSObject, ObservableObject {
                 "endTime": endTime.timeIntervalSince1970,
                 "duration": endTime.timeIntervalSince(startTime),
                 "exerciseLogs": logs,
-                "averageHeartRate": currentHeartRate ?? 0,
-                "activeCalories": 0 // Would come from HealthKit
+                "averageHeartRate": healthKit.averageHeartRate ?? 0,
+                "activeCalories": healthKit.activeCalories
             ]
         ]
         
@@ -325,48 +267,6 @@ class WatchWorkoutManager: NSObject, ObservableObject {
     }
 }
 
-// MARK: - HKWorkoutSessionDelegate
-
-extension WatchWorkoutManager: HKWorkoutSessionDelegate {
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didChangeTo toState: HKWorkoutSessionState, from fromState: HKWorkoutSessionState, date: Date) {
-        // Handle state changes if needed
-    }
-    
-    nonisolated func workoutSession(_ workoutSession: HKWorkoutSession, didFailWithError error: Error) {
-        print("Workout session failed: \(error)")
-    }
-}
-
-// MARK: - HKLiveWorkoutBuilderDelegate
-
-extension WatchWorkoutManager: HKLiveWorkoutBuilderDelegate {
-    nonisolated func workoutBuilderDidCollectEvent(_ workoutBuilder: HKLiveWorkoutBuilder) {
-        // Handle collected events
-    }
-    
-    nonisolated func workoutBuilder(_ workoutBuilder: HKLiveWorkoutBuilder, didCollectDataOf collectedTypes: Set<HKSampleType>) {
-        for type in collectedTypes {
-            guard let quantityType = type as? HKQuantityType else { continue }
-            
-            if quantityType == HKQuantityType(.heartRate) {
-                let statistics = workoutBuilder.statistics(for: quantityType)
-                let heartRate = statistics?.mostRecentQuantity()?.doubleValue(for: HKUnit.count().unitDivided(by: .minute()))
-                
-                Task { @MainActor in
-                    self.currentHeartRate = heartRate
-                    
-                    // Send to iPhone
-                    if let heartRate = heartRate {
-                        WatchConnectivityManager.shared.sendMessage([
-                            "type": "heartRateUpdate",
-                            "heartRate": heartRate
-                        ])
-                    }
-                }
-            }
-        }
-    }
-}
 
 // MARK: - Watch Models
 
