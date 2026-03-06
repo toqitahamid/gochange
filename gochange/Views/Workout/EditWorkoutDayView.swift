@@ -331,6 +331,9 @@ struct EditWorkoutDayView: View {
 
     private func moveExercises(from source: IndexSet, to destination: Int) {
         workoutDay.exercises.move(fromOffsets: source, toOffset: destination)
+        for (index, exercise) in workoutDay.exercises.enumerated() {
+            exercise.sortOrder = index
+        }
         saveChanges()
     }
 
