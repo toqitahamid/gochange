@@ -4,7 +4,7 @@ import Combine
 
 /// Service for HealthKit integration - saves workouts to Apple Health and reads heart rate data
 @MainActor
-class HealthKitService: ObservableObject {
+class HealthKitService: ObservableObject, HealthDataProviding {
     static let shared = HealthKitService()
     
     private let healthStore = HKHealthStore()
@@ -251,11 +251,10 @@ class HealthKitService: ObservableObject {
     }
     
     /// Request authorization to read/write health data
-    @discardableResult
-    func requestAuthorization() async -> Bool {
+    func requestAuthorization() async throws {
         guard isHealthKitAvailable else {
             print("❌ HealthKit is not available on this device")
-            return false
+            throw HealthKitError.notAvailable
         }
 
         print("📱 Requesting HealthKit authorization...")
@@ -267,10 +266,6 @@ class HealthKitService: ObservableObject {
             hasRequestedAuthorization = true
             print("✅ HealthKit authorization request completed")
             checkAuthorizationStatus()
-            return true // Always return true after request, as HealthKit doesn't reveal if user granted/denied read access
-        } catch {
-            print("❌ HealthKit authorization error: \(error.localizedDescription)")
-            return false
         }
     }
     
@@ -560,12 +555,12 @@ class HealthKitService: ObservableObject {
 
                 let sleepData = SleepData(
                     totalDuration: totalSleep,
-                    deepSleepDuration: deepSleep,
-                    remSleepDuration: remSleep,
-                    coreSleepDuration: coreSleep,
+                    deepDuration: deepSleep,
+                    remDuration: remSleep,
+                    coreDuration: coreSleep,
                     quality: quality,
-                    startDate: sleepSamples.first?.startDate ?? startOfDay,
-                    endDate: sleepSamples.last?.endDate ?? endOfDay
+                    startDate: sleepSamples.first?.startDate,
+                    endDate: sleepSamples.last?.endDate
                 )
 
                 print("✅ Sleep quality calculated: \(Int(quality * 100))%")
@@ -807,22 +802,25 @@ class HealthKitService: ObservableObject {
     }
     
     /// Get total walking/running distance for a specific date (in meters)
-    func getWalkingRunningDistance(for date: Date) async -> Double {
-        return await getSumQuantity(for: .distanceWalkingRunning, unit: .meter(), date: date)
+    func getWalkingRunningDistance(for date: Date) async -> Double? {
+        let value = await getSumQuantity(for: .distanceWalkingRunning, unit: .meter(), date: date)
+        return value > 0 ? value : nil
     }
     
     /// Get total active energy burned for a specific date (in kcal)
-    func getActiveEnergyBurned(for date: Date) async -> Double {
-        return await getSumQuantity(for: .activeEnergyBurned, unit: .kilocalorie(), date: date)
+    func getActiveEnergyBurned(for date: Date) async -> Double? {
+        let value = await getSumQuantity(for: .activeEnergyBurned, unit: .kilocalorie(), date: date)
+        return value > 0 ? value : nil
     }
     
     /// Get total exercise time for a specific date (in minutes)
-    func getExerciseTime(for date: Date) async -> Double {
-        return await getSumQuantity(for: .appleExerciseTime, unit: .minute(), date: date)
+    func getExerciseTime(for date: Date) async -> Double? {
+        let value = await getSumQuantity(for: .appleExerciseTime, unit: .minute(), date: date)
+        return value > 0 ? value : nil
     }
     
-    /// Get daily active energy burned for the last N days
-    func getHistoricalActiveEnergy(days: Int = 7) async -> [Date: Double] {
+    /// Get daily active energy burned for the last N days (returns dictionary)
+    func getHistoricalActiveEnergyDict(days: Int = 7) async -> [Date: Double] {
         guard isHealthKitAvailable else { return [:] }
         
         let type = HKQuantityType(.activeEnergyBurned)
@@ -931,40 +929,6 @@ struct HeartRateSample: Identifiable {
     let bpm: Double
 }
 
-struct SleepData {
-    let totalDuration: TimeInterval
-    let deepSleepDuration: TimeInterval
-    let remSleepDuration: TimeInterval
-    let coreSleepDuration: TimeInterval
-    let quality: Double // 0-1
-    let startDate: Date
-    let endDate: Date
-
-    var formattedTotal: String {
-        let hours = Int(totalDuration / 3600)
-        let minutes = Int((totalDuration.truncatingRemainder(dividingBy: 3600)) / 60)
-        return "\(hours)h \(minutes)m"
-    }
-
-    var formattedDeep: String {
-        let minutes = Int(deepSleepDuration / 60)
-        return "\(minutes) min"
-    }
-
-    var formattedREM: String {
-        let minutes = Int(remSleepDuration / 60)
-        return "\(minutes) min"
-    }
-
-    var formattedCore: String {
-        let minutes = Int(coreSleepDuration / 60)
-        return "\(minutes) min"
-    }
-
-    var qualityPercentage: Int {
-        Int(quality * 100)
-    }
-}
 
 enum HealthKitError: LocalizedError {
     case notAuthorized
@@ -983,3 +947,56 @@ enum HealthKitError: LocalizedError {
     }
 }
 
+
+// MARK: - HealthDataProviding Protocol Methods
+
+extension HealthKitService {
+    func getStandHours(for date: Date) async -> Int? {
+        guard isHealthKitAvailable else { return nil }
+
+        let standType = HKQuantityType(.appleStandTime)
+        let calendar = Calendar.current
+        let startOfDay = calendar.startOfDay(for: date)
+        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
+        let predicate = HKQuery.predicateForSamples(withStart: startOfDay, end: endOfDay, options: .strictStartDate)
+
+        return await withCheckedContinuation { continuation in
+            let query = HKStatisticsQuery(
+                quantityType: standType,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, result, _ in
+                let hours = result?.sumQuantity()?.doubleValue(for: .hour())
+                continuation.resume(returning: hours.map { Int($0) })
+            }
+            healthStore.execute(query)
+        }
+    }
+
+    func getHistoricalHRV(days: Int) async -> [(date: Date, value: Double)] {
+        let dict = await getHistoricalHeartRateVariability(days: days)
+        return dict.map { (date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    func getHistoricalRHR(days: Int) async -> [(date: Date, value: Double)] {
+        let dict = await getHistoricalRestingHeartRate(days: days)
+        return dict.map { (date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    func getHistoricalSleep(days: Int) async -> [(date: Date, duration: TimeInterval)] {
+        let dict = await getHistoricalSleepData(days: days)
+        return dict.map { (date: $0.key, duration: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    func getHistoricalActiveEnergy(days: Int) async -> [(date: Date, value: Double)] {
+        let dict = await getHistoricalActiveEnergyDict(days: days)
+        return dict.map { (date: $0.key, value: $0.value) }.sorted { $0.date < $1.date }
+    }
+
+    func getDailyActivityStats(days: Int) async -> [(date: Date, count: Int)] {
+        let endDate = Date()
+        let startDate = Calendar.current.date(byAdding: .day, value: -days, to: endDate) ?? endDate
+        let dict = await getDailyActivityStats(from: startDate, to: endDate)
+        return dict.map { (date: $0.key, count: $0.value) }.sorted { $0.date < $1.date }
+    }
+}

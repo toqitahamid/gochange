@@ -52,7 +52,7 @@ class RecoveryService: ObservableObject {
         // always show .notDetermined even after granted, so we just ensure we've requested it
         if !healthKitService.isAuthorized {
             print("⚠️ Authorization not requested yet, requesting...")
-            await healthKitService.requestAuthorization()
+            try? await healthKitService.requestAuthorization()
             // Wait a moment for permissions to settle
             try? await Task.sleep(nanoseconds: 500_000_000)
         }

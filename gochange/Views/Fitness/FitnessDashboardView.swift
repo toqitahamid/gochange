@@ -359,12 +359,12 @@ struct ActivitySummaryCard: View {
         async let time = healthKitService.getExerciseTime(for: today)
         
         let (s, d, e, t) = await (stepsCount, dist, energy, time)
-        
+
         await MainActor.run {
             self.steps = s
-            self.distance = d
-            self.activeEnergy = e
-            self.exerciseTime = t
+            self.distance = d ?? 0
+            self.activeEnergy = e ?? 0
+            self.exerciseTime = t ?? 0
         }
     }
 }

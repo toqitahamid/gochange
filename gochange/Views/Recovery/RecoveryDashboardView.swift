@@ -92,7 +92,7 @@ struct RecoveryDashboardView: View {
             .alert("HealthKit Authorization", isPresented: $showingHealthKitAuth) {
                 Button("Open Settings") {
                     Task {
-                        await healthKitService.requestAuthorization()
+                        try? await healthKitService.requestAuthorization()
                     }
                 }
                 Button("Cancel", role: .cancel) {}
@@ -279,7 +279,7 @@ struct RecoveryDashboardView: View {
             }
             
             Button {
-                Task { await healthKitService.requestAuthorization() }
+                Task { try? await healthKitService.requestAuthorization() }
             } label: {
                 Text("Connect Health")
                     .font(.system(size: 16, weight: .semibold))

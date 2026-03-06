@@ -22,10 +22,8 @@ struct DataSourcesView: View {
                         if !healthKitService.isAuthorized && healthKitService.authorizationStatus == .notDetermined {
                             Button {
                                 Task {
-                                    let authorized = await healthKitService.requestAuthorization()
-                                    if authorized {
-                                        healthKitEnabled = true
-                                    }
+                                    try? await healthKitService.requestAuthorization()
+                                    healthKitEnabled = healthKitService.isAuthorized
                                 }
                             } label: {
                                 HStack {
