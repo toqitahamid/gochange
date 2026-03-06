@@ -31,7 +31,7 @@ class AnalyticsViewModel: ObservableObject {
     @Published var totalReps: Int = 0
 
     @Published var selectedTimePeriod: TimePeriod = .month
-    @Published var isLoading = false
+    @Published var loadState: LoadState = .idle
 
     private var sessions: [WorkoutSession] = []
 
@@ -39,11 +39,11 @@ class AnalyticsViewModel: ObservableObject {
 
     func loadAnalytics(sessions: [WorkoutSession]) {
         self.sessions = sessions
-        isLoading = true
+        loadState = .loading
 
         Task {
             await refreshAllAnalytics()
-            isLoading = false
+            loadState = .loaded
         }
     }
 

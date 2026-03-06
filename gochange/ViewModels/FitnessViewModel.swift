@@ -5,6 +5,9 @@ import Combine
 
 @MainActor
 class FitnessViewModel: ObservableObject {
+    // MARK: - Load State
+    @Published var loadState: LoadState = .idle
+
     // MARK: - Published Properties
     @Published var muscleGroupVolumes: [String: Double] = [
         "Chest": 0, "Back": 0, "Legs": 0, "Shoulders": 0, "Core": 0, "Arms": 0
@@ -72,8 +75,9 @@ class FitnessViewModel: ObservableObject {
     
     // MARK: - Data Fetching
     func fetchData(for range: TimeRange = .month) async {
+        loadState = .loading
         currentTimeRange = range
-        
+
         // Fetch HealthKit Data
         if let rhr = await healthKitService.getRestingHeartRate(for: Date()) {
             self.restingHeartRate = rhr
@@ -94,6 +98,8 @@ class FitnessViewModel: ObservableObject {
 
         // Fetch Strain vs Recovery correlation data
         await fetchStrainRecoveryData(for: range)
+
+        loadState = .loaded
     }
     
     // Track current time range

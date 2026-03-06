@@ -13,7 +13,7 @@ struct WorkoutAnalyticsView: View {
             ZStack {
                 Color(hex: "#F5F5F7").ignoresSafeArea()
                 
-                if viewModel.isLoading {
+                if viewModel.loadState == .loading {
                     loadingView
                 } else {
                     ScrollView {

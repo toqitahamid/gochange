@@ -4,11 +4,6 @@ import Combine
 
 @MainActor
 final class HomeViewModel: ObservableObject {
-    // MARK: - Load State
-    enum LoadState: Equatable {
-        case idle, loading, loaded, error(String)
-    }
-
     @Published var loadState: LoadState = .idle
 
     // MARK: - Scores (0-100)
